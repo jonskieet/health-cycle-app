@@ -53,115 +53,126 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex flex-1 flex-col justify-center gap-8 px-6">
-      <div className="flex flex-col items-center gap-3 text-center">
-        <span
-          className="flex h-14 w-14 items-center justify-center rounded-full text-white"
-          style={{ background: "linear-gradient(135deg, var(--c-sleep), var(--c-period))" }}
-        >
-          <Sparkles size={24} />
-        </span>
-        <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Aura</h1>
-        <p className="text-sm text-[var(--ink-soft)]">
-          {mode === "signin" ? "Đăng nhập để tiếp tục" : "Tạo tài khoản mới"}
-        </p>
-      </div>
+    <main
+      className="flex flex-1 flex-col items-center justify-center px-5"
+      style={{
+        paddingTop: "max(2rem, env(safe-area-inset-top))",
+        paddingBottom: "max(2rem, env(safe-area-inset-bottom))",
+      }}
+    >
+      <div className="glass-card-strong flex w-full max-w-sm flex-col gap-7 rounded-[32px] p-7">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <span
+            className="flex h-14 w-14 items-center justify-center rounded-full text-white"
+            style={{ background: "linear-gradient(135deg, var(--c-sleep), var(--c-period))" }}
+          >
+            <Sparkles size={24} />
+          </span>
+          <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Aura</h1>
+          <p className="text-sm text-[var(--ink-soft)]">
+            {mode === "signin" ? "Đăng nhập để tiếp tục" : "Tạo tài khoản mới"}
+          </p>
+        </div>
 
-      <div className="flex flex-col gap-3">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-[var(--ink-soft)]">Email</span>
+            <div className="flex items-center gap-2 rounded-2xl bg-black/[0.03] px-4 py-3">
+              <Mail size={16} className="text-[var(--ink-faint)]" />
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="ban@email.com"
+                autoComplete="email"
+                className="w-full bg-transparent text-sm text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)]"
+              />
+            </div>
+          </label>
+
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-[var(--ink-soft)]">Mật khẩu</span>
+            <div className="flex items-center gap-2 rounded-2xl bg-black/[0.03] px-4 py-3">
+              <Lock size={16} className="text-[var(--ink-faint)]" />
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Tối thiểu 6 ký tự"
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                className="w-full bg-transparent text-sm text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)]"
+              />
+            </div>
+          </label>
+
+          {error && <p className="text-xs text-[var(--c-period)]">{error}</p>}
+          {info && <p className="text-xs text-[var(--c-mood)]">{info}</p>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-1 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-white disabled:opacity-60"
+            style={{ background: "linear-gradient(135deg, var(--c-sleep), var(--c-period))" }}
+          >
+            {loading && <Loader2 size={16} className="animate-spin" />}
+            {mode === "signin" ? "Đăng nhập" : "Đăng ký"}
+          </button>
+        </form>
+
+        <div className="flex items-center gap-3">
+          <span className="h-px flex-1 bg-black/10" />
+          <span className="text-xs text-[var(--ink-faint)]">hoặc</span>
+          <span className="h-px flex-1 bg-black/10" />
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={() => handleOAuth("google")}
+            disabled={oauthLoading !== null}
+            className="flex items-center justify-center gap-3 rounded-2xl border border-black/10 bg-white py-3 text-sm font-semibold text-[var(--ink)] disabled:opacity-60"
+          >
+            {oauthLoading === "google" ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <GoogleIcon />
+            )}
+            Tiếp tục với Google
+          </button>
+          <button
+            type="button"
+            onClick={() => handleOAuth("apple")}
+            disabled={oauthLoading !== null}
+            className="flex items-center justify-center gap-3 rounded-2xl bg-black py-3 text-sm font-semibold text-white disabled:opacity-60"
+          >
+            {oauthLoading === "apple" ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <AppleIcon />
+            )}
+            Tiếp tục với Apple
+          </button>
+        </div>
+
         <button
           type="button"
-          onClick={() => handleOAuth("google")}
-          disabled={oauthLoading !== null}
-          className="glass-card flex items-center justify-center gap-3 rounded-2xl py-3 text-sm font-semibold text-[var(--ink)] disabled:opacity-60"
+          onClick={() => {
+            setMode(mode === "signin" ? "signup" : "signin");
+            setError(null);
+            setInfo(null);
+          }}
+          className="text-center text-sm text-[var(--ink-soft)]"
         >
-          {oauthLoading === "google" ? (
-            <Loader2 size={18} className="animate-spin" />
+          {mode === "signin" ? (
+            <>Chưa có tài khoản? <span className="font-semibold text-[var(--c-sleep)]">Đăng ký</span></>
           ) : (
-            <GoogleIcon />
+            <>Đã có tài khoản? <span className="font-semibold text-[var(--c-sleep)]">Đăng nhập</span></>
           )}
-          Tiếp tục với Google
-        </button>
-        <button
-          type="button"
-          onClick={() => handleOAuth("apple")}
-          disabled={oauthLoading !== null}
-          className="flex items-center justify-center gap-3 rounded-2xl bg-black py-3 text-sm font-semibold text-white disabled:opacity-60"
-        >
-          {oauthLoading === "apple" ? (
-            <Loader2 size={18} className="animate-spin" />
-          ) : (
-            <AppleIcon />
-          )}
-          Tiếp tục với Apple
         </button>
       </div>
-
-      <div className="flex items-center gap-3">
-        <span className="h-px flex-1 bg-black/10" />
-        <span className="text-xs text-[var(--ink-faint)]">hoặc dùng email</span>
-        <span className="h-px flex-1 bg-black/10" />
-      </div>
-
-      <form onSubmit={handleSubmit} className="glass-card-strong flex flex-col gap-4 rounded-[28px] p-6">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-[var(--ink-soft)]">Email</span>
-          <div className="flex items-center gap-2 rounded-2xl bg-black/[0.03] px-4 py-3">
-            <Mail size={16} className="text-[var(--ink-faint)]" />
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="ban@email.com"
-              className="w-full bg-transparent text-sm text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)]"
-            />
-          </div>
-        </label>
-
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-medium text-[var(--ink-soft)]">Mật khẩu</span>
-          <div className="flex items-center gap-2 rounded-2xl bg-black/[0.03] px-4 py-3">
-            <Lock size={16} className="text-[var(--ink-faint)]" />
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Tối thiểu 6 ký tự"
-              className="w-full bg-transparent text-sm text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)]"
-            />
-          </div>
-        </label>
-
-        {error && <p className="text-xs text-[var(--c-period)]">{error}</p>}
-        {info && <p className="text-xs text-[var(--c-mood)]">{info}</p>}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-2 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-white disabled:opacity-60"
-          style={{ background: "linear-gradient(135deg, var(--c-sleep), var(--c-period))" }}
-        >
-          {loading && <Loader2 size={16} className="animate-spin" />}
-          {mode === "signin" ? "Đăng nhập" : "Đăng ký"}
-        </button>
-      </form>
-
-      <button
-        onClick={() => {
-          setMode(mode === "signin" ? "signup" : "signin");
-          setError(null);
-          setInfo(null);
-        }}
-        className="text-center text-sm text-[var(--ink-soft)]"
-      >
-        {mode === "signin" ? (
-          <>Chưa có tài khoản? <span className="font-semibold text-[var(--c-sleep)]">Đăng ký</span></>
-        ) : (
-          <>Đã có tài khoản? <span className="font-semibold text-[var(--c-sleep)]">Đăng nhập</span></>
-        )}
-      </button>
     </main>
   );
 }

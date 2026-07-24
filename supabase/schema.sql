@@ -1,32 +1,45 @@
 -- ============================================================
 -- Aura — schema + RLS
 -- Chạy trong Supabase SQL Editor (project của bạn).
--- An toàn để chạy lại nhiều lần (dùng IF NOT EXISTS / DROP POLICY IF EXISTS).
+-- An toàn để chạy lại nhiều lần: dùng IF NOT EXISTS / DROP POLICY IF EXISTS,
+-- và ALTER TABLE ... ADD COLUMN IF NOT EXISTS để "vá" các bảng có thể đã
+-- được tạo trước đó với cấu trúc khác (vd nếu bạn từng chạy dở bản cũ).
 -- ============================================================
 
 -- ---------- profiles ----------
 create table if not exists public.profiles (
-  id uuid primary key references auth.users (id) on delete cascade,
-  display_name text,
-  birth_date date,
-  avg_cycle_length int not null default 28,
-  avg_period_length int not null default 5,
-  onboarded boolean not null default false,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  id uuid primary key references auth.users (id) on delete cascade
 );
+
+alter table public.profiles add column if not exists display_name text;
+alter table public.profiles add column if not exists birth_date date;
+alter table public.profiles add column if not exists avg_cycle_length int not null default 28;
+alter table public.profiles add column if not exists avg_period_length int not null default 5;
+alter table public.profiles add column if not exists onboarded boolean not null default false;
+alter table public.profiles add column if not exists created_at timestamptz not null default now();
+alter table public.profiles add column if not exists updated_at timestamptz not null default now();
 
 -- ---------- cycle_logs ----------
 create table if not exists public.cycle_logs (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users (id) on delete cascade,
-  start_date date not null,
-  end_date date,
-  symptoms text[] not null default '{}',
-  flow text check (flow in ('light', 'medium', 'heavy')),
-  note text,
-  created_at timestamptz not null default now()
+  id uuid primary key default gen_random_uuid()
 );
+
+alter table public.cycle_logs add column if not exists user_id uuid references auth.users (id) on delete cascade;
+alter table public.cycle_logs add column if not exists start_date date;
+alter table public.cycle_logs add column if not exists end_date date;
+alter table public.cycle_logs add column if not exists symptoms text[] not null default '{}';
+alter table public.cycle_logs add column if not exists flow text;
+alter table public.cycle_logs add column if not exists note text;
+alter table public.cycle_logs add column if not exists created_at timestamptz not null default now();
+
+do $$ begin
+  alter table public.cycle_logs add constraint cycle_logs_flow_check
+    check (flow in ('light', 'medium', 'heavy'));
+exception when duplicate_object then null;
+end $$;
+
+alter table public.cycle_logs alter column start_date set not null;
+alter table public.cycle_logs alter column user_id set not null;
 
 create index if not exists cycle_logs_user_start_idx
   on public.cycle_logs (user_id, start_date desc);
@@ -34,31 +47,50 @@ create index if not exists cycle_logs_user_start_idx
 -- ---------- health_metrics ----------
 -- metric_type: 'stress' | 'heart_rate' | 'sleep' | 'hydration' | 'mood'
 create table if not exists public.health_metrics (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users (id) on delete cascade,
-  metric_type text not null check (
-    metric_type in ('stress', 'heart_rate', 'sleep', 'hydration', 'mood')
-  ),
-  value numeric not null,
-  logged_at date not null default current_date,
-  note text,
-  created_at timestamptz not null default now(),
-  unique (user_id, metric_type, logged_at)
+  id uuid primary key default gen_random_uuid()
 );
+
+alter table public.health_metrics add column if not exists user_id uuid references auth.users (id) on delete cascade;
+alter table public.health_metrics add column if not exists metric_type text;
+alter table public.health_metrics add column if not exists value numeric;
+alter table public.health_metrics add column if not exists logged_at date not null default current_date;
+alter table public.health_metrics add column if not exists note text;
+alter table public.health_metrics add column if not exists created_at timestamptz not null default now();
+
+do $$ begin
+  alter table public.health_metrics add constraint health_metrics_type_check
+    check (metric_type in ('stress', 'heart_rate', 'sleep', 'hydration', 'mood'));
+exception when duplicate_object then null;
+end $$;
+
+alter table public.health_metrics alter column user_id set not null;
+alter table public.health_metrics alter column metric_type set not null;
+alter table public.health_metrics alter column value set not null;
+
+do $$ begin
+  alter table public.health_metrics
+    add constraint health_metrics_user_type_date_key unique (user_id, metric_type, logged_at);
+exception when duplicate_object then null;
+end $$;
 
 create index if not exists health_metrics_user_type_date_idx
   on public.health_metrics (user_id, metric_type, logged_at desc);
 
 -- ---------- appointments ----------
 create table if not exists public.appointments (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users (id) on delete cascade,
-  title text not null,
-  doctor_name text,
-  appointment_at timestamptz not null,
-  note text,
-  created_at timestamptz not null default now()
+  id uuid primary key default gen_random_uuid()
 );
+
+alter table public.appointments add column if not exists user_id uuid references auth.users (id) on delete cascade;
+alter table public.appointments add column if not exists title text;
+alter table public.appointments add column if not exists doctor_name text;
+alter table public.appointments add column if not exists appointment_at timestamptz;
+alter table public.appointments add column if not exists note text;
+alter table public.appointments add column if not exists created_at timestamptz not null default now();
+
+alter table public.appointments alter column user_id set not null;
+alter table public.appointments alter column title set not null;
+alter table public.appointments alter column appointment_at set not null;
 
 create index if not exists appointments_user_time_idx
   on public.appointments (user_id, appointment_at);
