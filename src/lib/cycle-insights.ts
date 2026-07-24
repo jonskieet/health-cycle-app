@@ -258,3 +258,42 @@ export const CHECK_IN_QUIZZES: CheckInQuiz[] = [
     },
   },
 ];
+
+// ---------- 4) "Hỏi trợ lý" — gợi ý câu hỏi mở chat theo pha chu kỳ ----------
+
+const SUGGESTED_PROMPTS_BY_PHASE: Record<Phase, string[]> = {
+  period: [
+    "Hôm nay nên ăn gì để đỡ đau bụng?",
+    "Làm sao để giảm đau lưng trong kỳ kinh?",
+    "Ra máu bao nhiêu là bình thường?",
+    "Có nên tập thể dục khi đang hành kinh?",
+  ],
+  follicular: [
+    "Đây có phải thời điểm tốt để tập luyện cường độ cao?",
+    "Vì sao tâm trạng mình dạo này tốt hơn?",
+    "Nên ăn gì để tăng năng lượng giai đoạn này?",
+    "Làn da mình sẽ thay đổi thế nào trong giai đoạn này?",
+  ],
+  fertile: [
+    "Khả năng thụ thai hôm nay thế nào?",
+    "Dấu hiệu nào cho thấy sắp rụng trứng?",
+    "Cửa sổ thụ thai kéo dài bao lâu?",
+    "Dịch nhầy cổ tử cung thay đổi ra sao?",
+  ],
+  ovulation: [
+    "Hôm nay có phải ngày dễ thụ thai nhất?",
+    "Vì sao mình thấy đau nhẹ một bên bụng?",
+    "Ham muốn tăng cao có bình thường không?",
+    "Nên làm gì để theo dõi rụng trứng chính xác hơn?",
+  ],
+  luteal: [
+    "Làm sao để giảm bớt hội chứng tiền kinh nguyệt?",
+    "Vì sao mình hay nổi mụn giai đoạn này?",
+    "Thèm ăn nhiều có bình thường không?",
+    "Khi nào nên lo lắng nếu kinh nguyệt trễ?",
+  ],
+};
+
+export function getSuggestedPrompts(phase: Phase): string[] {
+  return SUGGESTED_PROMPTS_BY_PHASE[phase];
+}

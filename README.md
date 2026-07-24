@@ -1,5 +1,16 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Trợ lý AI "Hỏi trợ lý" (trang Chu kỳ)
+
+Tính năng chat AI trong trang Chu kỳ gọi Anthropic API từ server (`src/app/api/ai-chat/route.ts`),
+không lộ API key ra client. Copy `.env.local.example` thành `.env.local` và điền:
+
+- `ANTHROPIC_API_KEY`: API key Anthropic, chỉ dùng phía server.
+- `AI_MODEL` (tuỳ chọn): model dùng cho trợ lý, mặc định `claude-sonnet-4-6`.
+
+Route có rate-limit tạm thời (in-memory, 10 request/phút/user) — chỉ phù hợp cho MVP single-instance,
+cần thay bằng giải pháp bền hơn (Supabase/Redis) khi scale nhiều instance.
+
 ## Getting Started
 
 First, run the development server:

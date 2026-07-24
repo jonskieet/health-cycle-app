@@ -2,21 +2,25 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Plus, ChevronRight } from "lucide-react";
+import { Plus, ChevronRight, Sparkles } from "lucide-react";
 import AuroraRing from "@/components/ui/AuroraRing";
 import CycleCalendar from "@/components/cycle/CycleCalendar";
 import PhaseOutlook from "@/components/cycle/PhaseOutlook";
 import DailyInsights from "@/components/cycle/DailyInsights";
 import HealthCheckIns from "@/components/cycle/HealthCheckIns";
+import AiChatSheet from "@/components/cycle/AiChatSheet";
 import EmptyState from "@/components/ui/EmptyState";
 import CycleLogForm from "@/components/log/CycleLogForm";
 import { useCycleLogs, useProfile, CycleLogFull } from "@/lib/queries";
 import { predictCycle, phaseLabel, phaseColor, daysUntil } from "@/lib/cycle-utils";
+import { getSuggestedPrompts } from "@/lib/cycle-insights";
 
 export default function CyclePage() {
   const { data: profile } = useProfile();
   const { data: cycleLogs = [], isLoading } = useCycleLogs();
   const [editingLog, setEditingLog] = useState<CycleLogFull | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatInitialMessage, setChatInitialMessage] = useState<string | undefined>(undefined);
 
   const prediction = predictCycle(cycleLogs, {
     avgCycleLength: profile?.avg_cycle_length ?? 28,
@@ -81,6 +85,40 @@ export default function CyclePage() {
 
           <PhaseOutlook phase={prediction.phase} />
 
+          <section className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 px-1">
+              <Sparkles size={16} style={{ color: "var(--c-sleep)" }} />
+              <p className="font-display text-sm font-bold text-[var(--ink)]">
+                Có thắc mắc? Hỏi trợ lý nhé ✨
+              </p>
+            </div>
+            <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1" style={{ scrollbarWidth: "none" }}>
+              {getSuggestedPrompts(prediction.phase).map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => {
+                    setChatInitialMessage(prompt);
+                    setChatOpen(true);
+                  }}
+                  className="glass-card shrink-0 whitespace-nowrap rounded-full px-4 py-2.5 text-xs font-medium text-[var(--c-period)] active:scale-[0.98]"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setChatInitialMessage(undefined);
+                setChatOpen(true);
+              }}
+              className="glass-card rounded-full px-4 py-3 text-left text-xs text-[var(--ink-faint)]"
+            >
+              Nhập câu hỏi của bạn...
+            </button>
+          </section>
+
           <HealthCheckIns />
 
           <section className="glass-card rounded-[24px] p-5">
@@ -118,6 +156,9 @@ export default function CyclePage() {
       )}
 
       {editingLog && <CycleLogForm editLog={editingLog} onClose={() => setEditingLog(null)} />}
+      {chatOpen && (
+        <AiChatSheet initialMessage={chatInitialMessage} onClose={() => setChatOpen(false)} />
+      )}
     </main>
   );
 }
