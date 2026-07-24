@@ -14,7 +14,7 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { useProfile, useUpdateProfile, useCycleLogs } from "@/lib/queries";
 import { predictCycle } from "@/lib/cycle-utils";
-import { isVip } from "@/lib/vip";
+import { isVipProfile } from "@/lib/vip";
 import CycleInsights from "@/components/profile/CycleInsights";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import MembershipCard from "@/components/profile/MembershipCard";
@@ -25,7 +25,7 @@ export default function ProfilePage() {
   const { data: profile, isLoading } = useProfile();
   const { data: cycleLogs = [] } = useCycleLogs();
   const updateProfile = useUpdateProfile();
-  const vip = isVip(user?.email);
+  const vip = isVipProfile(profile);
 
   const lifetimeStats = predictCycle(cycleLogs, {
     avgCycleLength: profile?.avg_cycle_length ?? 28,

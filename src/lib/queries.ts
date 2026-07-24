@@ -15,6 +15,8 @@ export interface Profile {
   avg_cycle_length: number;
   avg_period_length: number;
   onboarded: boolean;
+  is_vip: boolean;
+  vip_activated_at: string | null;
 }
 
 export function useProfile() {
@@ -38,7 +40,7 @@ export function useUpdateProfile() {
   const { user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (patch: Partial<Profile>) => {
+    mutationFn: async (patch: Partial<Omit<Profile, "id" | "is_vip" | "vip_activated_at">>) => {
       const { error } = await supabase
         .from("profiles")
         .update(patch)

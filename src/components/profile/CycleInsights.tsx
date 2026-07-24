@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import StatusPill from "@/components/ui/StatusPill";
 import EmptyState from "@/components/ui/EmptyState";
-import LockedFeature from "@/components/profile/LockedFeature";
+import LockedCycleChart from "@/components/profile/LockedCycleChart";
 import { CycleLogFull } from "@/lib/queries";
 import {
   buildCycleHistory,
@@ -176,8 +176,10 @@ export default function CycleInsights({ cycleLogs, isVip }: CycleInsightsProps) 
       </section>
 
       {/* Đồ thị chu kỳ */}
-      {chartData.length >= 2 && (
-        <LockedFeature locked={!isVip} title="Đồ thị chu kỳ VIP">
+      {!isVip ? (
+        <LockedCycleChart />
+      ) : (
+        chartData.length >= 2 && (
           <section className="glass-card flex flex-col gap-4 rounded-[24px] p-5">
             <p className="font-display text-base font-bold text-[var(--ink)]">Đồ thị chu kỳ</p>
             <div className="h-[200px] w-full pt-2">
@@ -246,8 +248,9 @@ export default function CycleInsights({ cycleLogs, isVip }: CycleInsightsProps) 
               {NORMAL_CYCLE_RANGE.max} ngày)
             </p>
           </section>
-        </LockedFeature>
+        )
       )}
     </>
+
   );
 }

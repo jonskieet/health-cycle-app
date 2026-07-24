@@ -19,6 +19,29 @@ alter table public.profiles add column if not exists onboarded boolean not null 
 alter table public.profiles add column if not exists created_at timestamptz not null default now();
 alter table public.profiles add column if not exists updated_at timestamptz not null default now();
 
+-- ---------- gói thành viên (VIP / Premium) ----------
+alter table public.profiles add column if not exists is_vip boolean not null default false;
+alter table public.profiles add column if not exists vip_activated_at timestamptz;
+
+-- Chặn user tự set is_vip = true cho chính mình qua API/client.
+-- Chỉ cho phép thay đổi is_vip / vip_activated_at khi thực hiện bằng service_role
+-- (vd: SQL Editor, webhook thanh toán chạy bằng service key).
+create or replace function public.protect_vip_columns()
+returns trigger as $$
+begin
+  if auth.role() <> 'service_role' then
+    new.is_vip := old.is_vip;
+    new.vip_activated_at := old.vip_activated_at;
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+drop trigger if exists profiles_protect_vip on public.profiles;
+create trigger profiles_protect_vip
+  before update on public.profiles
+  for each row execute function public.protect_vip_columns();
+
 -- ---------- cycle_logs ----------
 create table if not exists public.cycle_logs (
   id uuid primary key default gen_random_uuid()
