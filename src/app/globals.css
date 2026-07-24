@@ -194,3 +194,13 @@ body {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Recharts (và trình duyệt) mặc định vẽ viền focus quanh các phần tử SVG
+   khi được bấm (dot, surface, wrapper) — bỏ viền này để khớp với phong cách
+   phẳng/glass của app, chỉ giữ hiệu ứng tooltip/active dot có chủ đích. */
+.recharts-wrapper:focus,
+.recharts-wrapper *:focus,
+.recharts-surface:focus,
+.recharts-dot:focus {
+  outline: none !important;
+}

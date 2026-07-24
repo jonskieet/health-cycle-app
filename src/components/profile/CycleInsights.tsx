@@ -2,6 +2,15 @@
 
 import { useMemo, useState } from "react";
 import { ChevronRight } from "lucide-react";
+import {
+  Line,
+  LineChart,
+  ReferenceArea,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import StatusPill from "@/components/ui/StatusPill";
 import EmptyState from "@/components/ui/EmptyState";
 import LockedCycleChart from "@/components/profile/LockedCycleChart";
@@ -42,13 +51,10 @@ export default function CycleInsights({ cycleLogs, isVip }: CycleInsightsProps) 
       abnormal: h.abnormalCycle,
     }));
 
-  const CHART_BAR_HEIGHT = 120;
-  const chartMax =
-    Math.max(NORMAL_CYCLE_RANGE.max, ...chartData.map((d) => d.cycleLength), 1) + 4;
-  const scaleBar = (value: number) =>
-    Math.max((Math.max(value, 0) / chartMax) * CHART_BAR_HEIGHT, 4);
-  const bandBottom = scaleBar(NORMAL_CYCLE_RANGE.min);
-  const bandHeight = scaleBar(NORMAL_CYCLE_RANGE.max) - bandBottom;
+  const yDomain: [number, number] = [
+    Math.max(0, Math.min(NORMAL_CYCLE_RANGE.min, ...chartData.map((d) => d.cycleLength)) - 4),
+    Math.max(NORMAL_CYCLE_RANGE.max, ...chartData.map((d) => d.cycleLength)) + 4,
+  ];
 
   return (
     <>
@@ -198,46 +204,67 @@ export default function CycleInsights({ cycleLogs, isVip }: CycleInsightsProps) 
 
           {chartData.length >= 2 ? (
             <>
-              <div className="relative">
-                {/* Dải phạm vi bình thường, phía sau các cột */}
-                <div
-                  className="pointer-events-none absolute inset-x-0 rounded-lg"
-                  style={{
-                    bottom: bandBottom,
-                    height: bandHeight,
-                    background: "color-mix(in srgb, var(--c-mood) 10%, transparent)",
-                    borderTop: "1px dashed color-mix(in srgb, var(--c-mood) 45%, transparent)",
-                    borderBottom: "1px dashed color-mix(in srgb, var(--c-mood) 45%, transparent)",
-                  }}
-                />
-
-                <div
-                  className="relative flex items-end justify-between gap-2 px-1"
-                  style={{ height: CHART_BAR_HEIGHT }}
-                >
-                  {chartData.map((d, i) => {
-                    const color = d.abnormal ? "var(--c-period)" : "var(--c-sleep)";
-                    return (
-                      <div key={i} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
-                        <span className="text-[10px] font-bold" style={{ color }}>
-                          {d.cycleLength}
-                        </span>
-                        <div
-                          className="w-3 rounded-full"
-                          style={{ height: scaleBar(d.cycleLength), background: color }}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex justify-between gap-2 px-1">
-                {chartData.map((d, i) => (
-                  <span key={i} className="flex-1 text-center text-[9px] text-[var(--ink-faint)]">
-                    {d.label}
-                  </span>
-                ))}
+              <div className="h-[190px] w-full overflow-hidden pt-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 16, right: 20, left: 4, bottom: 4 }}>
+                    <ReferenceArea
+                      y1={NORMAL_CYCLE_RANGE.min}
+                      y2={NORMAL_CYCLE_RANGE.max}
+                      fill="var(--c-mood)"
+                      fillOpacity={0.08}
+                      stroke="var(--c-mood)"
+                      strokeOpacity={0.35}
+                      strokeDasharray="4 4"
+                    />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 10, fill: "var(--ink-faint)" }}
+                      axisLine={false}
+                      tickLine={false}
+                      padding={{ left: 12, right: 12 }}
+                    />
+                    <YAxis
+                      width={26}
+                      domain={yDomain}
+                      tick={{ fontSize: 10, fill: "var(--ink-faint)" }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      formatter={(value) => [`${value} ngày`, "Độ dài chu kỳ"]}
+                      contentStyle={{
+                        borderRadius: 12,
+                        border: "1px solid var(--glass-border)",
+                        fontSize: 12,
+                      }}
+                      cursor={{ stroke: "var(--glass-border)", strokeWidth: 1 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="cycleLength"
+                      stroke="var(--c-sleep)"
+                      strokeWidth={2}
+                      isAnimationActive={false}
+                      activeDot={{ r: 6, stroke: "white", strokeWidth: 2, style: { outline: "none" } }}
+                      dot={(props) => {
+                        const { cx, cy, payload, index: dotIndex } = props;
+                        const abnormal = payload.abnormal as boolean;
+                        return (
+                          <circle
+                            key={`dot-${dotIndex}`}
+                            cx={cx}
+                            cy={cy}
+                            r={5}
+                            fill={abnormal ? "var(--c-period)" : "var(--c-sleep)"}
+                            stroke="white"
+                            strokeWidth={2}
+                            style={{ outline: "none" }}
+                          />
+                        );
+                      }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
 
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-[11px] text-[var(--ink-soft)]">
