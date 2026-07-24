@@ -58,7 +58,9 @@ alter table public.cycle_logs add column if not exists created_at timestamptz no
 do $$ begin
   alter table public.cycle_logs add constraint cycle_logs_flow_check
     check (flow in ('light', 'medium', 'heavy'));
-exception when duplicate_object then null;
+exception
+  when duplicate_object then null;
+  when duplicate_table then null;
 end $$;
 
 alter table public.cycle_logs alter column start_date set not null;
@@ -83,7 +85,9 @@ alter table public.health_metrics add column if not exists created_at timestampt
 do $$ begin
   alter table public.health_metrics add constraint health_metrics_type_check
     check (metric_type in ('stress', 'heart_rate', 'sleep', 'hydration', 'mood'));
-exception when duplicate_object then null;
+exception
+  when duplicate_object then null;
+  when duplicate_table then null;
 end $$;
 
 alter table public.health_metrics alter column user_id set not null;
@@ -93,7 +97,9 @@ alter table public.health_metrics alter column value set not null;
 do $$ begin
   alter table public.health_metrics
     add constraint health_metrics_user_type_date_key unique (user_id, metric_type, logged_at);
-exception when duplicate_object then null;
+exception
+  when duplicate_object then null;
+  when duplicate_table then null;
 end $$;
 
 create index if not exists health_metrics_user_type_date_idx

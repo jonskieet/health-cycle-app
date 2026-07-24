@@ -34,7 +34,7 @@ export default function RootLayout({
             <div className="phone-frame">
               <div className="phone-notch" />
               <div className="phone-viewport no-scrollbar">
-                <div className="flex min-h-full flex-col pb-24">
+                <div className="flex min-h-full flex-col pb-32">
                   <AuthGate>{children}</AuthGate>
                 </div>
               </div>
