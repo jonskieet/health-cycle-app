@@ -19,6 +19,7 @@ import CycleInsights from "@/components/profile/CycleInsights";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import MembershipCard from "@/components/profile/MembershipCard";
 import LockedFeature from "@/components/profile/LockedFeature";
+import EditProfileModal from "@/components/profile/EditProfileModal";
 
 export default function ProfilePage() {
   const { user, signOut } = useAuth();
@@ -50,82 +51,47 @@ export default function ProfilePage() {
     setTimeout(() => setSaved(false), 2000);
   }
 
-  // ---- Tên hiển thị ----
-  const [editingName, setEditingName] = useState(false);
-  const [nameDraft, setNameDraft] = useState("");
-  const [nameSaved, setNameSaved] = useState(false);
-
-  function startEditingName() {
-    setNameDraft(profile?.display_name ?? "");
-    setEditingName(true);
-  }
-
-  async function handleSaveName() {
-    const trimmed = nameDraft.trim();
-    await updateProfile.mutateAsync({ display_name: trimmed || null });
-    setEditingName(false);
-    setNameSaved(true);
-    setTimeout(() => setNameSaved(false), 2000);
-  }
+  // ---- Modal chỉnh sửa hồ sơ ----
+  const [editingProfile, setEditingProfile] = useState(false);
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-5 pt-8">
       <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Cá nhân</h1>
 
       <section className="glass-card-strong flex flex-col items-center gap-2 rounded-[28px] p-8 text-center">
-        <ProfileAvatar name={profile?.display_name} email={user?.email} isVip={vip} size={72} />
+        <button type="button" onClick={() => setEditingProfile(true)}>
+          <ProfileAvatar
+            name={profile?.display_name}
+            email={user?.email}
+            isVip={vip}
+            size={72}
+            avatarKey={profile?.avatar_key}
+          />
+        </button>
 
-        {editingName ? (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSaveName();
-            }}
-            className="mt-1 flex w-full max-w-[220px] items-center gap-2"
-          >
-            <input
-              autoFocus
-              value={nameDraft}
-              onChange={(e) => setNameDraft(e.target.value)}
-              placeholder="Tên hiển thị"
-              maxLength={40}
-              className="w-full rounded-full bg-black/[0.05] px-4 py-2 text-center text-sm text-[var(--ink)] outline-none"
-            />
-            <button
-              type="submit"
-              disabled={updateProfile.isPending}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white disabled:opacity-60"
-              style={{ background: "var(--c-sleep)" }}
-            >
-              {updateProfile.isPending ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <Check size={14} />
-              )}
-            </button>
-          </form>
-        ) : (
-          <button
-            type="button"
-            onClick={startEditingName}
-            className="mt-1 flex items-center gap-1.5"
-          >
-            <p className="font-display text-base font-bold text-[var(--ink)]">
-              {profile?.display_name || user?.email}
-            </p>
-            <Pencil size={13} className="text-[var(--ink-faint)]" />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => setEditingProfile(true)}
+          className="mt-1 flex items-center gap-1.5"
+        >
+          <p className="font-display text-base font-bold text-[var(--ink)]">
+            {profile?.display_name || user?.email}
+          </p>
+          <Pencil size={13} className="text-[var(--ink-faint)]" />
+        </button>
 
-        {profile?.display_name && !editingName && (
+        {profile?.display_name && (
           <p className="text-xs text-[var(--ink-faint)]">{user?.email}</p>
         )}
-        {nameSaved && (
-          <p className="text-[11px] font-medium" style={{ color: "var(--c-mood)" }}>
-            Đã lưu tên hiển thị
-          </p>
-        )}
       </section>
+
+      {editingProfile && (
+        <EditProfileModal
+          profile={profile}
+          fallbackName={user?.email}
+          onClose={() => setEditingProfile(false)}
+        />
+      )}
 
       <MembershipCard isVip={vip} />
 

@@ -1,12 +1,14 @@
 "use client";
 
 import { Crown, User } from "lucide-react";
+import { getAvatarPreset } from "@/lib/avatar-presets";
 
 interface ProfileAvatarProps {
   name?: string | null;
   email?: string | null;
   isVip: boolean;
   size?: number;
+  avatarKey?: string | null;
 }
 
 function getInitials(name?: string | null, email?: string | null) {
@@ -23,23 +25,37 @@ function getInitials(name?: string | null, email?: string | null) {
   return source[0]?.toUpperCase() ?? null;
 }
 
-export default function ProfileAvatar({ name, email, isVip, size = 72 }: ProfileAvatarProps) {
+export default function ProfileAvatar({
+  name,
+  email,
+  isVip,
+  size = 72,
+  avatarKey,
+}: ProfileAvatarProps) {
   const initials = getInitials(name, email);
+  const preset = getAvatarPreset(avatarKey);
+  const PresetIcon = preset?.icon;
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <span
         className="flex h-full w-full items-center justify-center rounded-full font-display text-2xl font-bold text-white"
         style={{
-          background: isVip
-            ? "linear-gradient(135deg, #f6c453, #e85c8a 55%, #7c6ff0)"
-            : "linear-gradient(135deg, var(--c-sleep), var(--c-period))",
+          background: preset
+            ? `linear-gradient(135deg, ${preset.gradientFrom}, ${preset.gradientTo})`
+            : isVip
+              ? "linear-gradient(135deg, #f6c453, #e85c8a 55%, #7c6ff0)"
+              : "linear-gradient(135deg, var(--c-sleep), var(--c-period))",
           boxShadow: isVip
             ? "0 0 0 3px #fff, 0 0 0 5px #f6c453"
             : "0 0 0 3px #fff, 0 0 0 4px rgba(124,111,240,0.25)",
         }}
       >
-        {initials ?? <User size={size * 0.4} />}
+        {PresetIcon ? (
+          <PresetIcon size={size * 0.42} />
+        ) : (
+          (initials ?? <User size={size * 0.4} />)
+        )}
       </span>
 
       {isVip && (

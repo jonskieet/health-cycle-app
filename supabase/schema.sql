@@ -19,6 +19,10 @@ alter table public.profiles add column if not exists onboarded boolean not null 
 alter table public.profiles add column if not exists created_at timestamptz not null default now();
 alter table public.profiles add column if not exists updated_at timestamptz not null default now();
 
+-- ---------- hồ sơ mở rộng: avatar preset + năm sinh ----------
+alter table public.profiles add column if not exists avatar_key text;
+alter table public.profiles add column if not exists birth_year int;
+
 -- ---------- gói thành viên (VIP / Premium) ----------
 alter table public.profiles add column if not exists is_vip boolean not null default false;
 alter table public.profiles add column if not exists vip_activated_at timestamptz;

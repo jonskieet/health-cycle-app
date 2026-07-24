@@ -14,6 +14,7 @@ import {
 import StatusPill from "@/components/ui/StatusPill";
 import EmptyState from "@/components/ui/EmptyState";
 import LockedCycleChart from "@/components/profile/LockedCycleChart";
+import RecordCycleButton from "@/components/profile/RecordCycleButton";
 import { CycleLogFull } from "@/lib/queries";
 import {
   buildCycleHistory,
@@ -62,12 +63,16 @@ export default function CycleInsights({ cycleLogs, isVip }: CycleInsightsProps) 
         </div>
 
         {!summary.hasPreviousCycle ? (
-          <EmptyState
-            title="Chưa đủ dữ liệu để phân tích"
-            description="Ghi nhận thêm ít nhất 2 kỳ kinh để xem tóm tắt chu kỳ của bạn."
-            actionLabel="Ghi nhận kỳ kinh"
-            actionHref="/log?type=cycle"
-          />
+          cycleLogs.length === 1 ? (
+            <RecordCycleButton label="Ghi lại thêm một kỳ kinh" />
+          ) : (
+            <EmptyState
+              title="Chưa đủ dữ liệu để phân tích"
+              description="Ghi nhận thêm ít nhất 2 kỳ kinh để xem tóm tắt chu kỳ của bạn."
+              actionLabel="Ghi nhận kỳ kinh"
+              actionHref="/log?type=cycle"
+            />
+          )
         ) : (
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-3 rounded-2xl bg-black/[0.03] p-4">
@@ -173,6 +178,10 @@ export default function CycleInsights({ cycleLogs, isVip }: CycleInsightsProps) 
             </div>
           ))}
         </div>
+
+        <RecordCycleButton
+          label={history.length >= 2 ? "Ghi lại thêm một kỳ kinh" : "Ghi lại hai kỳ kinh nguyệt"}
+        />
       </section>
 
       {/* Đồ thị chu kỳ */}

@@ -12,6 +12,8 @@ export interface Profile {
   id: string;
   display_name: string | null;
   birth_date: string | null;
+  birth_year: number | null;
+  avatar_key: string | null;
   avg_cycle_length: number;
   avg_period_length: number;
   onboarded: boolean;
