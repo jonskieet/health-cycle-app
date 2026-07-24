@@ -5,6 +5,9 @@ import { useState } from "react";
 import { Plus, ChevronRight } from "lucide-react";
 import AuroraRing from "@/components/ui/AuroraRing";
 import CycleCalendar from "@/components/cycle/CycleCalendar";
+import PhaseOutlook from "@/components/cycle/PhaseOutlook";
+import DailyInsights from "@/components/cycle/DailyInsights";
+import HealthCheckIns from "@/components/cycle/HealthCheckIns";
 import EmptyState from "@/components/ui/EmptyState";
 import CycleLogForm from "@/components/log/CycleLogForm";
 import { useCycleLogs, useProfile, CycleLogFull } from "@/lib/queries";
@@ -73,6 +76,12 @@ export default function CyclePage() {
           </section>
 
           <CycleCalendar prediction={prediction} />
+
+          <DailyInsights phase={prediction.phase} />
+
+          <PhaseOutlook phase={prediction.phase} />
+
+          <HealthCheckIns />
 
           <section className="glass-card rounded-[24px] p-5">
             <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--ink-faint)]">
