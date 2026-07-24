@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import BottomNav from "@/components/layout/BottomNav";
+import AuthGate from "@/components/auth/AuthGate";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -30,7 +31,7 @@ export default function RootLayout({
       <body className="min-h-full antialiased">
         <Providers>
           <div className="mx-auto flex min-h-screen max-w-md flex-col pb-24">
-            {children}
+            <AuthGate>{children}</AuthGate>
           </div>
           <BottomNav />
         </Providers>

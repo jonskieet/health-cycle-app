@@ -1,0 +1,130 @@
+"use client";
+
+import { useState } from "react";
+import { X, Loader2 } from "lucide-react";
+import { useAddCycleLog } from "@/lib/queries";
+
+const SYMPTOM_OPTIONS = [
+  "Đau bụng",
+  "Đau đầu",
+  "Nổi mụn",
+  "Đau lưng",
+  "Mệt mỏi",
+  "Đầy hơi",
+  "Căng ngực",
+  "Thay đổi tâm trạng",
+];
+
+export default function CycleLogForm({ onClose }: { onClose: () => void }) {
+  const addCycleLog = useAddCycleLog();
+  const today = new Date().toISOString().slice(0, 10);
+
+  const [startDate, setStartDate] = useState(today);
+  const [endDate, setEndDate] = useState("");
+  const [flow, setFlow] = useState<"light" | "medium" | "heavy">("medium");
+  const [symptoms, setSymptoms] = useState<string[]>([]);
+
+  function toggleSymptom(s: string) {
+    setSymptoms((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await addCycleLog.mutateAsync({
+      start_date: startDate,
+      end_date: endDate || null,
+      flow,
+      symptoms,
+    });
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/30 px-0" onClick={onClose}>
+      <form
+        onSubmit={handleSubmit}
+        onClick={(e) => e.stopPropagation()}
+        className="glass-card-strong flex w-full max-w-md flex-col gap-4 rounded-t-[28px] p-6"
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-lg font-bold text-[var(--ink)]">Ghi nhận kỳ kinh</h2>
+          <button type="button" onClick={onClose} className="rounded-full p-1.5 hover:bg-black/5">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-[var(--ink-soft)]">Ngày bắt đầu</span>
+            <input
+              type="date"
+              required
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="rounded-2xl bg-black/[0.03] px-3 py-2.5 text-sm text-[var(--ink)] outline-none"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-[var(--ink-soft)]">Ngày kết thúc (nếu có)</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="rounded-2xl bg-black/[0.03] px-3 py-2.5 text-sm text-[var(--ink)] outline-none"
+            />
+          </label>
+        </div>
+
+        <div>
+          <span className="text-xs font-medium text-[var(--ink-soft)]">Lượng máu</span>
+          <div className="mt-1.5 flex gap-2">
+            {(["light", "medium", "heavy"] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFlow(f)}
+                className="flex-1 rounded-full py-2 text-xs font-semibold"
+                style={{
+                  background: flow === f ? "var(--c-period)" : "rgba(0,0,0,0.03)",
+                  color: flow === f ? "#fff" : "var(--ink-soft)",
+                }}
+              >
+                {f === "light" ? "Nhẹ" : f === "medium" ? "Vừa" : "Nhiều"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <span className="text-xs font-medium text-[var(--ink-soft)]">Triệu chứng</span>
+          <div className="mt-1.5 flex flex-wrap gap-2">
+            {SYMPTOM_OPTIONS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => toggleSymptom(s)}
+                className="rounded-full px-3 py-1.5 text-xs font-medium"
+                style={{
+                  background: symptoms.includes(s) ? "var(--c-fertile)" : "rgba(0,0,0,0.03)",
+                  color: symptoms.includes(s) ? "#fff" : "var(--ink-soft)",
+                }}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={addCycleLog.isPending}
+          className="mt-2 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-white disabled:opacity-60"
+          style={{ background: "var(--c-period)" }}
+        >
+          {addCycleLog.isPending && <Loader2 size={16} className="animate-spin" />}
+          Lưu
+        </button>
+      </form>
+    </div>
+  );
+}
