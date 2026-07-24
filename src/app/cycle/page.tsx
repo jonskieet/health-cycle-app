@@ -1,16 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { useState } from "react";
+import { Plus, ChevronRight } from "lucide-react";
 import AuroraRing from "@/components/ui/AuroraRing";
 import CycleCalendar from "@/components/cycle/CycleCalendar";
 import EmptyState from "@/components/ui/EmptyState";
-import { useCycleLogs, useProfile } from "@/lib/queries";
+import CycleLogForm from "@/components/log/CycleLogForm";
+import { useCycleLogs, useProfile, CycleLogFull } from "@/lib/queries";
 import { predictCycle, phaseLabel, phaseColor, daysUntil } from "@/lib/cycle-utils";
 
 export default function CyclePage() {
   const { data: profile } = useProfile();
   const { data: cycleLogs = [], isLoading } = useCycleLogs();
+  const [editingLog, setEditingLog] = useState<CycleLogFull | null>(null);
 
   const prediction = predictCycle(cycleLogs, {
     avgCycleLength: profile?.avg_cycle_length ?? 28,
@@ -75,28 +78,37 @@ export default function CyclePage() {
             <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--ink-faint)]">
               Lịch sử gần đây
             </p>
-            <ul className="flex flex-col gap-3">
+            <ul className="flex flex-col gap-1">
               {cycleLogs.map((log) => (
-                <li key={log.id} className="flex items-center justify-between text-sm">
-                  <span className="text-[var(--ink)]">
-                    {new Date(log.start_date).toLocaleDateString("vi-VN")} –{" "}
-                    {log.end_date ? new Date(log.end_date).toLocaleDateString("vi-VN") : "..."}
-                  </span>
-                  <span className="text-xs text-[var(--ink-faint)]">
-                    {Math.round(
-                      (new Date(log.end_date ?? log.start_date).getTime() -
-                        new Date(log.start_date).getTime()) /
-                        (1000 * 60 * 60 * 24) +
-                        1
-                    )}{" "}
-                    ngày
-                  </span>
+                <li key={log.id}>
+                  <button
+                    type="button"
+                    onClick={() => setEditingLog(log)}
+                    className="flex w-full items-center justify-between rounded-2xl px-2 py-2.5 text-sm transition-colors hover:bg-black/[0.03]"
+                  >
+                    <span className="text-[var(--ink)]">
+                      {new Date(log.start_date).toLocaleDateString("vi-VN")} –{" "}
+                      {log.end_date ? new Date(log.end_date).toLocaleDateString("vi-VN") : "..."}
+                    </span>
+                    <span className="flex items-center gap-2 text-xs text-[var(--ink-faint)]">
+                      {Math.round(
+                        (new Date(log.end_date ?? log.start_date).getTime() -
+                          new Date(log.start_date).getTime()) /
+                          (1000 * 60 * 60 * 24) +
+                          1
+                      )}{" "}
+                      ngày
+                      <ChevronRight size={14} />
+                    </span>
+                  </button>
                 </li>
               ))}
             </ul>
           </section>
         </>
       )}
+
+      {editingLog && <CycleLogForm editLog={editingLog} onClose={() => setEditingLog(null)} />}
     </main>
   );
 }

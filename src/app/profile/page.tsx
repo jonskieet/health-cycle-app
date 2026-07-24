@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { User, LogOut, Loader2, Check } from "lucide-react";
+import Link from "next/link";
+import { User, LogOut, Loader2, Check, CalendarClock, ChevronRight, Pencil } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useProfile, useUpdateProfile } from "@/lib/queries";
 
@@ -28,6 +29,24 @@ export default function ProfilePage() {
     setTimeout(() => setSaved(false), 2000);
   }
 
+  // ---- Tên hiển thị ----
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [nameSaved, setNameSaved] = useState(false);
+
+  function startEditingName() {
+    setNameDraft(profile?.display_name ?? "");
+    setEditingName(true);
+  }
+
+  async function handleSaveName() {
+    const trimmed = nameDraft.trim();
+    await updateProfile.mutateAsync({ display_name: trimmed || null });
+    setEditingName(false);
+    setNameSaved(true);
+    setTimeout(() => setNameSaved(false), 2000);
+  }
+
   return (
     <main className="flex flex-1 flex-col gap-6 px-5 pt-8">
       <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Cá nhân</h1>
@@ -39,13 +58,72 @@ export default function ProfilePage() {
         >
           <User size={28} />
         </span>
-        <p className="font-display text-base font-bold text-[var(--ink)]">
-          {profile?.display_name || user?.email}
-        </p>
-        {profile?.display_name && (
+
+        {editingName ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSaveName();
+            }}
+            className="mt-1 flex w-full max-w-[220px] items-center gap-2"
+          >
+            <input
+              autoFocus
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              placeholder="Tên hiển thị"
+              maxLength={40}
+              className="w-full rounded-full bg-black/[0.05] px-4 py-2 text-center text-sm text-[var(--ink)] outline-none"
+            />
+            <button
+              type="submit"
+              disabled={updateProfile.isPending}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white disabled:opacity-60"
+              style={{ background: "var(--c-sleep)" }}
+            >
+              {updateProfile.isPending ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Check size={14} />
+              )}
+            </button>
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={startEditingName}
+            className="mt-1 flex items-center gap-1.5"
+          >
+            <p className="font-display text-base font-bold text-[var(--ink)]">
+              {profile?.display_name || user?.email}
+            </p>
+            <Pencil size={13} className="text-[var(--ink-faint)]" />
+          </button>
+        )}
+
+        {profile?.display_name && !editingName && (
           <p className="text-xs text-[var(--ink-faint)]">{user?.email}</p>
         )}
+        {nameSaved && (
+          <p className="text-[11px] font-medium" style={{ color: "var(--c-mood)" }}>
+            Đã lưu tên hiển thị
+          </p>
+        )}
       </section>
+
+      <Link href="/appointments" className="glass-card flex items-center gap-3 rounded-[22px] p-4">
+        <span
+          className="flex h-9 w-9 items-center justify-center rounded-full text-white"
+          style={{ background: "var(--c-fertile)" }}
+        >
+          <CalendarClock size={16} />
+        </span>
+        <span className="flex-1 text-left">
+          <span className="block text-sm font-semibold text-[var(--ink)]">Lịch hẹn</span>
+          <span className="block text-xs text-[var(--ink-faint)]">Quản lý các buổi khám sắp tới</span>
+        </span>
+        <ChevronRight size={16} className="text-[var(--ink-faint)]" />
+      </Link>
 
       {!isLoading && (
         <section className="glass-card flex flex-col gap-5 rounded-[24px] p-5">

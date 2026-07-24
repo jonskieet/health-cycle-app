@@ -51,15 +51,21 @@ export function useUpdateProfile() {
 
 // ---------- Cycle logs ----------
 
+export interface CycleLogFull extends CycleLog {
+  flow: "light" | "medium" | "heavy" | null;
+  symptoms: string[];
+  note: string | null;
+}
+
 export function useCycleLogs() {
   const { user } = useAuth();
   return useQuery({
     queryKey: ["cycle_logs", user?.id],
     enabled: !!user,
-    queryFn: async (): Promise<CycleLog[]> => {
+    queryFn: async (): Promise<CycleLogFull[]> => {
       const { data, error } = await supabase
         .from("cycle_logs")
-        .select("id, start_date, end_date")
+        .select("id, start_date, end_date, flow, symptoms, note")
         .eq("user_id", user!.id)
         .order("start_date", { ascending: false });
       if (error) throw error;
@@ -82,6 +88,48 @@ export function useAddCycleLog() {
       const { error } = await supabase
         .from("cycle_logs")
         .insert({ ...log, user_id: user!.id });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cycle_logs", user?.id] }),
+  });
+}
+
+export function useUpdateCycleLog() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      ...patch
+    }: {
+      id: string;
+      start_date: string;
+      end_date?: string | null;
+      symptoms?: string[];
+      flow?: "light" | "medium" | "heavy";
+      note?: string;
+    }) => {
+      const { error } = await supabase
+        .from("cycle_logs")
+        .update(patch)
+        .eq("id", id)
+        .eq("user_id", user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cycle_logs", user?.id] }),
+  });
+}
+
+export function useDeleteCycleLog() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("cycle_logs")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user!.id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["cycle_logs", user?.id] }),
@@ -144,6 +192,121 @@ export function useLogMetric() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["health_metrics", user?.id] }),
+  });
+}
+
+export function useDeleteHealthMetric() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("health_metrics")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["health_metrics", user?.id] }),
+  });
+}
+
+// ---------- Appointments ----------
+
+export interface Appointment {
+  id: string;
+  title: string;
+  doctor_name: string | null;
+  appointment_at: string; // ISO timestamptz
+  note: string | null;
+}
+
+export function useAppointments() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["appointments", user?.id],
+    enabled: !!user,
+    queryFn: async (): Promise<Appointment[]> => {
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("id, title, doctor_name, appointment_at, note")
+        .eq("user_id", user!.id)
+        .order("appointment_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+// Lịch hẹn sắp tới trong 7 ngày tới — dùng cho card trên Dashboard.
+export function useUpcomingAppointments(days = 7) {
+  const { data: appointments = [], isLoading } = useAppointments();
+  const now = new Date().getTime();
+  const until = now + days * 24 * 60 * 60 * 1000;
+  const upcoming = appointments.filter((a) => {
+    const t = new Date(a.appointment_at).getTime();
+    return t >= now && t <= until;
+  });
+  return { data: upcoming, isLoading };
+}
+
+export function useAddAppointment() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      title: string;
+      doctor_name?: string | null;
+      appointment_at: string;
+      note?: string | null;
+    }) => {
+      const { error } = await supabase
+        .from("appointments")
+        .insert({ ...input, user_id: user!.id });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["appointments", user?.id] }),
+  });
+}
+
+export function useUpdateAppointment() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      ...patch
+    }: {
+      id: string;
+      title: string;
+      doctor_name?: string | null;
+      appointment_at: string;
+      note?: string | null;
+    }) => {
+      const { error } = await supabase
+        .from("appointments")
+        .update(patch)
+        .eq("id", id)
+        .eq("user_id", user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["appointments", user?.id] }),
+  });
+}
+
+export function useDeleteAppointment() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("appointments")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["appointments", user?.id] }),
   });
 }
 

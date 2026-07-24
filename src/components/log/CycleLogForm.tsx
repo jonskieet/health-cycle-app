@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { X, Loader2 } from "lucide-react";
-import { useAddCycleLog } from "@/lib/queries";
+import { X, Loader2, Trash2 } from "lucide-react";
+import { useAddCycleLog, useUpdateCycleLog, useDeleteCycleLog, CycleLogFull } from "@/lib/queries";
 
 const SYMPTOM_OPTIONS = [
   "Đau bụng",
@@ -15,14 +15,26 @@ const SYMPTOM_OPTIONS = [
   "Thay đổi tâm trạng",
 ];
 
-export default function CycleLogForm({ onClose }: { onClose: () => void }) {
+export default function CycleLogForm({
+  onClose,
+  editLog,
+}: {
+  onClose: () => void;
+  editLog?: CycleLogFull;
+}) {
   const addCycleLog = useAddCycleLog();
+  const updateCycleLog = useUpdateCycleLog();
+  const deleteCycleLog = useDeleteCycleLog();
   const today = new Date().toISOString().slice(0, 10);
 
-  const [startDate, setStartDate] = useState(today);
-  const [endDate, setEndDate] = useState("");
-  const [flow, setFlow] = useState<"light" | "medium" | "heavy">("medium");
-  const [symptoms, setSymptoms] = useState<string[]>([]);
+  const [startDate, setStartDate] = useState(editLog?.start_date ?? today);
+  const [endDate, setEndDate] = useState(editLog?.end_date ?? "");
+  const [flow, setFlow] = useState<"light" | "medium" | "heavy">(editLog?.flow ?? "medium");
+  const [symptoms, setSymptoms] = useState<string[]>(editLog?.symptoms ?? []);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+  const isEdit = !!editLog;
+  const saving = addCycleLog.isPending || updateCycleLog.isPending;
 
   function toggleSymptom(s: string) {
     setSymptoms((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
@@ -30,12 +42,28 @@ export default function CycleLogForm({ onClose }: { onClose: () => void }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await addCycleLog.mutateAsync({
-      start_date: startDate,
-      end_date: endDate || null,
-      flow,
-      symptoms,
-    });
+    if (isEdit) {
+      await updateCycleLog.mutateAsync({
+        id: editLog.id,
+        start_date: startDate,
+        end_date: endDate || null,
+        flow,
+        symptoms,
+      });
+    } else {
+      await addCycleLog.mutateAsync({
+        start_date: startDate,
+        end_date: endDate || null,
+        flow,
+        symptoms,
+      });
+    }
+    onClose();
+  }
+
+  async function handleDelete() {
+    if (!editLog) return;
+    await deleteCycleLog.mutateAsync(editLog.id);
     onClose();
   }
 
@@ -47,7 +75,9 @@ export default function CycleLogForm({ onClose }: { onClose: () => void }) {
         className="glass-card-strong flex w-full max-w-md flex-col gap-4 rounded-t-[28px] p-6"
       >
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-bold text-[var(--ink)]">Ghi nhận kỳ kinh</h2>
+          <h2 className="font-display text-lg font-bold text-[var(--ink)]">
+            {isEdit ? "Sửa kỳ kinh" : "Ghi nhận kỳ kinh"}
+          </h2>
           <button type="button" onClick={onClose} className="rounded-full p-1.5 hover:bg-black/5">
             <X size={18} />
           </button>
@@ -117,13 +147,50 @@ export default function CycleLogForm({ onClose }: { onClose: () => void }) {
 
         <button
           type="submit"
-          disabled={addCycleLog.isPending}
+          disabled={saving}
           className="mt-2 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-white disabled:opacity-60"
           style={{ background: "var(--c-period)" }}
         >
-          {addCycleLog.isPending && <Loader2 size={16} className="animate-spin" />}
+          {saving && <Loader2 size={16} className="animate-spin" />}
           Lưu
         </button>
+
+        {isEdit && (
+          <>
+            {!confirmingDelete ? (
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                className="flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold"
+                style={{ color: "var(--c-heart)" }}
+              >
+                <Trash2 size={16} />
+                Xoá kỳ kinh này
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 rounded-2xl bg-black/[0.03] p-3">
+                <span className="flex-1 text-xs text-[var(--ink-soft)]">Xoá vĩnh viễn mục này?</span>
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(false)}
+                  className="rounded-full px-3 py-1.5 text-xs font-semibold text-[var(--ink-soft)]"
+                >
+                  Huỷ
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleteCycleLog.isPending}
+                  className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                  style={{ background: "var(--c-heart)" }}
+                >
+                  {deleteCycleLog.isPending && <Loader2 size={12} className="animate-spin" />}
+                  Xoá
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </form>
     </div>
   );

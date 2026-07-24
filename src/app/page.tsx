@@ -1,6 +1,6 @@
 "use client";
 
-import { HeartPulse, Flame, Moon, Droplets, Smile, LucideIcon } from "lucide-react";
+import { HeartPulse, Flame, Moon, Droplets, Smile, Stethoscope, ChevronRight, LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import MetricCard from "@/components/ui/MetricCard";
@@ -10,6 +10,7 @@ import {
   useHealthMetrics,
   useCycleLogs,
   useProfile,
+  useUpcomingAppointments,
   buildWeekSeries,
   latestValue,
   computeTodayHealthScore,
@@ -23,6 +24,7 @@ export default function DashboardPage() {
   const { data: profile } = useProfile();
   const { data: cycleLogs = [], isLoading: cycleLoading } = useCycleLogs();
   const { data: metrics = [], isLoading: metricsLoading } = useHealthMetrics();
+  const { data: upcomingAppointments } = useUpcomingAppointments();
 
   const prediction = predictCycle(cycleLogs, {
     avgCycleLength: profile?.avg_cycle_length ?? 28,
@@ -114,6 +116,45 @@ export default function DashboardPage() {
           <Droplets size={20} />
         </span>
       </Link>
+
+      {/* Nearest appointments — chỉ hiện khi có lịch hẹn trong 7 ngày tới */}
+      {upcomingAppointments && upcomingAppointments.length > 0 && (
+        <Link href="/appointments" className="glass-card flex flex-col gap-3 rounded-[24px] p-5">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-wide text-[var(--ink-faint)]">
+              Lịch hẹn sắp tới
+            </p>
+            <ChevronRight size={16} className="text-[var(--ink-faint)]" />
+          </div>
+          <div className="flex flex-col gap-3">
+            {upcomingAppointments.slice(0, 2).map((a) => (
+              <div key={a.id} className="flex items-center gap-3">
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
+                  style={{ background: "var(--c-fertile)" }}
+                >
+                  <Stethoscope size={15} />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-[var(--ink)]">{a.title}</p>
+                  <p className="text-xs text-[var(--ink-faint)]">
+                    {new Date(a.appointment_at).toLocaleDateString("vi-VN", {
+                      weekday: "short",
+                      day: "2-digit",
+                      month: "2-digit",
+                    })}{" "}
+                    ·{" "}
+                    {new Date(a.appointment_at).toLocaleTimeString("vi-VN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Link>
+      )}
 
       {/* Metric cards grid */}
       {!loading && !hasAnyMetrics ? (
