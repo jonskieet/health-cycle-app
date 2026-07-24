@@ -14,7 +14,13 @@ const items = [
 export default function BottomNav() {
   const pathname = usePathname();
 
-  if (pathname === "/login" || pathname === "/onboarding" || pathname === "/profile/report") return null;
+  if (
+    pathname === "/login" ||
+    pathname === "/onboarding" ||
+    pathname === "/profile/report" ||
+    pathname === "/settings"
+  )
+    return null;
 
   return (
     <nav

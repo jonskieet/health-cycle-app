@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  LogOut,
+  Settings,
   Loader2,
   Check,
   CalendarClock,
@@ -22,7 +22,7 @@ import LockedFeature from "@/components/profile/LockedFeature";
 import EditProfileModal from "@/components/profile/EditProfileModal";
 
 export default function ProfilePage() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { data: profile, isLoading } = useProfile();
   const { data: cycleLogs = [] } = useCycleLogs();
   const updateProfile = useUpdateProfile();
@@ -56,7 +56,16 @@ export default function ProfilePage() {
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-5 pt-8">
-      <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Cá nhân</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Cá nhân</h1>
+        <Link
+          href="/settings"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-[var(--ink-soft)]"
+          style={{ background: "rgba(36,27,47,0.06)" }}
+        >
+          <Settings size={18} />
+        </Link>
+      </div>
 
       <section className="glass-card-strong flex flex-col items-center gap-2 rounded-[28px] p-8 text-center">
         <button type="button" onClick={() => setEditingProfile(true)}>
@@ -207,15 +216,6 @@ export default function ProfilePage() {
           </button>
         </section>
       )}
-
-      <button
-        onClick={signOut}
-        className="glass-card flex items-center justify-center gap-2 rounded-[22px] p-4 text-sm font-semibold"
-        style={{ color: "var(--c-period)" }}
-      >
-        <LogOut size={16} />
-        Đăng xuất
-      </button>
     </main>
   );
 }
