@@ -1,34 +1,54 @@
 "use client";
 
-import { useState } from "react";
-import { Sparkles, Mail, Lock, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Sparkles, Mail, Lock, Loader2, ArrowLeft, ShieldCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
-type Mode = "signin" | "signup";
+type Step = "signin" | "signup" | "otp" | "forgot" | "forgot-sent";
+
+const RESEND_SECONDS = 45;
 
 export default function LoginPage() {
-  const [mode, setMode] = useState<Mode>("signin");
+  const router = useRouter();
+
+  const [step, setStep] = useState<Step>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<"google" | "apple" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  // OTP
+  const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
+  const [resendIn, setResendIn] = useState(0);
+  const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
+
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
+
+  function resetMessages() {
     setError(null);
     setInfo(null);
+  }
+
+  function goTo(next: Step) {
+    resetMessages();
+    setStep(next);
+  }
+
+  async function handleSignIn(e: React.FormEvent) {
+    e.preventDefault();
+    resetMessages();
     setLoading(true);
     try {
-      if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        setInfo("Đăng ký thành công! Kiểm tra email để xác nhận (nếu project bật xác nhận email), sau đó đăng nhập.");
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Có lỗi xảy ra, thử lại nhé.");
     } finally {
@@ -36,8 +56,84 @@ export default function LoginPage() {
     }
   }
 
+  async function handleSignUp(e: React.FormEvent) {
+    e.preventDefault();
+    resetMessages();
+    if (password !== confirmPassword) {
+      setError("Mật khẩu nhập lại không khớp.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+      setOtp(["", "", "", "", "", ""]);
+      setResendIn(RESEND_SECONDS);
+      setStep("otp");
+      setInfo(`Mã xác nhận 6 số đã được gửi tới ${email}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể đăng ký, thử lại nhé.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    resetMessages();
+    const token = otp.join("");
+    if (token.length !== 6) {
+      setError("Nhập đủ 6 số nhé.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: "signup",
+      });
+      if (error) throw error;
+      router.replace("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Mã không đúng hoặc đã hết hạn.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResend() {
+    if (resendIn > 0) return;
+    resetMessages();
+    try {
+      const { error } = await supabase.auth.resend({ type: "signup", email });
+      if (error) throw error;
+      setResendIn(RESEND_SECONDS);
+      setInfo("Đã gửi lại mã xác nhận.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không gửi lại được mã, thử lại sau.");
+    }
+  }
+
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault();
+    resetMessages();
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      setStep("forgot-sent");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không gửi được email, thử lại nhé.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleOAuth(provider: "google" | "apple") {
-    setError(null);
+    resetMessages();
     setOauthLoading(provider);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -52,6 +148,36 @@ export default function LoginPage() {
     }
   }
 
+  function handleOtpChange(index: number, raw: string) {
+    const digit = raw.replace(/\D/g, "").slice(-1);
+    setOtp((prev) => {
+      const next = [...prev];
+      next[index] = digit;
+      return next;
+    });
+    if (digit && index < 5) otpRefs.current[index + 1]?.focus();
+  }
+
+  function handleOtpKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  }
+
+  function handleOtpPaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!text) return;
+    e.preventDefault();
+    setOtp((prev) => {
+      const next = [...prev];
+      for (let i = 0; i < 6; i++) next[i] = text[i] ?? "";
+      return next;
+    });
+    otpRefs.current[Math.min(text.length, 5)]?.focus();
+  }
+
+  const isAuthStep = step === "signin" || step === "signup";
+
   return (
     <main
       className="flex flex-1 flex-col items-center justify-center px-5"
@@ -60,120 +186,353 @@ export default function LoginPage() {
         paddingBottom: "max(2rem, env(safe-area-inset-bottom))",
       }}
     >
-      <div className="glass-card-strong flex w-full max-w-sm flex-col gap-7 rounded-[32px] p-7">
+      <div className="flex w-full max-w-sm flex-col items-center gap-6">
+        {/* Hero / brand */}
         <div className="flex flex-col items-center gap-3 text-center">
           <span
-            className="flex h-14 w-14 items-center justify-center rounded-full text-white"
-            style={{ background: "linear-gradient(135deg, var(--c-sleep), var(--c-period))" }}
+            className="flex h-16 w-16 items-center justify-center rounded-[22px] text-white shadow-lg"
+            style={{
+              background: "linear-gradient(135deg, var(--c-sleep), var(--c-period))",
+              boxShadow: "0 16px 32px -12px rgba(124, 111, 240, 0.45)",
+            }}
           >
-            <Sparkles size={24} />
+            <Sparkles size={26} />
           </span>
-          <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Aura</h1>
-          <p className="text-sm text-[var(--ink-soft)]">
-            {mode === "signin" ? "Đăng nhập để tiếp tục" : "Tạo tài khoản mới"}
-          </p>
+          <div>
+            <h1 className="font-display text-2xl font-bold text-[var(--ink)]">KVCycle</h1>
+            <p className="mt-1 text-sm text-[var(--ink-soft)]">
+              {step === "signin" && "Chào mừng trở lại"}
+              {step === "signup" && "Tạo tài khoản để bắt đầu theo dõi"}
+              {step === "otp" && "Xác nhận email của bạn"}
+              {step === "forgot" && "Khôi phục mật khẩu"}
+              {step === "forgot-sent" && "Kiểm tra hộp thư của bạn"}
+            </p>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-[var(--ink-soft)]">Email</span>
-            <div className="flex items-center gap-2 rounded-2xl bg-black/[0.03] px-4 py-3">
-              <Mail size={16} className="text-[var(--ink-faint)]" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="ban@email.com"
-                autoComplete="email"
-                className="w-full bg-transparent text-sm text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)]"
-              />
+        <div className="glass-card-strong w-full rounded-[32px] p-7">
+          {/* Tabs — chỉ hiện ở bước đăng nhập/đăng ký */}
+          {isAuthStep && (
+            <div className="mb-6 flex rounded-2xl bg-black/[0.04] p-1">
+              <button
+                type="button"
+                onClick={() => goTo("signin")}
+                className="relative flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors"
+                style={
+                  step === "signin"
+                    ? { background: "white", color: "var(--ink)", boxShadow: "0 4px 12px rgba(36,27,47,0.08)" }
+                    : { color: "var(--ink-soft)" }
+                }
+              >
+                Đăng nhập
+              </button>
+              <button
+                type="button"
+                onClick={() => goTo("signup")}
+                className="relative flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors"
+                style={
+                  step === "signup"
+                    ? { background: "white", color: "var(--ink)", boxShadow: "0 4px 12px rgba(36,27,47,0.08)" }
+                    : { color: "var(--ink-soft)" }
+                }
+              >
+                Đăng ký
+              </button>
             </div>
-          </label>
-
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-[var(--ink-soft)]">Mật khẩu</span>
-            <div className="flex items-center gap-2 rounded-2xl bg-black/[0.03] px-4 py-3">
-              <Lock size={16} className="text-[var(--ink-faint)]" />
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Tối thiểu 6 ký tự"
-                autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                className="w-full bg-transparent text-sm text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)]"
-              />
-            </div>
-          </label>
-
-          {error && <p className="text-xs text-[var(--c-period)]">{error}</p>}
-          {info && <p className="text-xs text-[var(--c-mood)]">{info}</p>}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-1 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-white disabled:opacity-60"
-            style={{ background: "linear-gradient(135deg, var(--c-sleep), var(--c-period))" }}
-          >
-            {loading && <Loader2 size={16} className="animate-spin" />}
-            {mode === "signin" ? "Đăng nhập" : "Đăng ký"}
-          </button>
-        </form>
-
-        <div className="flex items-center gap-3">
-          <span className="h-px flex-1 bg-black/10" />
-          <span className="text-xs text-[var(--ink-faint)]">hoặc</span>
-          <span className="h-px flex-1 bg-black/10" />
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <button
-            type="button"
-            onClick={() => handleOAuth("google")}
-            disabled={oauthLoading !== null}
-            className="flex items-center justify-center gap-3 rounded-2xl border border-black/10 bg-white py-3 text-sm font-semibold text-[var(--ink)] disabled:opacity-60"
-          >
-            {oauthLoading === "google" ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              <GoogleIcon />
-            )}
-            Tiếp tục với Google
-          </button>
-          <button
-            type="button"
-            onClick={() => handleOAuth("apple")}
-            disabled={oauthLoading !== null}
-            className="flex items-center justify-center gap-3 rounded-2xl bg-black py-3 text-sm font-semibold text-white disabled:opacity-60"
-          >
-            {oauthLoading === "apple" ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              <AppleIcon />
-            )}
-            Tiếp tục với Apple
-          </button>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => {
-            setMode(mode === "signin" ? "signup" : "signin");
-            setError(null);
-            setInfo(null);
-          }}
-          className="text-center text-sm text-[var(--ink-soft)]"
-        >
-          {mode === "signin" ? (
-            <>Chưa có tài khoản? <span className="font-semibold text-[var(--c-sleep)]">Đăng ký</span></>
-          ) : (
-            <>Đã có tài khoản? <span className="font-semibold text-[var(--c-sleep)]">Đăng nhập</span></>
           )}
-        </button>
+
+          {step === "signin" && (
+            <form onSubmit={handleSignIn} className="flex flex-col gap-4">
+              <EmailField value={email} onChange={setEmail} />
+              <PasswordField
+                value={password}
+                onChange={setPassword}
+                placeholder="Nhập mật khẩu"
+                autoComplete="current-password"
+              />
+
+              <button
+                type="button"
+                onClick={() => goTo("forgot")}
+                className="-mt-1 self-end text-xs font-medium text-[var(--c-sleep)]"
+              >
+                Quên mật khẩu?
+              </button>
+
+              <Messages error={error} info={info} />
+
+              <SubmitButton loading={loading} label="Đăng nhập" />
+              <SocialDivider />
+              <SocialButtons oauthLoading={oauthLoading} onOAuth={handleOAuth} />
+            </form>
+          )}
+
+          {step === "signup" && (
+            <form onSubmit={handleSignUp} className="flex flex-col gap-4">
+              <EmailField value={email} onChange={setEmail} />
+              <PasswordField
+                value={password}
+                onChange={setPassword}
+                placeholder="Tối thiểu 6 ký tự"
+                autoComplete="new-password"
+              />
+              <PasswordField
+                value={confirmPassword}
+                onChange={setConfirmPassword}
+                placeholder="Nhập lại mật khẩu"
+                autoComplete="new-password"
+                label="Xác nhận mật khẩu"
+              />
+
+              <Messages error={error} info={info} />
+
+              <SubmitButton loading={loading} label="Đăng ký" />
+              <SocialDivider />
+              <SocialButtons oauthLoading={oauthLoading} onOAuth={handleOAuth} />
+            </form>
+          )}
+
+          {step === "otp" && (
+            <form onSubmit={handleVerifyOtp} className="flex flex-col gap-5">
+              <button
+                type="button"
+                onClick={() => goTo("signup")}
+                className="flex items-center gap-1 text-xs font-medium text-[var(--ink-soft)]"
+              >
+                <ArrowLeft size={14} /> Quay lại
+              </button>
+
+              <div className="flex flex-col items-center gap-2 text-center">
+                <span
+                  className="flex h-11 w-11 items-center justify-center rounded-full"
+                  style={{ background: "color-mix(in srgb, var(--c-sleep) 15%, white)" }}
+                >
+                  <ShieldCheck size={20} style={{ color: "var(--c-sleep)" }} />
+                </span>
+                <p className="text-sm text-[var(--ink-soft)]">
+                  Nhập mã 6 số vừa gửi tới
+                  <br />
+                  <span className="font-semibold text-[var(--ink)]">{email}</span>
+                </p>
+              </div>
+
+              <div className="flex justify-center gap-2">
+                {otp.map((digit, i) => (
+                  <input
+                    key={i}
+                    ref={(el) => {
+                      otpRefs.current[i] = el;
+                    }}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(i, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                    onPaste={handleOtpPaste}
+                    inputMode="numeric"
+                    maxLength={1}
+                    className="h-12 w-11 rounded-2xl bg-black/[0.04] text-center text-lg font-bold text-[var(--ink)] outline-none focus:ring-2"
+                    style={{ boxShadow: digit ? "0 0 0 2px var(--c-sleep) inset" : undefined }}
+                  />
+                ))}
+              </div>
+
+              <Messages error={error} info={info} />
+
+              <SubmitButton loading={loading} label="Xác nhận" />
+
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resendIn > 0}
+                className="text-center text-xs font-medium text-[var(--ink-soft)] disabled:opacity-60"
+              >
+                {resendIn > 0 ? (
+                  <>Gửi lại mã sau {resendIn}s</>
+                ) : (
+                  <>
+                    Chưa nhận được mã?{" "}
+                    <span className="font-semibold text-[var(--c-sleep)]">Gửi lại</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {step === "forgot" && (
+            <form onSubmit={handleForgotPassword} className="flex flex-col gap-4">
+              <button
+                type="button"
+                onClick={() => goTo("signin")}
+                className="flex items-center gap-1 text-xs font-medium text-[var(--ink-soft)]"
+              >
+                <ArrowLeft size={14} /> Quay lại đăng nhập
+              </button>
+              <p className="text-sm text-[var(--ink-soft)]">
+                Nhập email đã đăng ký, chúng tôi sẽ gửi liên kết đặt lại mật khẩu.
+              </p>
+              <EmailField value={email} onChange={setEmail} />
+              <Messages error={error} info={info} />
+              <SubmitButton loading={loading} label="Gửi liên kết khôi phục" />
+            </form>
+          )}
+
+          {step === "forgot-sent" && (
+            <div className="flex flex-col items-center gap-4 py-2 text-center">
+              <span
+                className="flex h-12 w-12 items-center justify-center rounded-full"
+                style={{ background: "color-mix(in srgb, var(--c-mood) 15%, white)" }}
+              >
+                <Mail size={20} style={{ color: "var(--c-mood)" }} />
+              </span>
+              <p className="text-sm text-[var(--ink-soft)]">
+                Đã gửi liên kết đặt lại mật khẩu tới
+                <br />
+                <span className="font-semibold text-[var(--ink)]">{email}</span>
+              </p>
+              <button
+                type="button"
+                onClick={() => goTo("signin")}
+                className="mt-1 flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold text-white"
+                style={{ background: "linear-gradient(135deg, var(--c-sleep), var(--c-period))" }}
+              >
+                Quay lại đăng nhập
+              </button>
+            </div>
+          )}
+        </div>
+
+        {isAuthStep && (
+          <button
+            type="button"
+            onClick={() => goTo(step === "signin" ? "signup" : "signin")}
+            className="text-center text-sm text-[var(--ink-soft)]"
+          >
+            {step === "signin" ? (
+              <>Chưa có tài khoản? <span className="font-semibold text-[var(--c-sleep)]">Đăng ký ngay</span></>
+            ) : (
+              <>Đã có tài khoản? <span className="font-semibold text-[var(--c-sleep)]">Đăng nhập</span></>
+            )}
+          </button>
+        )}
       </div>
     </main>
+  );
+}
+
+function EmailField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-xs font-medium text-[var(--ink-soft)]">Email</span>
+      <div className="flex items-center gap-2 rounded-2xl bg-black/[0.03] px-4 py-3">
+        <Mail size={16} className="text-[var(--ink-faint)]" />
+        <input
+          type="email"
+          required
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="ban@email.com"
+          autoComplete="email"
+          className="w-full bg-transparent text-sm text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)]"
+        />
+      </div>
+    </label>
+  );
+}
+
+function PasswordField({
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+  label = "Mật khẩu",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  autoComplete: string;
+  label?: string;
+}) {
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-xs font-medium text-[var(--ink-soft)]">{label}</span>
+      <div className="flex items-center gap-2 rounded-2xl bg-black/[0.03] px-4 py-3">
+        <Lock size={16} className="text-[var(--ink-faint)]" />
+        <input
+          type="password"
+          required
+          minLength={6}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          className="w-full bg-transparent text-sm text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)]"
+        />
+      </div>
+    </label>
+  );
+}
+
+function Messages({ error, info }: { error: string | null; info: string | null }) {
+  if (!error && !info) return null;
+  return (
+    <>
+      {error && <p className="text-xs text-[var(--c-period)]">{error}</p>}
+      {info && <p className="text-xs text-[var(--c-mood)]">{info}</p>}
+    </>
+  );
+}
+
+function SubmitButton({ loading, label }: { loading: boolean; label: string }) {
+  return (
+    <button
+      type="submit"
+      disabled={loading}
+      className="mt-1 flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-white disabled:opacity-60"
+      style={{ background: "linear-gradient(135deg, var(--c-sleep), var(--c-period))" }}
+    >
+      {loading && <Loader2 size={16} className="animate-spin" />}
+      {label}
+    </button>
+  );
+}
+
+function SocialDivider() {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="h-px flex-1 bg-black/10" />
+      <span className="text-xs text-[var(--ink-faint)]">hoặc tiếp tục với</span>
+      <span className="h-px flex-1 bg-black/10" />
+    </div>
+  );
+}
+
+function SocialButtons({
+  oauthLoading,
+  onOAuth,
+}: {
+  oauthLoading: "google" | "apple" | null;
+  onOAuth: (provider: "google" | "apple") => void;
+}) {
+  return (
+    <div className="flex gap-3">
+      <button
+        type="button"
+        onClick={() => onOAuth("google")}
+        disabled={oauthLoading !== null}
+        className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-black/10 bg-white py-3 text-sm font-semibold text-[var(--ink)] disabled:opacity-60"
+      >
+        {oauthLoading === "google" ? <Loader2 size={18} className="animate-spin" /> : <GoogleIcon />}
+        Google
+      </button>
+      <button
+        type="button"
+        onClick={() => onOAuth("apple")}
+        disabled={oauthLoading !== null}
+        className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-black py-3 text-sm font-semibold text-white disabled:opacity-60"
+      >
+        {oauthLoading === "apple" ? <Loader2 size={18} className="animate-spin" /> : <AppleIcon />}
+        Apple
+      </button>
+    </div>
   );
 }
 

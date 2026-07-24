@@ -29,7 +29,7 @@ export default function OnboardingPage() {
       <div className="text-center">
         <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Bắt đầu nhé 🌸</h1>
         <p className="mt-1 text-sm text-[var(--ink-soft)]">
-          Vài thông tin để Aura dự đoán chu kỳ chính xác hơn.
+          Vài thông tin để KVCycle dự đoán chu kỳ chính xác hơn.
         </p>
       </div>
 

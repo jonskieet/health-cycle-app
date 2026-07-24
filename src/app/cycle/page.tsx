@@ -36,7 +36,7 @@ export default function CyclePage() {
       {isLoading ? null : cycleLogs.length === 0 ? (
         <EmptyState
           title="Chưa có dữ liệu chu kỳ"
-          description="Ghi nhận ngày bắt đầu kỳ kinh gần nhất để Aura bắt đầu dự đoán chu kỳ cho bạn."
+          description="Ghi nhận ngày bắt đầu kỳ kinh gần nhất để KVCycle bắt đầu dự đoán chu kỳ cho bạn."
           actionLabel="Ghi nhận kỳ kinh"
           actionHref="/log?type=cycle"
         />

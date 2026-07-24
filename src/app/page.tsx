@@ -119,7 +119,7 @@ export default function DashboardPage() {
       {!loading && !hasAnyMetrics ? (
         <EmptyState
           title="Chưa có chỉ số nào hôm nay"
-          description="Ghi nhận nhịp tim, giấc ngủ, stress, nước uống hoặc tâm trạng để Aura bắt đầu theo dõi sức khỏe của bạn."
+          description="Ghi nhận nhịp tim, giấc ngủ, stress, nước uống hoặc tâm trạng để KVCycle bắt đầu theo dõi sức khỏe của bạn."
           actionLabel="Ghi nhận ngay"
           actionHref="/log"
         />

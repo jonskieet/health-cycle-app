@@ -17,7 +17,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Aura — Sức khỏe & Chu kỳ",
+  title: "KVCycle — Sức khỏe & Chu kỳ",
   description: "Theo dõi sức khỏe tổng quát và chu kỳ kinh nguyệt",
 };
 

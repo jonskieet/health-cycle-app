@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useProfile } from "@/lib/queries";
 
-const PUBLIC_ROUTES = ["/login"];
+const PUBLIC_ROUTES = ["/login", "/reset-password"];
 
 export default function AuthGate({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -21,7 +21,7 @@ export default function AuthGate({ children }: { children: ReactNode }) {
       router.replace("/login");
       return;
     }
-    if (user && isPublic) {
+    if (user && isPublic && pathname !== "/reset-password") {
       router.replace("/");
       return;
     }
