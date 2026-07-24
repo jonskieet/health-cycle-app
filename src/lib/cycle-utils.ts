@@ -106,6 +106,100 @@ export function daysUntil(date: Date, today: Date = new Date()) {
   return Math.max(0, diffInDays(date, today));
 }
 
+// ---------- Lịch sử & phân tích chu kỳ (dùng cho trang Cá nhân) ----------
+
+// Ngưỡng lâm sàng phổ biến: chu kỳ 21–35 ngày và hành kinh 2–8 ngày được xem là bình thường.
+export const NORMAL_CYCLE_RANGE = { min: 21, max: 35 };
+export const NORMAL_PERIOD_RANGE = { min: 2, max: 8 };
+
+export interface CycleHistoryEntry {
+  id: string;
+  start_date: string;
+  end_date: string | null;
+  /** Số ngày từ kỳ này đến kỳ kế tiếp gần đây hơn — null nếu là kỳ mới nhất (chưa có kỳ sau để so). */
+  cycleLength: number | null;
+  /** Số ngày hành kinh, null nếu chưa ghi nhận ngày kết thúc. */
+  periodLength: number | null;
+  abnormalCycle: boolean;
+  abnormalPeriod: boolean;
+}
+
+/**
+ * Dựng lịch sử chu kỳ từ `cycle_logs`, mới nhất trước. `cycleLength` của mỗi mục
+ * là độ dài của chu kỳ NGAY TRƯỚC kỳ đó (khoảng cách đến kỳ kế tiếp gần hơn),
+ * tức `history[0].cycleLength` = độ dài chu kỳ gần đây nhất đã hoàn thành.
+ */
+export function buildCycleHistory(logs: CycleLog[]): CycleHistoryEntry[] {
+  const sorted = [...logs].sort(
+    (a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+  );
+
+  return sorted.map((log, i) => {
+    const next = sorted[i + 1];
+    const cycleLength = next
+      ? diffInDays(new Date(log.start_date), new Date(next.start_date))
+      : null;
+    const periodLength = log.end_date
+      ? diffInDays(new Date(log.end_date), new Date(log.start_date)) + 1
+      : null;
+
+    return {
+      id: log.id,
+      start_date: log.start_date,
+      end_date: log.end_date,
+      cycleLength,
+      periodLength,
+      abnormalCycle:
+        cycleLength != null &&
+        (cycleLength < NORMAL_CYCLE_RANGE.min || cycleLength > NORMAL_CYCLE_RANGE.max),
+      abnormalPeriod:
+        periodLength != null &&
+        (periodLength < NORMAL_PERIOD_RANGE.min || periodLength > NORMAL_PERIOD_RANGE.max),
+    };
+  });
+}
+
+export interface CycleSummary {
+  /** Có đủ dữ liệu (>=2 kỳ) để tính độ dài chu kỳ trước hay chưa. */
+  hasPreviousCycle: boolean;
+  /** Có đủ dữ liệu (>=3 kỳ) để so sánh sự thay đổi giữa 2 chu kỳ gần nhất hay chưa. */
+  hasVariability: boolean;
+  previousCycleLength: number | null;
+  previousCycleAbnormal: boolean;
+  previousPeriodLength: number | null;
+  previousPeriodAbnormal: boolean;
+  cycleLengthDelta: number | null;
+  irregular: boolean;
+}
+
+// Chênh lệch giữa 2 chu kỳ gần nhất vượt quá 7 ngày được xem là "không đều đặn".
+const IRREGULARITY_THRESHOLD_DAYS = 7;
+
+export function summarizeCycleHistory(history: CycleHistoryEntry[]): CycleSummary {
+  const withCycleLength = history.filter((h) => h.cycleLength != null);
+  const withPeriodLength = history.filter((h) => h.periodLength != null);
+
+  const previous = withCycleLength[0] ?? null;
+  const previousPeriod = withPeriodLength[0] ?? null;
+  const secondPrevious = withCycleLength[1] ?? null;
+
+  const cycleLengthDelta =
+    previous?.cycleLength != null && secondPrevious?.cycleLength != null
+      ? Math.abs(previous.cycleLength - secondPrevious.cycleLength)
+      : null;
+
+  return {
+    hasPreviousCycle: previous != null,
+    hasVariability: cycleLengthDelta != null,
+    previousCycleLength: previous?.cycleLength ?? null,
+    previousCycleAbnormal: previous?.abnormalCycle ?? false,
+    previousPeriodLength: previousPeriod?.periodLength ?? null,
+    previousPeriodAbnormal: previousPeriod?.abnormalPeriod ?? false,
+    cycleLengthDelta,
+    irregular: cycleLengthDelta != null && cycleLengthDelta > IRREGULARITY_THRESHOLD_DAYS,
+  };
+}
+
 export const phaseLabel: Record<CyclePrediction["phase"], string> = {
   period: "Đang hành kinh",
   fertile: "Cửa sổ thụ thai",

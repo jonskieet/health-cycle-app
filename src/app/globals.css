@@ -157,6 +157,34 @@ body {
   scrollbar-width: none;
 }
 
+@media print {
+  .phone-shell {
+    display: block;
+    min-height: 0;
+  }
+  .phone-frame {
+    height: auto;
+    max-width: none;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+  }
+  .phone-viewport {
+    height: auto;
+    overflow: visible;
+    padding-top: 0;
+  }
+  .phone-notch {
+    display: none !important;
+  }
+  .report-hide {
+    display: none !important;
+  }
+  .report-page {
+    padding-bottom: 0 !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

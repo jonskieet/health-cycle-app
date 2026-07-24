@@ -2,14 +2,32 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { User, LogOut, Loader2, Check, CalendarClock, ChevronRight, Pencil } from "lucide-react";
+import {
+  User,
+  LogOut,
+  Loader2,
+  Check,
+  CalendarClock,
+  ChevronRight,
+  Pencil,
+  Sparkles,
+  FileText,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { useProfile, useUpdateProfile } from "@/lib/queries";
+import { useProfile, useUpdateProfile, useCycleLogs } from "@/lib/queries";
+import { predictCycle } from "@/lib/cycle-utils";
+import CycleInsights from "@/components/profile/CycleInsights";
 
 export default function ProfilePage() {
   const { user, signOut } = useAuth();
   const { data: profile, isLoading } = useProfile();
+  const { data: cycleLogs = [] } = useCycleLogs();
   const updateProfile = useUpdateProfile();
+
+  const lifetimeStats = predictCycle(cycleLogs, {
+    avgCycleLength: profile?.avg_cycle_length ?? 28,
+    avgPeriodLength: profile?.avg_period_length ?? 5,
+  });
 
   // Local override once the user starts dragging a slider; falls back to
   // the loaded profile value (or a sane default) until then.
@@ -110,6 +128,67 @@ export default function ProfilePage() {
           </p>
         )}
       </section>
+
+      {/* Toàn bộ tính năng đã được mở khoá miễn phí trên KVCycle — không có bản PRO trả phí */}
+      <div
+        className="flex items-center gap-3 rounded-[22px] p-4 text-white"
+        style={{ background: "linear-gradient(135deg, var(--c-sleep), var(--c-period))" }}
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20">
+          <Sparkles size={16} />
+        </span>
+        <span className="flex-1 text-left">
+          <span className="block text-sm font-semibold">Đã mở khoá toàn bộ tính năng</span>
+          <span className="block text-xs text-white/85">Miễn phí, không giới hạn</span>
+        </span>
+      </div>
+
+      {cycleLogs.length > 0 && (
+        <>
+          <section>
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--ink-faint)]">
+              Số liệu thống kê
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="glass-card rounded-2xl p-4">
+                <p className="text-xs text-[var(--ink-soft)]">Chiều dài chu kỳ trung bình</p>
+                <p className="mt-1 font-display text-2xl font-extrabold text-[var(--ink)]">
+                  {lifetimeStats.avgCycleLength} ngày
+                </p>
+              </div>
+              <div className="glass-card rounded-2xl p-4">
+                <p className="text-xs text-[var(--ink-soft)]">Thời gian hành kinh trung bình</p>
+                <p className="mt-1 font-display text-2xl font-extrabold text-[var(--ink)]">
+                  {lifetimeStats.avgPeriodLength} ngày
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <Link
+            href="/profile/report"
+            className="glass-card flex items-center gap-3 rounded-[22px] p-4"
+          >
+            <span
+              className="flex h-9 w-9 items-center justify-center rounded-full text-white"
+              style={{ background: "var(--c-mood)" }}
+            >
+              <FileText size={16} />
+            </span>
+            <span className="flex-1 text-left">
+              <span className="block text-sm font-semibold text-[var(--ink)]">
+                Báo cáo sức khỏe cho bác sĩ
+              </span>
+              <span className="block text-xs text-[var(--ink-faint)]">
+                Tóm tắt chu kỳ & chỉ số gần đây, sẵn sàng để in
+              </span>
+            </span>
+            <ChevronRight size={16} className="text-[var(--ink-faint)]" />
+          </Link>
+
+          <CycleInsights cycleLogs={cycleLogs} />
+        </>
+      )}
 
       <Link href="/appointments" className="glass-card flex items-center gap-3 rounded-[22px] p-4">
         <span
