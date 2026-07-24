@@ -2,15 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { ChevronRight } from "lucide-react";
-import {
-  Line,
-  LineChart,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import StatusPill from "@/components/ui/StatusPill";
 import EmptyState from "@/components/ui/EmptyState";
 import LockedCycleChart from "@/components/profile/LockedCycleChart";
@@ -51,6 +42,14 @@ export default function CycleInsights({ cycleLogs, isVip }: CycleInsightsProps) 
       abnormal: h.abnormalCycle,
     }));
 
+  const CHART_BAR_HEIGHT = 120;
+  const chartMax =
+    Math.max(NORMAL_CYCLE_RANGE.max, ...chartData.map((d) => d.cycleLength), 1) + 4;
+  const scaleBar = (value: number) =>
+    Math.max((Math.max(value, 0) / chartMax) * CHART_BAR_HEIGHT, 4);
+  const bandBottom = scaleBar(NORMAL_CYCLE_RANGE.min);
+  const bandHeight = scaleBar(NORMAL_CYCLE_RANGE.max) - bandBottom;
+
   return (
     <>
       {/* Tóm tắt chu kỳ */}
@@ -76,7 +75,7 @@ export default function CycleInsights({ cycleLogs, isVip }: CycleInsightsProps) 
         ) : (
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-3 rounded-2xl bg-black/[0.03] p-4">
-              <span className="text-sm text-[var(--ink-soft)]">Độ dài chu kỳ trước</span>
+              <span className="min-w-0 flex-1 text-sm text-[var(--ink-soft)]">Độ dài chu kỳ trước</span>
               <StatusPill
                 ok={!summary.previousCycleAbnormal}
                 okLabel="Bình thường"
@@ -90,7 +89,9 @@ export default function CycleInsights({ cycleLogs, isVip }: CycleInsightsProps) 
 
             {summary.previousPeriodLength != null && (
               <div className="flex items-center justify-between gap-3 rounded-2xl bg-black/[0.03] p-4">
-                <span className="text-sm text-[var(--ink-soft)]">Độ dài kỳ kinh nguyệt trước</span>
+                <span className="min-w-0 flex-1 text-sm text-[var(--ink-soft)]">
+                  Độ dài kỳ kinh nguyệt trước
+                </span>
                 <StatusPill
                   ok={!summary.previousPeriodAbnormal}
                   okLabel="Bình thường"
@@ -101,7 +102,9 @@ export default function CycleInsights({ cycleLogs, isVip }: CycleInsightsProps) 
 
             {summary.hasVariability ? (
               <div className="flex items-center justify-between gap-3 rounded-2xl bg-black/[0.03] p-4">
-                <span className="text-sm text-[var(--ink-soft)]">Sự thay đổi độ dài chu kỳ</span>
+                <span className="min-w-0 flex-1 text-sm text-[var(--ink-soft)]">
+                  Sự thay đổi độ dài chu kỳ
+                </span>
                 <StatusPill ok={!summary.irregular} okLabel="Đều đặn" warnLabel="Không đều đặn" />
               </div>
             ) : (
@@ -109,6 +112,8 @@ export default function CycleInsights({ cycleLogs, isVip }: CycleInsightsProps) 
                 Nhập thêm một kỳ kinh nữa để xem sự thay đổi giữa các chu kỳ.
               </p>
             )}
+
+            <RecordCycleButton label="Ghi lại thêm một kỳ kinh" />
           </div>
         )}
       </section>
@@ -193,71 +198,65 @@ export default function CycleInsights({ cycleLogs, isVip }: CycleInsightsProps) 
 
           {chartData.length >= 2 ? (
             <>
-              <div className="h-[200px] w-full pt-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 24, right: 16, left: -20, bottom: 0 }}>
-                    <XAxis
-                      dataKey="label"
-                      tick={{ fontSize: 10, fill: "var(--ink-faint)" }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis tick={{ fontSize: 10, fill: "var(--ink-faint)" }} axisLine={false} tickLine={false} />
-                    <ReferenceLine y={NORMAL_CYCLE_RANGE.min} stroke="rgba(36,27,47,0.12)" strokeDasharray="4 4" />
-                    <ReferenceLine y={NORMAL_CYCLE_RANGE.max} stroke="rgba(36,27,47,0.12)" strokeDasharray="4 4" />
-                    <Tooltip
-                      formatter={(value) => [`${value} ngày`, "Độ dài chu kỳ"]}
-                      contentStyle={{
-                        borderRadius: 12,
-                        border: "1px solid var(--glass-border)",
-                        fontSize: 12,
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="cycleLength"
-                      stroke="var(--c-sleep)"
-                      strokeWidth={2}
-                      dot={(props) => {
-                        const { cx, cy, payload, index: dotIndex } = props;
-                        const abnormal = payload.abnormal as boolean;
-                        return (
-                          <g key={`dot-${dotIndex}`}>
-                            {abnormal && (
-                              <circle cx={cx} cy={cy} r={11} fill="var(--c-period)" opacity={0.16} />
-                            )}
-                            <circle
-                              cx={cx}
-                              cy={cy}
-                              r={5}
-                              fill={abnormal ? "var(--c-period)" : "var(--c-sleep)"}
-                              stroke="white"
-                              strokeWidth={2}
-                            />
-                            {abnormal && cy != null && (
-                              <text
-                                x={cx}
-                                y={cy - 16}
-                                textAnchor="middle"
-                                fontSize={9}
-                                fontWeight={700}
-                                letterSpacing={0.4}
-                                fill="var(--c-period)"
-                              >
-                                BẤT THƯỜNG
-                              </text>
-                            )}
-                          </g>
-                        );
-                      }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+              <div className="relative">
+                {/* Dải phạm vi bình thường, phía sau các cột */}
+                <div
+                  className="pointer-events-none absolute inset-x-0 rounded-lg"
+                  style={{
+                    bottom: bandBottom,
+                    height: bandHeight,
+                    background: "color-mix(in srgb, var(--c-mood) 10%, transparent)",
+                    borderTop: "1px dashed color-mix(in srgb, var(--c-mood) 45%, transparent)",
+                    borderBottom: "1px dashed color-mix(in srgb, var(--c-mood) 45%, transparent)",
+                  }}
+                />
+
+                <div
+                  className="relative flex items-end justify-between gap-2 px-1"
+                  style={{ height: CHART_BAR_HEIGHT }}
+                >
+                  {chartData.map((d, i) => {
+                    const color = d.abnormal ? "var(--c-period)" : "var(--c-sleep)";
+                    return (
+                      <div key={i} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
+                        <span className="text-[10px] font-bold" style={{ color }}>
+                          {d.cycleLength}
+                        </span>
+                        <div
+                          className="w-3 rounded-full"
+                          style={{ height: scaleBar(d.cycleLength), background: color }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <p className="text-center text-[11px] text-[var(--ink-faint)]">
-                Chấm hồng đánh dấu chu kỳ nằm ngoài phạm vi bình thường ({NORMAL_CYCLE_RANGE.min}–
-                {NORMAL_CYCLE_RANGE.max} ngày)
-              </p>
+
+              <div className="flex justify-between gap-2 px-1">
+                {chartData.map((d, i) => (
+                  <span key={i} className="flex-1 text-center text-[9px] text-[var(--ink-faint)]">
+                    {d.label}
+                  </span>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-[11px] text-[var(--ink-soft)]">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--c-sleep)" }} />
+                  Bình thường
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--c-period)" }} />
+                  Bất thường
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full border border-dashed"
+                    style={{ borderColor: "var(--c-mood)" }}
+                  />
+                  Phạm vi {NORMAL_CYCLE_RANGE.min}–{NORMAL_CYCLE_RANGE.max} ngày
+                </span>
+              </div>
             </>
           ) : (
             <EmptyState

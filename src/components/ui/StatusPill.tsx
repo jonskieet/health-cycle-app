@@ -12,10 +12,10 @@ export default function StatusPill({ ok, okLabel, warnLabel }: StatusPillProps) 
   const color = ok ? "var(--c-mood)" : "var(--c-stress)";
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white"
+      className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white"
       style={{ background: color }}
     >
-      {ok ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}
+      {ok ? <CheckCircle2 size={13} className="shrink-0" /> : <AlertTriangle size={13} className="shrink-0" />}
       {ok ? okLabel : warnLabel}
     </span>
   );
