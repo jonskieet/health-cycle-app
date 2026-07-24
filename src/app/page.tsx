@@ -35,17 +35,8 @@ export default function DashboardPage() {
   const hasAnyMetrics = metrics.length > 0;
   const loading = cycleLoading || metricsLoading;
 
-  const displayName = profile?.display_name?.trim() || "bạn";
-
   return (
-    <main className="flex flex-1 flex-col gap-6 px-5 pt-8">
-      <header className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-[var(--ink-soft)]">Chào buổi sáng,</p>
-          <h1 className="font-display text-2xl font-bold text-[var(--ink)]">{displayName} 👋</h1>
-        </div>
-      </header>
-
+    <main className="flex flex-1 flex-col gap-6 px-5 pt-6">
       {/* Signature element: Health Score ring */}
       <section className="glass-card-strong flex items-center gap-5 rounded-[28px] p-6">
         <AuroraRing percent={healthScore ?? 0} colorFrom="#7c6ff0" colorTo="#e85c8a">

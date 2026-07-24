@@ -83,6 +83,72 @@ body {
     0 20px 40px -16px rgba(124, 111, 240, 0.22);
 }
 
+/* Phone frame — bọc UI thành khung điện thoại, căn giữa trên màn hình lớn */
+.phone-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phone-frame {
+  position: relative;
+  width: 100%;
+  max-width: 430px;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.phone-viewport {
+  position: relative;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.phone-notch {
+  display: none;
+}
+
+/* Trên màn hình rộng hơn điện thoại: hiện khung bo tròn kiểu thiết bị */
+@media (min-width: 640px) {
+  .phone-shell {
+    padding: 32px 16px;
+  }
+
+  .phone-frame {
+    height: min(100dvh - 64px, 900px);
+    border-radius: 44px;
+    border: 10px solid #16121e;
+    box-shadow:
+      0 30px 60px -20px rgba(36, 27, 47, 0.45),
+      0 0 0 1px rgba(36, 27, 47, 0.06);
+    background:
+      radial-gradient(120% 90% at 8% -10%, var(--aurora-a) 0%, transparent 60%),
+      radial-gradient(110% 80% at 100% 0%, var(--aurora-c) 0%, transparent 55%),
+      radial-gradient(140% 100% at 50% 120%, var(--aurora-b) 0%, transparent 60%),
+      #f7f5fb;
+  }
+
+  .phone-viewport {
+    padding-top: 28px;
+  }
+
+  .phone-notch {
+    display: block;
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 22px;
+    background: #16121e;
+    border-radius: 0 0 16px 16px;
+    z-index: 30;
+  }
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

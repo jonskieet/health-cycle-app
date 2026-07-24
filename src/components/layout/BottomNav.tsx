@@ -17,7 +17,7 @@ export default function BottomNav() {
   if (pathname === "/login" || pathname === "/onboarding") return null;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto flex w-full max-w-md justify-center px-4 pb-4">
+    <nav className="absolute inset-x-0 bottom-0 z-20 mx-auto flex w-full justify-center px-4 pb-4">
       <div className="glass-card-strong flex w-full items-center justify-between rounded-full px-3 py-2">
         {items.map(({ href, label, icon: Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);

@@ -30,10 +30,17 @@ export default function RootLayout({
     <html lang="vi" className={`${jakarta.variable} ${inter.variable}`}>
       <body className="min-h-full antialiased">
         <Providers>
-          <div className="mx-auto flex min-h-screen max-w-md flex-col pb-24">
-            <AuthGate>{children}</AuthGate>
+          <div className="phone-shell">
+            <div className="phone-frame">
+              <div className="phone-notch" />
+              <div className="phone-viewport no-scrollbar">
+                <div className="flex min-h-full flex-col pb-24">
+                  <AuthGate>{children}</AuthGate>
+                </div>
+                <BottomNav />
+              </div>
+            </div>
           </div>
-          <BottomNav />
         </Providers>
       </body>
     </html>
