@@ -3,26 +3,29 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  User,
   LogOut,
   Loader2,
   Check,
   CalendarClock,
   ChevronRight,
   Pencil,
-  Sparkles,
   FileText,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useProfile, useUpdateProfile, useCycleLogs } from "@/lib/queries";
 import { predictCycle } from "@/lib/cycle-utils";
+import { isVip } from "@/lib/vip";
 import CycleInsights from "@/components/profile/CycleInsights";
+import ProfileAvatar from "@/components/profile/ProfileAvatar";
+import MembershipCard from "@/components/profile/MembershipCard";
+import LockedFeature from "@/components/profile/LockedFeature";
 
 export default function ProfilePage() {
   const { user, signOut } = useAuth();
   const { data: profile, isLoading } = useProfile();
   const { data: cycleLogs = [] } = useCycleLogs();
   const updateProfile = useUpdateProfile();
+  const vip = isVip(user?.email);
 
   const lifetimeStats = predictCycle(cycleLogs, {
     avgCycleLength: profile?.avg_cycle_length ?? 28,
@@ -70,12 +73,7 @@ export default function ProfilePage() {
       <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Cá nhân</h1>
 
       <section className="glass-card-strong flex flex-col items-center gap-2 rounded-[28px] p-8 text-center">
-        <span
-          className="flex h-16 w-16 items-center justify-center rounded-full text-white"
-          style={{ background: "var(--c-sleep)" }}
-        >
-          <User size={28} />
-        </span>
+        <ProfileAvatar name={profile?.display_name} email={user?.email} isVip={vip} size={72} />
 
         {editingName ? (
           <form
@@ -129,19 +127,7 @@ export default function ProfilePage() {
         )}
       </section>
 
-      {/* Toàn bộ tính năng đã được mở khoá miễn phí trên KVCycle — không có bản PRO trả phí */}
-      <div
-        className="flex items-center gap-3 rounded-[22px] p-4 text-white"
-        style={{ background: "linear-gradient(135deg, var(--c-sleep), var(--c-period))" }}
-      >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20">
-          <Sparkles size={16} />
-        </span>
-        <span className="flex-1 text-left">
-          <span className="block text-sm font-semibold">Đã mở khoá toàn bộ tính năng</span>
-          <span className="block text-xs text-white/85">Miễn phí, không giới hạn</span>
-        </span>
-      </div>
+      <MembershipCard isVip={vip} />
 
       {cycleLogs.length > 0 && (
         <>
@@ -165,28 +151,30 @@ export default function ProfilePage() {
             </div>
           </section>
 
-          <Link
-            href="/profile/report"
-            className="glass-card flex items-center gap-3 rounded-[22px] p-4"
-          >
-            <span
-              className="flex h-9 w-9 items-center justify-center rounded-full text-white"
-              style={{ background: "var(--c-mood)" }}
+          <LockedFeature locked={!vip} title="Báo cáo sức khỏe VIP">
+            <Link
+              href="/profile/report"
+              className="glass-card flex items-center gap-3 rounded-[22px] p-4"
             >
-              <FileText size={16} />
-            </span>
-            <span className="flex-1 text-left">
-              <span className="block text-sm font-semibold text-[var(--ink)]">
-                Báo cáo sức khỏe cho bác sĩ
+              <span
+                className="flex h-9 w-9 items-center justify-center rounded-full text-white"
+                style={{ background: "var(--c-mood)" }}
+              >
+                <FileText size={16} />
               </span>
-              <span className="block text-xs text-[var(--ink-faint)]">
-                Tóm tắt chu kỳ & chỉ số gần đây, sẵn sàng để in
+              <span className="flex-1 text-left">
+                <span className="block text-sm font-semibold text-[var(--ink)]">
+                  Báo cáo sức khỏe cho bác sĩ
+                </span>
+                <span className="block text-xs text-[var(--ink-faint)]">
+                  Tóm tắt chu kỳ & chỉ số gần đây, sẵn sàng để in
+                </span>
               </span>
-            </span>
-            <ChevronRight size={16} className="text-[var(--ink-faint)]" />
-          </Link>
+              <ChevronRight size={16} className="text-[var(--ink-faint)]" />
+            </Link>
+          </LockedFeature>
 
-          <CycleInsights cycleLogs={cycleLogs} />
+          <CycleInsights cycleLogs={cycleLogs} isVip={vip} />
         </>
       )}
 

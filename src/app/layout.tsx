@@ -37,8 +37,8 @@ export default function RootLayout({
                 <div className="flex min-h-full flex-col pb-24">
                   <AuthGate>{children}</AuthGate>
                 </div>
-                <BottomNav />
               </div>
+              <BottomNav />
             </div>
           </div>
         </Providers>

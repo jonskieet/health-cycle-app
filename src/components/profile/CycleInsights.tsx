@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import StatusPill from "@/components/ui/StatusPill";
 import EmptyState from "@/components/ui/EmptyState";
+import LockedFeature from "@/components/profile/LockedFeature";
 import { CycleLogFull } from "@/lib/queries";
 import {
   buildCycleHistory,
@@ -22,12 +23,13 @@ import {
 
 interface CycleInsightsProps {
   cycleLogs: CycleLogFull[];
+  isVip: boolean;
 }
 
 const HISTORY_PREVIEW_COUNT = 3;
 const CHART_MAX_POINTS = 6;
 
-export default function CycleInsights({ cycleLogs }: CycleInsightsProps) {
+export default function CycleInsights({ cycleLogs, isVip }: CycleInsightsProps) {
   const [showAllHistory, setShowAllHistory] = useState(false);
 
   const history = useMemo(() => buildCycleHistory(cycleLogs), [cycleLogs]);
@@ -175,56 +177,76 @@ export default function CycleInsights({ cycleLogs }: CycleInsightsProps) {
 
       {/* Đồ thị chu kỳ */}
       {chartData.length >= 2 && (
-        <section className="glass-card flex flex-col gap-4 rounded-[24px] p-5">
-          <p className="font-display text-base font-bold text-[var(--ink)]">Đồ thị chu kỳ</p>
-          <div className="h-[180px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 16, right: 12, left: -20, bottom: 0 }}>
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 10, fill: "var(--ink-faint)" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis tick={{ fontSize: 10, fill: "var(--ink-faint)" }} axisLine={false} tickLine={false} />
-                <ReferenceLine y={NORMAL_CYCLE_RANGE.min} stroke="rgba(36,27,47,0.12)" strokeDasharray="4 4" />
-                <ReferenceLine y={NORMAL_CYCLE_RANGE.max} stroke="rgba(36,27,47,0.12)" strokeDasharray="4 4" />
-                <Tooltip
-                  formatter={(value) => [`${value} ngày`, "Độ dài chu kỳ"]}
-                  contentStyle={{
-                    borderRadius: 12,
-                    border: "1px solid var(--glass-border)",
-                    fontSize: 12,
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="cycleLength"
-                  stroke="var(--c-sleep)"
-                  strokeWidth={2}
-                  dot={(props) => {
-                    const { cx, cy, payload, index: dotIndex } = props;
-                    return (
-                      <circle
-                        key={`dot-${dotIndex}`}
-                        cx={cx}
-                        cy={cy}
-                        r={5}
-                        fill={payload.abnormal ? "var(--c-period)" : "var(--c-sleep)"}
-                        stroke="white"
-                        strokeWidth={2}
-                      />
-                    );
-                  }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          <p className="text-center text-[11px] text-[var(--ink-faint)]">
-            Chấm hồng đánh dấu chu kỳ nằm ngoài phạm vi bình thường ({NORMAL_CYCLE_RANGE.min}–
-            {NORMAL_CYCLE_RANGE.max} ngày)
-          </p>
-        </section>
+        <LockedFeature locked={!isVip} title="Đồ thị chu kỳ VIP">
+          <section className="glass-card flex flex-col gap-4 rounded-[24px] p-5">
+            <p className="font-display text-base font-bold text-[var(--ink)]">Đồ thị chu kỳ</p>
+            <div className="h-[200px] w-full pt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 24, right: 16, left: -20, bottom: 0 }}>
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 10, fill: "var(--ink-faint)" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis tick={{ fontSize: 10, fill: "var(--ink-faint)" }} axisLine={false} tickLine={false} />
+                  <ReferenceLine y={NORMAL_CYCLE_RANGE.min} stroke="rgba(36,27,47,0.12)" strokeDasharray="4 4" />
+                  <ReferenceLine y={NORMAL_CYCLE_RANGE.max} stroke="rgba(36,27,47,0.12)" strokeDasharray="4 4" />
+                  <Tooltip
+                    formatter={(value) => [`${value} ngày`, "Độ dài chu kỳ"]}
+                    contentStyle={{
+                      borderRadius: 12,
+                      border: "1px solid var(--glass-border)",
+                      fontSize: 12,
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="cycleLength"
+                    stroke="var(--c-sleep)"
+                    strokeWidth={2}
+                    dot={(props) => {
+                      const { cx, cy, payload, index: dotIndex } = props;
+                      const abnormal = payload.abnormal as boolean;
+                      return (
+                        <g key={`dot-${dotIndex}`}>
+                          {abnormal && (
+                            <circle cx={cx} cy={cy} r={11} fill="var(--c-period)" opacity={0.16} />
+                          )}
+                          <circle
+                            cx={cx}
+                            cy={cy}
+                            r={5}
+                            fill={abnormal ? "var(--c-period)" : "var(--c-sleep)"}
+                            stroke="white"
+                            strokeWidth={2}
+                          />
+                          {abnormal && cy != null && (
+                            <text
+                              x={cx}
+                              y={cy - 16}
+                              textAnchor="middle"
+                              fontSize={9}
+                              fontWeight={700}
+                              letterSpacing={0.4}
+                              fill="var(--c-period)"
+                            >
+                              BẤT THƯỜNG
+                            </text>
+                          )}
+                        </g>
+                      );
+                    }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-center text-[11px] text-[var(--ink-faint)]">
+              Chấm hồng đánh dấu chu kỳ nằm ngoài phạm vi bình thường ({NORMAL_CYCLE_RANGE.min}–
+              {NORMAL_CYCLE_RANGE.max} ngày)
+            </p>
+          </section>
+        </LockedFeature>
       )}
     </>
   );
