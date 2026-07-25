@@ -28,12 +28,25 @@ const PER_MODEL_TIMEOUT_MS = 20_000;
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
+// Một số model free đôi khi trả về output rác (echo lại nhãn hệ thống, chuỗi
+// quá ngắn, không phải câu trả lời thật). Lọc các trường hợp này ra để
+// Promise.any bỏ qua và lấy kết quả của model kế tiếp thay vì hiển thị rác
+// cho người dùng.
+function isDegenerateReply(text: string): boolean {
+  const trimmed = text.trim();
+  if (trimmed.length < 15) return true;
+  if (/^(user|assistant|system)\s*[:\-]/i.test(trimmed)) return true;
+  if (/^(safety|user safety|content policy)\s*[:\-]/i.test(trimmed)) return true;
+  return false;
+}
+
 async function callOpenRouterModel(
   model: string,
   systemPrompt: string,
   messages: ChatMessage[],
   apiKey: string,
-  siteUrl: string
+  siteUrl: string,
+  strict: boolean
 ): Promise<string> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), PER_MODEL_TIMEOUT_MS);
@@ -65,6 +78,9 @@ async function callOpenRouterModel(
     if (!reply) {
       throw new Error(`OpenRouter ${model} trả về nội dung rỗng`);
     }
+    if (strict && isDegenerateReply(reply)) {
+      throw new Error(`OpenRouter ${model} trả về nội dung không hợp lệ: "${reply.slice(0, 80)}"`);
+    }
     return reply;
   } finally {
     clearTimeout(timeout);
@@ -73,7 +89,10 @@ async function callOpenRouterModel(
 
 /**
  * Gọi song song tất cả model trong danh sách, trả về kết quả của model nào
- * xong TRƯỚC TIÊN. Nếu tất cả đều lỗi/timeout, ném lỗi tổng hợp (AggregateError).
+ * xong TRƯỚC TIÊN và hợp lệ (Promise.any bỏ qua model trả rác nhờ `strict`).
+ * Nếu KHÔNG model nào cho kết quả hợp lệ, thử lại một lượt "dễ tính" (bỏ qua
+ * kiểm tra chất lượng) để vẫn có gì đó trả lời thay vì báo lỗi trắng cho
+ * người dùng — chỉ khi tất cả các lần gọi đều lỗi thật sự mới báo lỗi.
  */
 async function raceAiModels(
   systemPrompt: string,
@@ -81,13 +100,24 @@ async function raceAiModels(
   apiKey: string,
   siteUrl: string
 ): Promise<{ reply: string; model: string }> {
-  const attempts = AI_MODELS.map((model) =>
-    callOpenRouterModel(model, systemPrompt, messages, apiKey, siteUrl).then((reply) => ({
+  const strictAttempts = AI_MODELS.map((model) =>
+    callOpenRouterModel(model, systemPrompt, messages, apiKey, siteUrl, true).then((reply) => ({
       reply,
       model,
     }))
   );
-  return Promise.any(attempts);
+  try {
+    return await Promise.any(strictAttempts);
+  } catch {
+    // Lượt "dễ tính": chấp nhận cả câu trả lời chất lượng thấp, còn hơn báo lỗi.
+    const lenientAttempts = AI_MODELS.map((model) =>
+      callOpenRouterModel(model, systemPrompt, messages, apiKey, siteUrl, false).then((reply) => ({
+        reply,
+        model,
+      }))
+    );
+    return Promise.any(lenientAttempts);
+  }
 }
 
 // ---------- Rate limit tạm thời (MVP) ----------
@@ -259,7 +289,7 @@ function buildSystemPrompt(ctx: {
 
   return `Bạn là trợ lý sức khỏe chu kỳ kinh nguyệt thân thiện trong app KVCycle.
 
-Ngữ cảnh người dùng hiện tại:
+DỮ LIỆU CHU KỲ THỰC TẾ của người dùng đang trò chuyện (đã được hệ thống lấy sẵn, bạn ĐANG có quyền truy cập — không được nói bạn "không lưu dữ liệu" hay "không biết thông tin của người dùng", vì dữ liệu đã nằm ngay dưới đây):
 - Đang ở ngày thứ ${prediction.currentDay} của chu kỳ (chu kỳ trung bình ${prediction.avgCycleLength} ngày).
 - Giai đoạn hiện tại: ${phaseLabel[prediction.phase]}.
 - Kỳ kinh tiếp theo dự kiến trong ${daysToNextPeriod} ngày nữa.
@@ -267,11 +297,15 @@ Ngữ cảnh người dùng hiện tại:
 - ${symptomsLine}
 ${metricsLine ? `- ${metricsLine}` : ""}
 
+Cách trả lời:
+- LUÔN chủ động dùng dữ liệu ở trên để cá nhân hóa câu trả lời — nêu cụ thể ngày thứ mấy, giai đoạn nào, hoặc triệu chứng nào liên quan, thay vì trả lời chung chung như thể không biết gì về người dùng.
+- Nếu câu hỏi có thể liên quan tới cảnh báo/rủi ro (ví dụ trễ kinh nhiều ngày, triệu chứng bất thường lặp lại), hãy chủ động chỉ ra điều đó dựa trên dữ liệu, kèm mức độ cần lưu ý.
+- Nếu dữ liệu chưa đủ để trả lời chính xác (ví dụ chưa có triệu chứng ghi nhận), nói rõ đang thiếu phần dữ liệu nào, đừng phủ nhận việc có quyền truy cập dữ liệu.
+
 Ràng buộc an toàn bắt buộc:
 - Không chẩn đoán bệnh, không kê đơn hoặc liều thuốc cụ thể.
 - Luôn khuyên người dùng gặp bác sĩ nếu có triệu chứng nghiêm trọng hoặc bất thường (chảy máu nhiều bất thường, đau dữ dội, chậm kinh nghi ngờ mang thai, v.v.).
 - Trả lời ngắn gọn, khoảng 3-6 câu.
 - Giọng điệu ấm áp, đồng cảm, gần gũi.
-- Luôn trả lời bằng tiếng Việt.
-- Câu trả lời nên tham chiếu đến ngữ cảnh chu kỳ hiện tại của người dùng khi phù hợp, thay vì chỉ trả lời chung chung.`;
+- Luôn trả lời bằng tiếng Việt.`;
 }
