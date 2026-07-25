@@ -40,6 +40,19 @@ function isDegenerateReply(text: string): boolean {
   return false;
 }
 
+// Lưới an toàn: dù đã dặn trong prompt, một số model free vẫn thỉnh thoảng chèn
+// markdown (**, #, gạch đầu dòng, backtick). Khung chat hiển thị text thuần nên
+// bóc các ký hiệu này ra để không lộ ký tự thừa cho người dùng.
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^[-*]\s+/gm, "")
+    .replace(/`([^`]*)`/g, "$1")
+    .trim();
+}
+
 async function callOpenRouterModel(
   model: string,
   systemPrompt: string,
@@ -236,7 +249,7 @@ export async function POST(req: NextRequest) {
 
     try {
       const { reply } = await raceAiModels(systemPrompt, messages, apiKey, siteUrl);
-      return NextResponse.json({ reply });
+      return NextResponse.json({ reply: stripMarkdown(reply) });
     } catch (err) {
       // Tất cả model đều lỗi/timeout (Promise.any -> AggregateError).
       if (err instanceof AggregateError) {
@@ -301,6 +314,7 @@ Cách trả lời:
 - LUÔN chủ động dùng dữ liệu ở trên để cá nhân hóa câu trả lời — nêu cụ thể ngày thứ mấy, giai đoạn nào, hoặc triệu chứng nào liên quan, thay vì trả lời chung chung như thể không biết gì về người dùng.
 - Nếu câu hỏi có thể liên quan tới cảnh báo/rủi ro (ví dụ trễ kinh nhiều ngày, triệu chứng bất thường lặp lại), hãy chủ động chỉ ra điều đó dựa trên dữ liệu, kèm mức độ cần lưu ý.
 - Nếu dữ liệu chưa đủ để trả lời chính xác (ví dụ chưa có triệu chứng ghi nhận), nói rõ đang thiếu phần dữ liệu nào, đừng phủ nhận việc có quyền truy cập dữ liệu.
+- CHỈ dùng văn bản thuần, TUYỆT ĐỐI không dùng markdown (không **, không #, không dấu gạch đầu dòng -, không backtick). Khung chat hiển thị dạng chữ thường, ký hiệu markdown sẽ hiện nguyên si rất xấu.
 
 Ràng buộc an toàn bắt buộc:
 - Không chẩn đoán bệnh, không kê đơn hoặc liều thuốc cụ thể.
