@@ -9,16 +9,17 @@ export const runtime = "nodejs";
 // nhanh nhất sẽ được dùng làm câu trả lời (Promise.any). Các request còn lại
 // vẫn chạy nền nhưng kết quả bị bỏ qua.
 //
-// LƯU Ý: danh sách model free trên OpenRouter thay đổi liên tục — model bị gỡ
-// hoặc đổi ID mà không báo trước. Nếu thấy lỗi "model không tồn tại", vào
-// https://openrouter.ai/models?max_price=0 để lấy ID mới nhất và cập nhật
-// biến môi trường AI_MODELS (phân cách bằng dấu phẩy) trong .env.local.
-const DEFAULT_FREE_MODELS = [
-  "qwen/qwen3-235b-a22b:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
-  "z-ai/glm-4.5-air:free",
-  "nousresearch/hermes-3-llama-3.1-405b:free",
-];
+// Mặc định dùng "openrouter/free" — một router đặc biệt của OpenRouter tự
+// chọn NGẪU NHIÊN một model free đang khả dụng cho mỗi lần gọi. Nhờ vậy
+// không bao giờ bị lỗi 404 "model đã ngừng free" như khi hard-code ID cụ
+// thể (ID model free hay bị đổi/gỡ mà không báo trước). Gọi 4 lần song song
+// vẫn có giá trị: mỗi lần router có thể chọn model khác nhau, và request
+// nào xong trước sẽ thắng.
+//
+// Muốn chỉ định đích danh model cụ thể (ví dụ để tối ưu chất lượng), đặt
+// biến môi trường AI_MODELS (phân cách bằng dấu phẩy) — nhớ kiểm tra ID còn
+// tồn tại bản free tại https://openrouter.ai/models?max_price=0 trước khi dùng.
+const DEFAULT_FREE_MODELS = ["openrouter/free", "openrouter/free", "openrouter/free", "openrouter/free"];
 const AI_MODELS =
   process.env.AI_MODELS?.split(",").map((m) => m.trim()).filter(Boolean) || DEFAULT_FREE_MODELS;
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
