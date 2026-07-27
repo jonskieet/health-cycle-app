@@ -169,13 +169,18 @@ export default function AppDatePicker(props: Props) {
 
       {open && (
         <div
-          className="fixed inset-0 z-40 flex items-end justify-center bg-black/30"
+          className="fixed inset-0 z-40 flex items-end justify-center bg-black/55 backdrop-blur-[2px]"
           onClick={() => setOpen(false)}
         >
           <div
-            className="glass-card-strong flex w-full max-w-md flex-col gap-4 rounded-t-[28px] p-6"
+            className="flex w-full max-w-md flex-col gap-4 rounded-t-[28px] p-6 pt-3"
+            style={{
+              background: "var(--surface)",
+              boxShadow: "0 -8px 40px -8px rgba(36,27,47,0.35)",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
+            <div className="mx-auto h-1 w-10 rounded-full" style={{ background: "var(--ink-faint)", opacity: 0.4 }} />
             <div className="flex items-center justify-between">
               <h3 className="font-display text-sm font-bold text-[var(--ink)]">
                 {isRange

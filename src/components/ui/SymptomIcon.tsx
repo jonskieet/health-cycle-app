@@ -31,21 +31,31 @@ export default function SymptomIcon({
   active?: boolean;
 }) {
   const tint = CATEGORY_TINT[category];
-  const dims = size === "sm" ? 28 : size === "lg" ? 56 : 40;
-  const iconSize = size === "sm" ? 14 : size === "lg" ? 26 : 18;
+  // Kích thước lớn hơn bản cũ + nền dạng "blob" 2 lớp màu (thay vì 1 khối
+  // tròn phẳng) để trông giống 1 minh hoạ nhỏ hơn là 1 icon chip UI thông
+  // thường. Đây vẫn là bước đệm bằng lucide-react (xem ghi chú đầu file) —
+  // nhưng đã đủ khác biệt về cảm giác thị giác so với các nút bấm khác.
+  const dims = size === "sm" ? 34 : size === "lg" ? 72 : 48;
+  const iconSize = size === "sm" ? 16 : size === "lg" ? 32 : 22;
 
   return (
     <span
-      className="flex shrink-0 items-center justify-center rounded-full transition-transform"
+      className="relative flex shrink-0 items-center justify-center transition-transform"
       style={{
         width: dims,
         height: dims,
-        background: active ? tint.fg : tint.bg,
+        borderRadius: "42% 58% 55% 45% / 45% 42% 58% 55%",
+        background: active
+          ? `linear-gradient(150deg, ${tint.fg}, ${tint.fg}cc)`
+          : `linear-gradient(150deg, ${tint.bg}, ${tint.bg})`,
+        boxShadow: active
+          ? `0 4px 14px -4px ${tint.fg}88`
+          : "0 1px 3px rgba(36,27,47,0.06)",
         color: active ? "#fff" : tint.fg,
-        transform: active ? "scale(1.06)" : "scale(1)",
+        transform: active ? "scale(1.08) rotate(-2deg)" : "scale(1)",
       }}
     >
-      <Icon size={iconSize} strokeWidth={2.1} />
+      <Icon size={iconSize} strokeWidth={2} />
     </span>
   );
 }

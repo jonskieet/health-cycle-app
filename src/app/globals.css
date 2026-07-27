@@ -17,6 +17,11 @@
   --glass: rgba(255, 255, 255, 0.68);
   --glass-strong: rgba(255, 255, 255, 0.86);
   --glass-border: rgba(255, 255, 255, 0.9);
+  /* Solid (non-transparent) surface — dùng cho modal/sheet cần chữ rõ, không
+     bị nội dung phía sau "xuyên" qua như glass-card (P10 fix: date picker
+     modal trong suốt khó nhìn). */
+  --surface: #ffffff;
+  --surface-soft: #faf9fc;
 
   /* Accents per metric */
   --c-stress: #f4a261;
@@ -52,6 +57,8 @@
   --glass: rgba(38, 30, 54, 0.6);
   --glass-strong: rgba(38, 30, 54, 0.82);
   --glass-border: rgba(255, 255, 255, 0.08);
+  --surface: #241a30;
+  --surface-soft: #2c2240;
 
   --background: var(--aurora-a);
   --foreground: var(--ink);
