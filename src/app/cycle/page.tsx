@@ -9,6 +9,7 @@ import PhaseOutlook from "@/components/cycle/PhaseOutlook";
 import DailyInsights from "@/components/cycle/DailyInsights";
 import HealthCheckIns from "@/components/cycle/HealthCheckIns";
 import AiChatSheet from "@/components/cycle/AiChatSheet";
+import AbnormalCycleBanner from "@/components/cycle/AbnormalCycleBanner";
 import EmptyState from "@/components/ui/EmptyState";
 import CycleLogForm from "@/components/log/CycleLogForm";
 import { useCycleLogs, useProfile, CycleLogFull } from "@/lib/queries";
@@ -52,6 +53,8 @@ export default function CyclePage() {
         />
       ) : (
         <>
+          <AbnormalCycleBanner cycleLogs={cycleLogs} />
+
           <section className="glass-card-strong flex flex-col items-center gap-3 rounded-[28px] p-6 text-center">
             <AuroraRing percent={ringPercent} colorFrom={phaseColor[prediction.phase]} colorTo="var(--c-fertile)" size={160}>
               <span className="text-xs text-[var(--ink-faint)]">Ngày</span>
@@ -77,6 +80,16 @@ export default function CyclePage() {
                 </p>
               </div>
             </div>
+
+            {profile?.usage_goal === "conceive" && (
+              <p
+                className="w-full rounded-2xl px-3 py-2.5 text-center text-xs font-medium"
+                style={{ background: "color-mix(in srgb, var(--c-fertile) 18%, white)", color: "var(--ink)" }}
+              >
+                🌷 Cửa sổ thụ thai: {prediction.fertileWindow.start.toLocaleDateString("vi-VN")} –{" "}
+                {prediction.fertileWindow.end.toLocaleDateString("vi-VN")}
+              </p>
+            )}
           </section>
 
           <CycleCalendar prediction={prediction} />

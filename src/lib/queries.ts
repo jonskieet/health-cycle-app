@@ -8,6 +8,8 @@ import { computeHealthScore } from "@/lib/health-score";
 
 // ---------- Profile ----------
 
+export type UsageGoal = "track" | "conceive" | "avoid";
+
 export interface Profile {
   id: string;
   display_name: string | null;
@@ -19,6 +21,9 @@ export interface Profile {
   onboarded: boolean;
   is_vip: boolean;
   vip_activated_at: string | null;
+  usage_goal: UsageGoal | null;
+  notifications_enabled: boolean;
+  metric_units: boolean;
 }
 
 export function useProfile() {

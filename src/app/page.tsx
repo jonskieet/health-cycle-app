@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import MetricCard from "@/components/ui/MetricCard";
 import AuroraRing from "@/components/ui/AuroraRing";
 import EmptyState from "@/components/ui/EmptyState";
+import AbnormalCycleBanner from "@/components/cycle/AbnormalCycleBanner";
 import {
   useHealthMetrics,
   useCycleLogs,
@@ -75,6 +76,8 @@ export default function DashboardPage() {
           </p>
         </div>
       </section>
+
+      {cycleLogs.length > 0 && <AbnormalCycleBanner cycleLogs={cycleLogs} />}
 
       {/* Cycle teaser card */}
       <Link href="/cycle" className="glass-card flex items-center justify-between rounded-[24px] p-5">

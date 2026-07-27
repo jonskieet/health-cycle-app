@@ -16,8 +16,13 @@ import {
   ShieldCheck,
   LogOut,
   CalendarClock,
+  Heart,
+  Baby,
+  ShieldOff,
+  Check,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { useProfile, useUpdateProfile, UsageGoal } from "@/lib/queries";
 import Switch from "@/components/ui/Switch";
 import SettingsRow from "@/components/ui/SettingsRow";
 
@@ -34,13 +39,41 @@ function SettingsSection({ title, children }: { title: string; children: React.R
   );
 }
 
+const GOAL_OPTIONS: { value: UsageGoal; label: string; icon: typeof Heart }[] = [
+  { value: "track", label: "Theo dõi chu kỳ", icon: Heart },
+  { value: "conceive", label: "Mong có thai", icon: Baby },
+  { value: "avoid", label: "Tránh thai", icon: ShieldOff },
+];
+
+const GOAL_LABEL: Record<UsageGoal, string> = {
+  track: "Theo dõi chu kỳ của bạn",
+  conceive: "Mong có thai",
+  avoid: "Tránh thai",
+};
+
 export default function SettingsPage() {
   const router = useRouter();
   const { signOut } = useAuth();
+  const { data: profile } = useProfile();
+  const updateProfile = useUpdateProfile();
 
-  // Các tuỳ chọn giao diện cơ bản — lưu cục bộ trong phiên, chưa đồng bộ backend.
-  const [notifications, setNotifications] = useState(true);
-  const [metricUnits, setMetricUnits] = useState(true);
+  const [goalPickerOpen, setGoalPickerOpen] = useState(false);
+
+  const notifications = profile?.notifications_enabled ?? true;
+  const metricUnits = profile?.metric_units ?? true;
+
+  function handleToggleNotifications(next: boolean) {
+    updateProfile.mutate({ notifications_enabled: next });
+  }
+
+  function handleToggleUnits(next: boolean) {
+    updateProfile.mutate({ metric_units: next });
+  }
+
+  function handleSelectGoal(goal: UsageGoal) {
+    updateProfile.mutate({ usage_goal: goal });
+    setGoalPickerOpen(false);
+  }
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-5 pt-8">
@@ -57,20 +90,20 @@ export default function SettingsPage() {
       </div>
 
       <SettingsSection title="Cài đặt ứng dụng">
-        <SettingsRow icon={Palette} label="Chủ đề" subtitle="Sáng" color="var(--c-sleep)" />
+        <SettingsRow icon={Palette} label="Chủ đề" subtitle="Sáng (mặc định)" color="var(--c-sleep)" />
         <SettingsRow
           icon={Bell}
           label="Thông báo"
           subtitle={notifications ? "Đang bật" : "Đang tắt"}
           color="var(--c-heart)"
-          right={<Switch checked={notifications} onChange={setNotifications} label="Thông báo" />}
+          right={<Switch checked={notifications} onChange={handleToggleNotifications} label="Thông báo" />}
         />
         <SettingsRow
           icon={Ruler}
           label="Hệ mét"
           subtitle={metricUnits ? "cm, kg" : "inch, lb"}
           color="var(--c-hydration)"
-          right={<Switch checked={metricUnits} onChange={setMetricUnits} label="Hệ mét" />}
+          right={<Switch checked={metricUnits} onChange={handleToggleUnits} label="Hệ mét" />}
         />
       </SettingsSection>
 
@@ -78,8 +111,9 @@ export default function SettingsPage() {
         <SettingsRow
           icon={Target}
           label="Mục đích"
-          subtitle="Theo dõi chu kỳ của bạn"
+          subtitle={profile?.usage_goal ? GOAL_LABEL[profile.usage_goal] : "Chưa chọn"}
           color="var(--c-mood)"
+          onClick={() => setGoalPickerOpen(true)}
         />
         <Link href="/profile" className="flex w-full items-center gap-3 px-1 py-3 text-left">
           <span
@@ -119,6 +153,50 @@ export default function SettingsPage() {
       <SettingsSection title="Tài khoản">
         <SettingsRow icon={LogOut} label="Đăng xuất" tone="danger" onClick={signOut} />
       </SettingsSection>
+
+      {goalPickerOpen && (
+        <div
+          className="fixed inset-0 z-30 flex items-end justify-center bg-black/30"
+          onClick={() => setGoalPickerOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-card-strong flex w-full max-w-md flex-col gap-3 rounded-t-[28px] p-6"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-lg font-bold text-[var(--ink)]">Mục đích sử dụng</h2>
+              <button
+                type="button"
+                onClick={() => setGoalPickerOpen(false)}
+                className="rounded-full p-1.5 hover:bg-black/5"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            {GOAL_OPTIONS.map(({ value, label, icon: Icon }) => {
+              const active = profile?.usage_goal === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => handleSelectGoal(value)}
+                  className="flex items-center gap-3 rounded-2xl p-3 text-left"
+                  style={{ background: active ? "rgba(124,111,240,0.12)" : "rgba(0,0,0,0.03)" }}
+                >
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
+                    style={{ background: "var(--c-sleep)" }}
+                  >
+                    <Icon size={16} />
+                  </span>
+                  <span className="flex-1 text-sm font-semibold text-[var(--ink)]">{label}</span>
+                  {active && <Check size={16} style={{ color: "var(--c-sleep)" }} />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

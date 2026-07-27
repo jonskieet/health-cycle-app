@@ -3,17 +3,11 @@
 import { useState } from "react";
 import { X, Loader2, Trash2 } from "lucide-react";
 import { useAddCycleLog, useUpdateCycleLog, useDeleteCycleLog, CycleLogFull } from "@/lib/queries";
-
-const SYMPTOM_OPTIONS = [
-  "Đau bụng",
-  "Đau đầu",
-  "Nổi mụn",
-  "Đau lưng",
-  "Mệt mỏi",
-  "Đầy hơi",
-  "Căng ngực",
-  "Thay đổi tâm trạng",
-];
+import {
+  SYMPTOM_CATEGORIES,
+  SYMPTOM_CATEGORY_LABELS,
+  getSymptomsByCategory,
+} from "@/lib/symptoms";
 
 export default function CycleLogForm({
   onClose,
@@ -31,6 +25,7 @@ export default function CycleLogForm({
   const [endDate, setEndDate] = useState(editLog?.end_date ?? "");
   const [flow, setFlow] = useState<"light" | "medium" | "heavy">(editLog?.flow ?? "medium");
   const [symptoms, setSymptoms] = useState<string[]>(editLog?.symptoms ?? []);
+  const [activeCategory, setActiveCategory] = useState(SYMPTOM_CATEGORIES[0]);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const isEdit = !!editLog;
@@ -127,22 +122,72 @@ export default function CycleLogForm({
 
         <div>
           <span className="text-xs font-medium text-[var(--ink-soft)]">Triệu chứng</span>
-          <div className="mt-1.5 flex flex-wrap gap-2">
-            {SYMPTOM_OPTIONS.map((s) => (
+
+          <div className="mt-1.5 flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+            {SYMPTOM_CATEGORIES.map((cat) => {
+              const count = symptoms.filter(
+                (s) => getSymptomsByCategory(cat).some((d) => d.id === s)
+              ).length;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setActiveCategory(cat)}
+                  className="flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold"
+                  style={{
+                    background: activeCategory === cat ? "var(--c-sleep)" : "rgba(0,0,0,0.03)",
+                    color: activeCategory === cat ? "#fff" : "var(--ink-soft)",
+                  }}
+                >
+                  {SYMPTOM_CATEGORY_LABELS[cat]}
+                  {count > 0 && (
+                    <span
+                      className="flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px]"
+                      style={{
+                        background: activeCategory === cat ? "rgba(255,255,255,0.3)" : "var(--c-sleep)",
+                        color: "#fff",
+                      }}
+                    >
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-2 flex flex-wrap gap-2">
+            {getSymptomsByCategory(activeCategory).map(({ id, label, icon: Icon }) => (
               <button
-                key={s}
+                key={id}
                 type="button"
-                onClick={() => toggleSymptom(s)}
-                className="rounded-full px-3 py-1.5 text-xs font-medium"
+                onClick={() => toggleSymptom(id)}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
                 style={{
-                  background: symptoms.includes(s) ? "var(--c-fertile)" : "rgba(0,0,0,0.03)",
-                  color: symptoms.includes(s) ? "#fff" : "var(--ink-soft)",
+                  background: symptoms.includes(id) ? "var(--c-fertile)" : "rgba(0,0,0,0.03)",
+                  color: symptoms.includes(id) ? "#fff" : "var(--ink-soft)",
                 }}
               >
-                {s}
+                <Icon size={13} />
+                {label}
               </button>
             ))}
           </div>
+
+          {symptoms.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5 border-t border-black/[0.05] pt-3">
+              <span className="text-[11px] text-[var(--ink-faint)]">Đã chọn ({symptoms.length}):</span>
+              {symptoms.map((s) => (
+                <span
+                  key={s}
+                  className="rounded-full px-2 py-0.5 text-[11px] font-medium"
+                  style={{ background: "var(--c-fertile)", color: "#fff" }}
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         <button
