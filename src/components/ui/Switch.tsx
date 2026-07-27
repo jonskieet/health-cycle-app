@@ -17,8 +17,8 @@ export default function Switch({ checked, onChange, label }: SwitchProps) {
       style={{ background: checked ? "var(--c-sleep)" : "rgba(36,27,47,0.14)" }}
     >
       <span
-        className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform"
-        style={{ transform: checked ? "translateX(21px)" : "translateX(2px)" }}
+        className="absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-[left]"
+        style={{ left: checked ? "21px" : "2px" }}
       />
     </button>
   );
