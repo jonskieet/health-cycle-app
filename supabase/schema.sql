@@ -83,7 +83,7 @@ create table if not exists public.health_metrics (
 alter table public.health_metrics add column if not exists user_id uuid references auth.users (id) on delete cascade;
 alter table public.health_metrics add column if not exists metric_type text;
 alter table public.health_metrics add column if not exists value numeric;
-alter table public.health_metrics add column if not exists logged_at date not null default current_date;
+alter table public.health_metrics add column if not exists recorded_date date not null default current_date;
 alter table public.health_metrics add column if not exists note text;
 alter table public.health_metrics add column if not exists created_at timestamptz not null default now();
 
@@ -104,14 +104,14 @@ alter table public.health_metrics alter column value set not null;
 
 do $$ begin
   alter table public.health_metrics
-    add constraint health_metrics_user_type_date_key unique (user_id, metric_type, logged_at);
+    add constraint health_metrics_user_type_date_key unique (user_id, metric_type, recorded_date);
 exception
   when duplicate_object then null;
   when duplicate_table then null;
 end $$;
 
 create index if not exists health_metrics_user_type_date_idx
-  on public.health_metrics (user_id, metric_type, logged_at desc);
+  on public.health_metrics (user_id, metric_type, recorded_date desc);
 
 -- ---------- appointments ----------
 create table if not exists public.appointments (
