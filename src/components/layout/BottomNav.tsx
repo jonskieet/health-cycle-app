@@ -21,7 +21,8 @@ export default function BottomNav() {
     pathname === "/settings" ||
     pathname === "/upgrade" ||
     pathname === "/kegel" ||
-    pathname === "/fatigue-test"
+    pathname === "/fatigue-test" ||
+    pathname.startsWith("/library/")
   )
     return null;
 

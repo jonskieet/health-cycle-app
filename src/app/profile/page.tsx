@@ -12,6 +12,7 @@ import {
   FileText,
   HeartPulse,
   Battery,
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useProfile, useUpdateProfile, useCycleLogs } from "@/lib/queries";
@@ -205,6 +206,22 @@ export default function ProfilePage() {
           <ChevronRight size={16} className="text-[var(--ink-faint)]" />
         </Link>
       </LockedFeature>
+
+      <Link href="/library" className="glass-card flex items-center gap-3 rounded-[22px] p-4">
+        <span
+          className="flex h-9 w-9 items-center justify-center rounded-full text-white"
+          style={{ background: "var(--c-sleep)" }}
+        >
+          <BookOpen size={16} />
+        </span>
+        <span className="flex-1 text-left">
+          <span className="block text-sm font-semibold text-[var(--ink)]">Thư viện kiến thức</span>
+          <span className="block text-xs text-[var(--ink-faint)]">
+            Bài viết về chu kỳ, dinh dưỡng, khả năng sinh sản
+          </span>
+        </span>
+        <ChevronRight size={16} className="text-[var(--ink-faint)]" />
+      </Link>
 
       <Link href="/appointments" className="glass-card flex items-center gap-3 rounded-[22px] p-4">
         <span
