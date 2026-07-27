@@ -191,10 +191,10 @@ export function useHealthMetrics() {
       since.setDate(since.getDate() - 6);
       const { data, error } = await supabase
         .from("health_metrics")
-        .select("id, metric_type, value, logged_at")
+        .select("id, metric_type, value, logged_at:recorded_date")
         .eq("user_id", user!.id)
-        .gte("logged_at", since.toISOString().slice(0, 10))
-        .order("logged_at", { ascending: true });
+        .gte("recorded_date", since.toISOString().slice(0, 10))
+        .order("recorded_date", { ascending: true });
       if (error) throwSupabaseError(error);
       return data ?? [];
     },
@@ -214,11 +214,11 @@ export function useMetricTrend(type: MetricType, days: number = 90) {
       since.setDate(since.getDate() - (days - 1));
       const { data, error } = await supabase
         .from("health_metrics")
-        .select("id, metric_type, value, logged_at")
+        .select("id, metric_type, value, logged_at:recorded_date")
         .eq("user_id", user!.id)
         .eq("metric_type", type)
-        .gte("logged_at", since.toISOString().slice(0, 10))
-        .order("logged_at", { ascending: true });
+        .gte("recorded_date", since.toISOString().slice(0, 10))
+        .order("recorded_date", { ascending: true });
       if (error) throwSupabaseError(error);
       return data ?? [];
     },
@@ -241,10 +241,10 @@ export function useLogMetric() {
           user_id: user!.id,
           metric_type: input.metric_type,
           value: input.value,
-          logged_at,
+          recorded_date: logged_at,
           note: input.note,
         },
-        { onConflict: "user_id,metric_type,logged_at" }
+        { onConflict: "user_id,metric_type,recorded_date" }
       );
       if (error) throwSupabaseError(error);
     },
@@ -613,9 +613,9 @@ export async function fetchAllUserDataForExport(userId: string) {
         .order("start_date", { ascending: false }),
       supabase
         .from("health_metrics")
-        .select("id, metric_type, value, logged_at")
+        .select("id, metric_type, value, logged_at:recorded_date")
         .eq("user_id", userId)
-        .order("logged_at", { ascending: false }),
+        .order("recorded_date", { ascending: false }),
       supabase
         .from("appointments")
         .select("id, title, doctor_name, appointment_at, note")
