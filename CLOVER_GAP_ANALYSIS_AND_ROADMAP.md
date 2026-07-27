@@ -142,52 +142,52 @@ Ký hiệu: ✅ Đã có · ⚠️ Có khung nhưng chưa đủ sâu · ❌ Chư
 - Nếu thay đổi code trong `server/` hoặc cần deploy backend riêng — dự án này không có thư mục `server/` (Next.js full-stack), nên deploy là qua Vercel/hosting Next.js bình thường, không áp dụng quy trình git push riêng cho `server/`.
 
 ### Module 1 — Chuẩn hoá triệu chứng & cảnh báo PMS
-- [ ] Định nghĩa danh sách triệu chứng chuẩn có nhóm (thể chất: đau bụng, đau đầu, đau lưng...; tâm trạng: cáu gắt, lo âu...; khác: thèm ăn, mất ngủ...) trong `src/lib/symptoms.ts` mới, mỗi item có `id`, `label`, `group`, `icon`.
-- [ ] Cập nhật `CycleLogForm.tsx` dùng danh sách chuẩn thay vì text tự do (giữ khả năng thêm ghi chú tự do song song).
-- [ ] Thêm banner cảnh báo trong `PhaseOutlook.tsx` hoặc trang `/cycle` khi `abnormalCycle`/`abnormalPeriod`/`irregular` = true (đã có sẵn logic trong `cycle-utils.ts`, chỉ thiếu UI).
+- [x] Định nghĩa danh sách triệu chứng chuẩn có nhóm (thể chất: đau bụng, đau đầu, đau lưng...; tâm trạng: cáu gắt, lo âu...; khác: thèm ăn, mất ngủ...) trong `src/lib/symptoms.ts` mới, mỗi item có `id`, `label`, `group`, `icon`.
+- [x] Cập nhật `CycleLogForm.tsx` dùng danh sách chuẩn thay vì text tự do (giữ khả năng thêm ghi chú tự do song song).
+- [x] Thêm banner cảnh báo trong `PhaseOutlook.tsx` hoặc trang `/cycle` khi `abnormalCycle`/`abnormalPeriod`/`irregular` = true (đã có sẵn logic trong `cycle-utils.ts`, chỉ thiếu UI). — làm ở entry Module 4/N1 trong nhật ký, dùng chung `AbnormalCycleBanner.tsx`.
 
 ### Module 2 — Hệ thống nhắc nhở (Reminders)
-- [ ] Thêm bảng `reminders` vào `supabase/schema.sql`: `id, user_id, type (period_upcoming/log_daily/medication/custom), enabled, lead_days, time_of_day, created_at`.
-- [ ] Quyết định kênh gửi: web app không có push notification native dễ dàng như mobile — đề xuất dùng **Web Push API (service worker)** hoặc đơn giản hơn là **in-app banner + email** (qua Supabase Edge Function/cron). Ghi rõ lựa chọn cuối cùng vào nhật ký.
-- [ ] UI cấu hình reminder trong `/settings`.
+- [x] Thêm bảng `reminders` vào `supabase/schema.sql`: `id, user_id, type (period_upcoming/log_daily/medication/custom), enabled, lead_days, time_of_day, created_at`.
+- [x] Quyết định kênh gửi: web app không có push notification native dễ dàng như mobile — đề xuất dùng **Web Push API (service worker)** hoặc đơn giản hơn là **in-app banner + email** (qua Supabase Edge Function/cron). Ghi rõ lựa chọn cuối cùng vào nhật ký. — đã chọn in-app banner, xem lý do trong entry Module 2.
+- [x] UI cấu hình reminder trong `/settings`.
 
 ### Module 3 — Theo dõi cân nặng & nhiệt độ cơ bản (BBT)
-- [ ] Mở rộng `MetricType` trong `queries.ts` và constraint `health_metrics_type_check` trong schema: thêm `'weight'`, `'bbt'`.
-- [ ] Thêm form nhập trong `MetricLogForm.tsx`.
-- [ ] Thêm biểu đồ xu hướng cân nặng/BBT (tái sử dụng `MiniBars.tsx` hoặc thêm chart mới).
-- [ ] BBT ảnh hưởng dự đoán rụng trứng — **không bắt buộc** phải tích hợp vào `predictCycle()` ngay, có thể để giai đoạn 2; nếu tích hợp, note rõ thuật toán dùng (vd: phát hiện tăng nhiệt 0.3-0.5°C sau rụng trứng).
+- [x] Mở rộng `MetricType` trong `queries.ts` và constraint `health_metrics_type_check` trong schema: thêm `'weight'`, `'bbt'`.
+- [x] Thêm form nhập trong `MetricLogForm.tsx`.
+- [x] Thêm biểu đồ xu hướng cân nặng/BBT (tái sử dụng `MiniBars.tsx` hoặc thêm chart mới).
+- [ ] BBT ảnh hưởng dự đoán rụng trứng — **không bắt buộc** phải tích hợp vào `predictCycle()` ngay, có thể để giai đoạn 2; nếu tích hợp, note rõ thuật toán dùng (vd: phát hiện tăng nhiệt 0.3-0.5°C sau rụng trứng). — CHƯA làm, đúng như ghi chú "không bắt buộc"; để lại cho agent sau nếu chủ dự án muốn giai đoạn 2.
 
 ### Module 4 — Xuất báo cáo PDF cho bác sĩ (VIP)
-- [ ] Tạo `src/lib/export-report.ts`: build dữ liệu báo cáo từ `buildCycleHistory()` + `summarizeCycleHistory()` + health metrics.
-- [ ] Dùng thư viện PDF phía client (vd: `@react-pdf/renderer` hoặc `jspdf`) để xuất file — kiểm tra `package.json` xem đã có lib PDF chưa trước khi thêm mới.
-- [ ] Khoá tính năng bằng `LockedFeature`/`isVipProfile()`.
-- [ ] Nút "Xuất báo cáo" đặt ở `/profile/report`.
+- [x] Tạo `src/lib/export-report.ts`: build dữ liệu báo cáo từ `buildCycleHistory()` + `summarizeCycleHistory()` + health metrics.
+- [x] Dùng thư viện PDF phía client (vd: `@react-pdf/renderer` hoặc `jspdf`) để xuất file — kiểm tra `package.json` xem đã có lib PDF chưa trước khi thêm mới.
+- [x] Khoá tính năng bằng `LockedFeature`/`isVipProfile()`.
+- [x] Nút "Xuất báo cáo" đặt ở `/profile/report`.
 
 ### Module 5 — Event/Correlation Analysis (VIP)
-- [ ] Cho phép user chọn 2 metric (vd: stress vs sleep, hoặc 1 metric vs 1 triệu chứng) và hiển thị biểu đồ chồng theo trục thời gian/theo ngày-trong-chu-kỳ.
-- [ ] Tạo `src/lib/correlation.ts`: hàm thuần tính alignment dữ liệu 2 chuỗi theo ngày.
-- [ ] Component mới `src/components/profile/CorrelationChart.tsx`.
-- [ ] Khoá VIP.
+- [x] Cho phép user chọn 2 metric (vd: stress vs sleep, hoặc 1 metric vs 1 triệu chứng) và hiển thị biểu đồ chồng theo trục thời gian/theo ngày-trong-chu-kỳ.
+- [x] Tạo `src/lib/correlation.ts`: hàm thuần tính alignment dữ liệu 2 chuỗi theo ngày.
+- [x] Component mới `src/components/profile/CorrelationChart.tsx`.
+- [x] Khoá VIP.
 
 ### Module 6 — Symptom Analysis chuyên sâu (VIP)
-- [ ] Thống kê tần suất từng triệu chứng theo pha chu kỳ (dùng taxonomy từ Module 1) qua nhiều chu kỳ.
-- [ ] Hiển thị dạng bar chart "triệu chứng nào xuất hiện nhiều nhất ở pha nào".
-- [ ] Khoá VIP, đặt trong `/profile` hoặc `/profile/report`.
+- [x] Thống kê tần suất từng triệu chứng theo pha chu kỳ (dùng taxonomy từ Module 1) qua nhiều chu kỳ.
+- [x] Hiển thị dạng bar chart "triệu chứng nào xuất hiện nhiều nhất ở pha nào".
+- [x] Khoá VIP, đặt trong `/profile` hoặc `/profile/report`.
 
 ### Module 7 — Thư viện nội dung giáo dục
 - [x] Thêm bảng `articles` (nếu muốn quản trị nội dung động) hoặc mở rộng file tĩnh `cycle-insights.ts` thành danh mục lớn hơn có phân loại + trang danh sách `/library` hoặc `/insights`.
 - [x] Free: xem giới hạn số bài/tháng hoặc chỉ xem preview; VIP: xem toàn bộ — dùng lại `LockedFeature`.
 
 ### Module 8 — Onboarding quiz mở rộng
-- [ ] Xem lại `src/app/onboarding/page.tsx` hiện tại, bổ sung câu hỏi "mục tiêu sử dụng" (theo dõi thường / mong có thai / tránh thai) → lưu vào `profiles` (thêm cột `usage_goal`).
-- [ ] Dùng mục tiêu này để cá nhân hoá nội dung insight (vd: nếu goal = "mong có thai" thì nhấn mạnh cửa sổ thụ thai, BBT).
+- [x] Xem lại `src/app/onboarding/page.tsx` hiện tại, bổ sung câu hỏi "mục tiêu sử dụng" (theo dõi thường / mong có thai / tránh thai) → lưu vào `profiles` (thêm cột `usage_goal`).
+- [x] Dùng mục tiêu này để cá nhân hoá nội dung insight (vd: nếu goal = "mong có thai" thì nhấn mạnh cửa sổ thụ thai, BBT). — chỉ mới áp dụng ở cửa sổ thụ thai trên `/cycle` (xem "còn thiếu" ở entry Module 8), `DailyInsights`/`cycle-insights.ts` chưa cá nhân hoá theo goal.
 
 ### Module 9 — Kegel Trainer (VIP)
-- [ ] Component timer bài tập đơn giản (không cần dữ liệu Supabase phức tạp, có thể lưu lịch sử tập vào bảng `kegel_sessions` nếu muốn theo dõi).
-- [ ] Trang riêng hoặc modal, khoá VIP.
+- [x] Component timer bài tập đơn giản (không cần dữ liệu Supabase phức tạp, có thể lưu lịch sử tập vào bảng `kegel_sessions` nếu muốn theo dõi).
+- [x] Trang riêng hoặc modal, khoá VIP.
 
 ### Module 10 — Fatigue test / mini quiz sức khoẻ định kỳ
-- [ ] Thiết kế bộ câu hỏi ngắn (3-5 câu) trả về điểm số, lưu kết quả như một `health_metrics` entry mới hoặc bảng riêng `wellness_checks`.
+- [x] Thiết kế bộ câu hỏi ngắn (3-5 câu) trả về điểm số, lưu kết quả như một `health_metrics` entry mới hoặc bảng riêng `wellness_checks`.
 
 ### Module 11 — App Lock (PIN)
 - [x] Thêm cột `app_lock_pin_hash` vào `profiles` (hash, không lưu plaintext).
@@ -223,10 +223,10 @@ Ký hiệu: ✅ Đã có · ⚠️ Có khung nhưng chưa đủ sâu · ❌ Chư
 ### 5.3 Đề xuất module mới (ưu tiên cao) dựa trên phát hiện N2
 
 ### Module 0 (mới, nên làm sớm) — Luồng nâng cấp VIP thực sự
-- [ ] Quyết định phương thức thanh toán cho thị trường VN (vd: chuyển khoản QR + admin duyệt qua bảng `vip_requests`, hoặc tích hợp VNPay/MoMo/PayOS).
-- [ ] Nối `onClick` ở `LockedFeature.tsx`, `MembershipCard.tsx` đến trang/modal "Nâng cấp VIP" thật.
-- [ ] Trang `/upgrade` hoặc modal hiển thị lợi ích VIP (P1-P14) + CTA thanh toán.
-- [ ] Webhook/endpoint service-role để tự động set `is_vip = true` sau khi xác nhận thanh toán (thay vì chạy SQL tay như hiện tại).
+- [x] Quyết định phương thức thanh toán cho thị trường VN (vd: chuyển khoản QR + admin duyệt qua bảng `vip_requests`, hoặc tích hợp VNPay/MoMo/PayOS).
+- [x] Nối `onClick` ở `LockedFeature.tsx`, `MembershipCard.tsx` đến trang/modal "Nâng cấp VIP" thật.
+- [x] Trang `/upgrade` hoặc modal hiển thị lợi ích VIP (P1-P14) + CTA thanh toán.
+- [ ] Webhook/endpoint service-role để tự động set `is_vip = true` sau khi xác nhận thanh toán (thay vì chạy SQL tay như hiện tại). — CHƯA làm, đúng như ghi ở "còn thiếu" của entry Module 0: duyệt VIP vẫn thủ công qua Supabase SQL Editor.
 
 ---
 

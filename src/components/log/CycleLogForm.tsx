@@ -8,6 +8,8 @@ import {
   SYMPTOM_CATEGORY_LABELS,
   getSymptomsByCategory,
 } from "@/lib/symptoms";
+import AppDatePicker from "@/components/ui/AppDatePicker";
+import SymptomIcon from "@/components/ui/SymptomIcon";
 
 export default function CycleLogForm({
   onClose,
@@ -78,27 +80,15 @@ export default function CycleLogForm({
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-[var(--ink-soft)]">Ngày bắt đầu</span>
-            <input
-              type="date"
-              required
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="rounded-2xl bg-black/[0.03] px-3 py-2.5 text-sm text-[var(--ink)] outline-none"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-[var(--ink-soft)]">Ngày kết thúc (nếu có)</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="rounded-2xl bg-black/[0.03] px-3 py-2.5 text-sm text-[var(--ink)] outline-none"
-            />
-          </label>
-        </div>
+        <AppDatePicker
+          mode="range"
+          startValue={startDate}
+          endValue={endDate}
+          onChangeStart={setStartDate}
+          onChangeEnd={setEndDate}
+          startLabel="Ngày bắt đầu"
+          endLabel="Ngày kết thúc (nếu có)"
+        />
 
         <div>
           <span className="text-xs font-medium text-[var(--ink-soft)]">Lượng máu</span>
@@ -157,18 +147,18 @@ export default function CycleLogForm({
           </div>
 
           <div className="mt-2 flex flex-wrap gap-2">
-            {getSymptomsByCategory(activeCategory).map(({ id, label, icon: Icon }) => (
+            {getSymptomsByCategory(activeCategory).map(({ id, label, icon: Icon, category }) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => toggleSymptom(id)}
-                className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium"
+                className="flex items-center gap-1.5 rounded-full py-1 pl-1 pr-3 text-xs font-medium transition active:scale-95"
                 style={{
                   background: symptoms.includes(id) ? "var(--c-fertile)" : "rgba(0,0,0,0.03)",
                   color: symptoms.includes(id) ? "#fff" : "var(--ink-soft)",
                 }}
               >
-                <Icon size={13} />
+                <SymptomIcon icon={Icon} category={category} size="sm" active={symptoms.includes(id)} />
                 {label}
               </button>
             ))}
