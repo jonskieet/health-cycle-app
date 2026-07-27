@@ -19,7 +19,9 @@ export default function BottomNav() {
     pathname === "/onboarding" ||
     pathname === "/profile/report" ||
     pathname === "/settings" ||
-    pathname === "/upgrade"
+    pathname === "/upgrade" ||
+    pathname === "/kegel" ||
+    pathname === "/fatigue-test"
   )
     return null;
 

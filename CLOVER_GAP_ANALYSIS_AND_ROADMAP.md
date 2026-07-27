@@ -318,3 +318,18 @@ Ký hiệu: ✅ Đã có · ⚠️ Có khung nhưng chưa đủ sâu · ❌ Chư
   - Đã chạy `tsc --noEmit` không lỗi.
   - **Còn thiếu để hoàn thiện đầy đủ**: chưa có phân tích thật sự theo pha chu kỳ (xem lý do ở trên); ngưỡng "tăng/giảm" (15 điểm %) là ước lượng hợp lý, chưa được kiểm chứng bởi chuyên gia; danh sách chỉ hiển thị tối đa 8 triệu chứng đầu (không có nút "xem thêm").
   - Người thực hiện: Claude. File package gửi cho user: `module6_symptom_analysis.zip` (2 file mới, 1 file sửa).
+- **2026-07-27** — **Hoàn thành Module 7 — Kegel Trainer (P4, VIP) + Module 9 — Fatigue Test (P5, VIP), gộp 1 patch.** Đã triển khai:
+  - `supabase/sql/module7_kegel_sessions.sql` (mới): bảng `kegel_sessions` (`preset_id, reps_completed, total_reps, duration_seconds, completed`), RLS đầy đủ.
+  - `supabase/sql/module9_fatigue_tests.sql` (mới): bảng `fatigue_tests` (`score, level, answers jsonb`), RLS đầy đủ.
+  - **Quyết định phạm vi quan trọng**: không ép 2 tính năng này vào `health_metrics`/`MetricType` hiện có (khác cách làm P6/P7 ở Module 3) vì cả Kegel session lẫn Fatigue test đều là dữ liệu nhiều-trường (nhiều rep, nhiều câu trả lời quiz), không phải "1 giá trị/loại/ngày" — ép vào sẽ mất thông tin chi tiết. Tạo 2 bảng riêng, không đụng tới `health_metrics`/`health-score.ts`.
+  - `src/lib/kegel.ts` (mới, business logic thuần): 3 preset cố định (Người mới/Trung cấp/Nâng cao), `buildKegelSequence()` sinh chuỗi phase co/thả lỏng/nghỉ giữa set.
+  - `src/lib/fatigue-test.ts` (mới, business logic thuần): 6 câu hỏi thang 5 mức độ, `scoreFatigueTest()` quy điểm 0-100 và phân loại 3 mức kèm gợi ý, luôn có disclaimer không thay thế chẩn đoán y khoa.
+  - `src/components/kegel/KegelTimer.tsx` (mới): timer trực quan dùng lại `AuroraRing` có sẵn, ghi `kegel_sessions` khi hoàn thành hoặc dừng giữa chừng.
+  - `src/components/fatigue/FatigueQuiz.tsx` (mới): quiz từng câu một, hiển thị kết quả + gợi ý ngay khi xong, tự lưu `fatigue_tests`.
+  - `src/app/kegel/page.tsx`, `src/app/fatigue-test/page.tsx` (mới): trang chọn preset/làm quiz + lịch sử các lần trước.
+  - `src/lib/queries.ts`: thêm `useKegelSessions`/`useLogKegelSession`/`useFatigueTests`/`useSaveFatigueTest`.
+  - `src/app/profile/page.tsx`: thêm 2 mục liên kết mới tới `/kegel` và `/fatigue-test`, bọc `LockedFeature`/`isVipProfile()` có sẵn — không tạo cơ chế khoá mới.
+  - `src/components/layout/BottomNav.tsx`: ẩn bottom nav ở `/kegel` và `/fatigue-test` (bottom nav chỉ có 4 chỗ cố định, theo đúng pattern các trang phụ khác như `/upgrade`/`/settings`).
+  - Đã chạy `tsc --noEmit` + `eslint` trên toàn bộ file mới/sửa (fix 1 lỗi `react-hooks/set-state-in-effect` ở `KegelTimer.tsx` bằng cách gộp countdown + chuyển phase vào chung 1 interval callback dùng functional setState) — không còn lỗi. Đã merge patch vào bản copy đầy đủ dự án để kiểm tra type end-to-end. `next build` không chạy được trong sandbox do mạng chặn Google Fonts — không liên quan tới code patch.
+  - **Còn thiếu để hoàn thiện đầy đủ**: chưa có biểu đồ xu hướng theo thời gian cho cả 2 module (mới có danh sách lịch sử dạng list, giống cách Module 3 làm trước khi có `WeightBBTChart`) — nên làm chung nếu cần; Kegel Trainer chỉ có 3 preset cố định, chưa cho tự tạo bài tập riêng; ngưỡng phân loại fatigue (33/66 điểm) là ước lượng chia đều, chưa kiểm chứng chuyên gia; timer Kegel chạy client-side bằng `setInterval` nên có thể bị trình duyệt tạm dừng nếu khoá màn hình mobile giữa chừng (giới hạn chung, cần Wake Lock API nếu muốn khắc phục, ngoài phạm vi module này).
+  - Người thực hiện: Claude. File package gửi cho user: `module7_module9_kegel_fatigue.zip` (2 file SQL mới, 6 file mới, 3 file sửa).

@@ -480,3 +480,95 @@ export function useUpsertReminder() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reminders", user?.id] }),
   });
 }
+
+// ---------- Kegel Trainer (Module 7, VIP) ----------
+
+export type KegelPresetId = "beginner" | "intermediate" | "advanced";
+
+export interface KegelSession {
+  id: string;
+  preset_id: KegelPresetId;
+  reps_completed: number;
+  total_reps: number;
+  duration_seconds: number;
+  completed: boolean;
+  created_at: string;
+}
+
+export function useKegelSessions(limit = 20) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["kegel_sessions", user?.id, limit],
+    enabled: !!user,
+    queryFn: async (): Promise<KegelSession[]> => {
+      const { data, error } = await supabase
+        .from("kegel_sessions")
+        .select("id, preset_id, reps_completed, total_reps, duration_seconds, completed, created_at")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useLogKegelSession() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      preset_id: KegelPresetId;
+      reps_completed: number;
+      total_reps: number;
+      duration_seconds: number;
+      completed: boolean;
+    }) => {
+      const { error } = await supabase.from("kegel_sessions").insert({ user_id: user!.id, ...input });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["kegel_sessions", user?.id] }),
+  });
+}
+
+// ---------- Fatigue Test (Module 9, VIP) ----------
+
+export type FatigueLevel = "low" | "moderate" | "high";
+
+export interface FatigueTestResult {
+  id: string;
+  score: number;
+  level: FatigueLevel;
+  answers: number[];
+  created_at: string;
+}
+
+export function useFatigueTests(limit = 10) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["fatigue_tests", user?.id, limit],
+    enabled: !!user,
+    queryFn: async (): Promise<FatigueTestResult[]> => {
+      const { data, error } = await supabase
+        .from("fatigue_tests")
+        .select("id, score, level, answers, created_at")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useSaveFatigueTest() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { score: number; level: FatigueLevel; answers: number[] }) => {
+      const { error } = await supabase.from("fatigue_tests").insert({ user_id: user!.id, ...input });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["fatigue_tests", user?.id] }),
+  });
+}

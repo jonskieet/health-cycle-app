@@ -10,6 +10,8 @@ import {
   ChevronRight,
   Pencil,
   FileText,
+  HeartPulse,
+  Battery,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useProfile, useUpdateProfile, useCycleLogs } from "@/lib/queries";
@@ -167,6 +169,42 @@ export default function ProfilePage() {
           <SymptomAnalysis cycleLogs={cycleLogs} />
         </LockedFeature>
       )}
+
+      <LockedFeature locked={!vip} title="Bài tập Kegel VIP">
+        <Link href="/kegel" className="glass-card flex items-center gap-3 rounded-[22px] p-4">
+          <span
+            className="flex h-9 w-9 items-center justify-center rounded-full text-white"
+            style={{ background: "linear-gradient(135deg, var(--c-period), var(--c-sleep))" }}
+          >
+            <HeartPulse size={16} />
+          </span>
+          <span className="flex-1 text-left">
+            <span className="block text-sm font-semibold text-[var(--ink)]">Bài tập Kegel</span>
+            <span className="block text-xs text-[var(--ink-faint)]">
+              Timer hướng dẫn co-thả lỏng cơ sàn chậu
+            </span>
+          </span>
+          <ChevronRight size={16} className="text-[var(--ink-faint)]" />
+        </Link>
+      </LockedFeature>
+
+      <LockedFeature locked={!vip} title="Trắc nghiệm năng lượng VIP">
+        <Link href="/fatigue-test" className="glass-card flex items-center gap-3 rounded-[22px] p-4">
+          <span
+            className="flex h-9 w-9 items-center justify-center rounded-full text-white"
+            style={{ background: "var(--c-stress)" }}
+          >
+            <Battery size={16} />
+          </span>
+          <span className="flex-1 text-left">
+            <span className="block text-sm font-semibold text-[var(--ink)]">Trắc nghiệm năng lượng</span>
+            <span className="block text-xs text-[var(--ink-faint)]">
+              Bài test nhanh đánh giá mức độ mệt mỏi
+            </span>
+          </span>
+          <ChevronRight size={16} className="text-[var(--ink-faint)]" />
+        </Link>
+      </LockedFeature>
 
       <Link href="/appointments" className="glass-card flex items-center gap-3 rounded-[22px] p-4">
         <span
