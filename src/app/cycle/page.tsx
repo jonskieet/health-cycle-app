@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { Plus, ChevronRight, Sparkles } from "lucide-react";
 import AuroraRing from "@/components/ui/AuroraRing";
@@ -20,6 +19,7 @@ export default function CyclePage() {
   const { data: profile } = useProfile();
   const { data: cycleLogs = [], isLoading } = useCycleLogs();
   const [editingLog, setEditingLog] = useState<CycleLogFull | null>(null);
+  const [addingNew, setAddingNew] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInitialMessage, setChatInitialMessage] = useState<string | undefined>(undefined);
 
@@ -35,13 +35,14 @@ export default function CyclePage() {
     <main className="flex flex-1 flex-col gap-6 px-5 pt-8">
       <header className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Chu kỳ</h1>
-        <Link
-          href="/log?type=cycle"
+        <button
+          type="button"
+          onClick={() => setAddingNew(true)}
           className="flex h-9 w-9 items-center justify-center rounded-full text-white"
           style={{ background: "var(--c-period)" }}
         >
           <Plus size={18} />
-        </Link>
+        </button>
       </header>
 
       {isLoading ? null : cycleLogs.length === 0 ? (
@@ -49,7 +50,7 @@ export default function CyclePage() {
           title="Chưa có dữ liệu chu kỳ"
           description="Ghi nhận ngày bắt đầu kỳ kinh gần nhất để KVCycle bắt đầu dự đoán chu kỳ cho bạn."
           actionLabel="Ghi nhận kỳ kinh"
-          actionHref="/log?type=cycle"
+          onAction={() => setAddingNew(true)}
         />
       ) : (
         <>
@@ -169,6 +170,7 @@ export default function CyclePage() {
       )}
 
       {editingLog && <CycleLogForm editLog={editingLog} onClose={() => setEditingLog(null)} />}
+      {addingNew && <CycleLogForm onClose={() => setAddingNew(false)} />}
       {chatOpen && (
         <AiChatSheet initialMessage={chatInitialMessage} onClose={() => setChatOpen(false)} />
       )}

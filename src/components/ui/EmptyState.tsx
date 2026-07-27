@@ -6,6 +6,7 @@ interface EmptyStateProps {
   description: string;
   actionLabel?: string;
   actionHref?: string;
+  onAction?: () => void;
   icon?: LucideIcon;
 }
 
@@ -14,6 +15,7 @@ export default function EmptyState({
   description,
   actionLabel,
   actionHref,
+  onAction,
   icon: Icon = Sparkles,
 }: EmptyStateProps) {
   return (
@@ -26,7 +28,17 @@ export default function EmptyState({
       </span>
       <p className="font-display text-sm font-bold text-[var(--ink)]">{title}</p>
       <p className="text-xs text-[var(--ink-soft)]">{description}</p>
-      {actionLabel && actionHref && (
+      {actionLabel && onAction && (
+        <button
+          type="button"
+          onClick={onAction}
+          className="mt-1 rounded-full px-5 py-2 text-xs font-semibold text-white"
+          style={{ background: "linear-gradient(135deg, var(--c-sleep), var(--c-period))" }}
+        >
+          {actionLabel}
+        </button>
+      )}
+      {actionLabel && actionHref && !onAction && (
         <Link
           href={actionHref}
           className="mt-1 rounded-full px-5 py-2 text-xs font-semibold text-white"

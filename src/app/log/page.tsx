@@ -17,15 +17,16 @@ const metricConfigs: Record<Exclude<MetricType, never>, {
   max: number;
   step: number;
   default: number;
+  presets?: number[];
 }> = {
-  stress: { type: "stress", label: "Mức độ stress", unit: "pts", icon: Flame, color: "var(--c-stress)", min: 1, max: 10, step: 1, default: 5 },
-  heart_rate: { type: "heart_rate", label: "Nhịp tim", unit: "bpm", icon: HeartPulse, color: "var(--c-heart)", min: 40, max: 180, step: 1, default: 72 },
-  sleep: { type: "sleep", label: "Giấc ngủ", unit: "giờ", icon: Moon, color: "var(--c-sleep)", min: 0, max: 12, step: 0.5, default: 7 },
-  hydration: { type: "hydration", label: "Nước uống", unit: "ml", icon: Droplets, color: "var(--c-hydration)", min: 0, max: 4000, step: 100, default: 2000 },
-  mood: { type: "mood", label: "Tâm trạng", unit: "/5", icon: Smile, color: "var(--c-mood)", min: 1, max: 5, step: 1, default: 3 },
+  stress: { type: "stress", label: "Mức độ stress", unit: "pts", icon: Flame, color: "var(--c-stress)", min: 1, max: 10, step: 1, default: 5, presets: [2, 5, 8] },
+  heart_rate: { type: "heart_rate", label: "Nhịp tim", unit: "bpm", icon: HeartPulse, color: "var(--c-heart)", min: 40, max: 180, step: 1, default: 72, presets: [60, 72, 90] },
+  sleep: { type: "sleep", label: "Giấc ngủ", unit: "giờ", icon: Moon, color: "var(--c-sleep)", min: 0, max: 12, step: 0.5, default: 7, presets: [6, 7, 8] },
+  hydration: { type: "hydration", label: "Nước uống", unit: "ml", icon: Droplets, color: "var(--c-hydration)", min: 0, max: 4000, step: 100, default: 2000, presets: [1000, 2000, 3000] },
+  mood: { type: "mood", label: "Tâm trạng", unit: "/5", icon: Smile, color: "var(--c-mood)", min: 1, max: 5, step: 1, default: 3, presets: [2, 3, 4] },
   // Module 3: cân nặng & nhiệt độ cơ bản (BBT).
   weight: { type: "weight", label: "Cân nặng", unit: "kg", icon: Scale, color: "var(--c-sleep)", min: 30, max: 120, step: 0.1, default: 55 },
-  bbt: { type: "bbt", label: "Nhiệt độ cơ bản (BBT)", unit: "°C", icon: Thermometer, color: "var(--c-fertile)", min: 35, max: 39, step: 0.05, default: 36.5 },
+  bbt: { type: "bbt", label: "Nhiệt độ cơ bản (BBT)", unit: "°C", icon: Thermometer, color: "var(--c-fertile)", min: 35, max: 39, step: 0.05, default: 36.5, presets: [36.3, 36.6, 36.9] },
 };
 
 const logOptions: { key: string; label: string; icon: typeof HeartPulse; color: string }[] = [
