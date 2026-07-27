@@ -6,6 +6,24 @@ import { useAuth } from "@/lib/auth-context";
 import { CycleLog } from "@/lib/cycle-utils";
 import { computeHealthScore } from "@/lib/health-score";
 
+// ---------- Lỗi Supabase ----------
+
+// Trước đây mọi hook đều `throw error` với `error` là object PostgrestError
+// thô ({message, details, hint, code}), KHÔNG phải `instanceof Error`. Các
+// form (CycleLogForm, MetricLogForm) bắt lỗi bằng `err instanceof Error` để
+// hiện thông báo cụ thể — nên với lỗi Supabase thật, điều kiện đó luôn false
+// và người dùng chỉ thấy "Lưu thất bại. Vui lòng thử lại." chung chung,
+// không biết nguyên nhân (VD thiếu unique constraint, RLS chặn...). Hàm này
+// bọc lại thành `Error` thật, giữ nguyên message + code để hiện ra UI và dễ
+// debug qua console.
+function throwSupabaseError(error: { message?: string; code?: string; hint?: string } | null): never {
+  const code = error?.code ? ` (mã: ${error.code})` : "";
+  const hint = error?.hint ? ` — ${error.hint}` : "";
+  const err = new Error(`${error?.message ?? "Lỗi không xác định từ Supabase"}${code}${hint}`);
+  console.error("[Supabase]", error);
+  throw err;
+}
+
 // ---------- Profile ----------
 
 export type UsageGoal = "track" | "conceive" | "avoid";
@@ -42,7 +60,7 @@ export function useProfile() {
         .select("*")
         .eq("id", user!.id)
         .maybeSingle();
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
       return data;
     },
   });
@@ -57,7 +75,7 @@ export function useUpdateProfile() {
         .from("profiles")
         .update(patch)
         .eq("id", user!.id);
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["profile", user?.id] }),
   });
@@ -82,7 +100,7 @@ export function useCycleLogs() {
         .select("id, start_date, end_date, flow, symptoms, note")
         .eq("user_id", user!.id)
         .order("start_date", { ascending: false });
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
       return data ?? [];
     },
   });
@@ -102,7 +120,7 @@ export function useAddCycleLog() {
       const { error } = await supabase
         .from("cycle_logs")
         .insert({ ...log, user_id: user!.id });
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["cycle_logs", user?.id] }),
   });
@@ -128,7 +146,7 @@ export function useUpdateCycleLog() {
         .update(patch)
         .eq("id", id)
         .eq("user_id", user!.id);
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["cycle_logs", user?.id] }),
   });
@@ -144,7 +162,7 @@ export function useDeleteCycleLog() {
         .delete()
         .eq("id", id)
         .eq("user_id", user!.id);
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["cycle_logs", user?.id] }),
   });
@@ -177,7 +195,7 @@ export function useHealthMetrics() {
         .eq("user_id", user!.id)
         .gte("logged_at", since.toISOString().slice(0, 10))
         .order("logged_at", { ascending: true });
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
       return data ?? [];
     },
   });
@@ -201,7 +219,7 @@ export function useMetricTrend(type: MetricType, days: number = 90) {
         .eq("metric_type", type)
         .gte("logged_at", since.toISOString().slice(0, 10))
         .order("logged_at", { ascending: true });
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
       return data ?? [];
     },
   });
@@ -228,7 +246,7 @@ export function useLogMetric() {
         },
         { onConflict: "user_id,metric_type,logged_at" }
       );
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["health_metrics", user?.id] }),
   });
@@ -244,7 +262,7 @@ export function useDeleteHealthMetric() {
         .delete()
         .eq("id", id)
         .eq("user_id", user!.id);
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["health_metrics", user?.id] }),
   });
@@ -271,7 +289,7 @@ export function useAppointments() {
         .select("id, title, doctor_name, appointment_at, note")
         .eq("user_id", user!.id)
         .order("appointment_at", { ascending: true });
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
       return data ?? [];
     },
   });
@@ -302,7 +320,7 @@ export function useAddAppointment() {
       const { error } = await supabase
         .from("appointments")
         .insert({ ...input, user_id: user!.id });
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["appointments", user?.id] }),
   });
@@ -327,7 +345,7 @@ export function useUpdateAppointment() {
         .update(patch)
         .eq("id", id)
         .eq("user_id", user!.id);
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["appointments", user?.id] }),
   });
@@ -343,7 +361,7 @@ export function useDeleteAppointment() {
         .delete()
         .eq("id", id)
         .eq("user_id", user!.id);
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["appointments", user?.id] }),
   });
@@ -410,7 +428,7 @@ export function useLatestVipRequest() {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
       return data;
     },
   });
@@ -424,7 +442,7 @@ export function useCreateVipRequest() {
       const { error } = await supabase
         .from("vip_requests")
         .insert({ user_id: user!.id, note: input.note ?? null, transfer_code: input.transfer_code });
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["vip_request_latest", user?.id] }),
   });
@@ -452,7 +470,7 @@ export function useReminders() {
         .from("reminders")
         .select("id, type, enabled, lead_days, time_of_day")
         .eq("user_id", user!.id);
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
       return data ?? [];
     },
   });
@@ -480,7 +498,7 @@ export function useUpsertReminder() {
         },
         { onConflict: "user_id,type" }
       );
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["reminders", user?.id] }),
   });
@@ -512,7 +530,7 @@ export function useKegelSessions(limit = 20) {
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false })
         .limit(limit);
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
       return data ?? [];
     },
   });
@@ -530,7 +548,7 @@ export function useLogKegelSession() {
       completed: boolean;
     }) => {
       const { error } = await supabase.from("kegel_sessions").insert({ user_id: user!.id, ...input });
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["kegel_sessions", user?.id] }),
   });
@@ -560,7 +578,7 @@ export function useFatigueTests(limit = 10) {
         .eq("user_id", user!.id)
         .order("created_at", { ascending: false })
         .limit(limit);
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
       return data ?? [];
     },
   });
@@ -572,7 +590,7 @@ export function useSaveFatigueTest() {
   return useMutation({
     mutationFn: async (input: { score: number; level: FatigueLevel; answers: number[] }) => {
       const { error } = await supabase.from("fatigue_tests").insert({ user_id: user!.id, ...input });
-      if (error) throw error;
+      if (error) throwSupabaseError(error);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fatigue_tests", user?.id] }),
   });
