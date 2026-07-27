@@ -185,6 +185,19 @@ body {
   scrollbar-width: none;
 }
 
+/* Bug fix: trên web mobile thật (dưới breakpoint sm, .phone-frame lấp đầy toàn màn
+   hình), BottomNav vốn `position:absolute` bên trong `.phone-frame` (cao 100dvh).
+   Trong lúc trang tải, thanh địa chỉ trình duyệt co/giãn khiến 100dvh của khung cha
+   đổi theo từng nhịp, kéo thanh menu lệch/trồi theo — nhìn như "không cố định".
+   Ghim thẳng vào viewport thật bằng `position:fixed` để không còn phụ thuộc vào
+   chiều cao (luôn biến động) của khung cha nữa. Ở chế độ mockup desktop (≥640px)
+   vẫn giữ `absolute` để thanh menu nằm đúng trong khung điện thoại giả lập. */
+@media (max-width: 639px) {
+  .app-bottom-nav {
+    position: fixed;
+  }
+}
+
 @media print {
   .phone-shell {
     display: block;

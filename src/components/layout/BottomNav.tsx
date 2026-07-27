@@ -28,7 +28,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="absolute inset-x-0 bottom-0 z-20 mx-auto flex w-full justify-center px-4"
+      className="app-bottom-nav absolute inset-x-0 bottom-0 z-20 mx-auto flex w-full justify-center px-4"
       style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))" }}
     >
       <div className="glass-card-strong flex w-full items-center justify-between rounded-full px-3 py-2">
