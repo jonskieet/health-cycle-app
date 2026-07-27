@@ -74,7 +74,8 @@ create index if not exists cycle_logs_user_start_idx
   on public.cycle_logs (user_id, start_date desc);
 
 -- ---------- health_metrics ----------
--- metric_type: 'stress' | 'heart_rate' | 'sleep' | 'hydration' | 'mood'
+-- metric_type: 'stress' | 'heart_rate' | 'sleep' | 'hydration' | 'mood' | 'weight' | 'bbt'
+-- (Module 3: thêm 'weight' - cân nặng kg, 'bbt' - nhiệt độ cơ bản °C đo buổi sáng)
 create table if not exists public.health_metrics (
   id uuid primary key default gen_random_uuid()
 );
@@ -86,9 +87,12 @@ alter table public.health_metrics add column if not exists logged_at date not nu
 alter table public.health_metrics add column if not exists note text;
 alter table public.health_metrics add column if not exists created_at timestamptz not null default now();
 
+-- Module 3: mở rộng CHECK constraint để cho phép 'weight' và 'bbt'.
+-- Phải drop constraint cũ trước vì Postgres không cho "alter constraint" trực tiếp.
+alter table public.health_metrics drop constraint if exists health_metrics_type_check;
 do $$ begin
   alter table public.health_metrics add constraint health_metrics_type_check
-    check (metric_type in ('stress', 'heart_rate', 'sleep', 'hydration', 'mood'));
+    check (metric_type in ('stress', 'heart_rate', 'sleep', 'hydration', 'mood', 'weight', 'bbt'));
 exception
   when duplicate_object then null;
   when duplicate_table then null;

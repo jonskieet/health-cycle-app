@@ -11,6 +11,8 @@ const METRIC_LABELS: Record<MetricType, string> = {
   sleep: "Giấc ngủ (giờ)",
   hydration: "Hydration (ml)",
   mood: "Tâm trạng",
+  weight: "Cân nặng (kg)",
+  bbt: "Nhiệt độ cơ bản (°C)",
 };
 
 export default function HealthReportPage() {

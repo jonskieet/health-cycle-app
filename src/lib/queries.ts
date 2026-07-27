@@ -147,7 +147,8 @@ export function useDeleteCycleLog() {
 
 // ---------- Health metrics ----------
 
-export type MetricType = "stress" | "heart_rate" | "sleep" | "hydration" | "mood";
+// Module 3: thêm 'weight' (cân nặng, kg) và 'bbt' (nhiệt độ cơ bản, °C).
+export type MetricType = "stress" | "heart_rate" | "sleep" | "hydration" | "mood" | "weight" | "bbt";
 
 export interface HealthMetricRow {
   id: string;
@@ -169,6 +170,30 @@ export function useHealthMetrics() {
         .from("health_metrics")
         .select("id, metric_type, value, logged_at")
         .eq("user_id", user!.id)
+        .gte("logged_at", since.toISOString().slice(0, 10))
+        .order("logged_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+// Module 3: cân nặng/BBT cần xem xu hướng dài hơn 7 ngày (vd 90 ngày) để thấy
+// được biểu đồ có ý nghĩa, khác với useHealthMetrics() vốn chỉ lấy tuần gần nhất
+// cho các chỉ số hàng ngày (stress/heart_rate/sleep/hydration/mood).
+export function useMetricTrend(type: MetricType, days: number = 90) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["health_metrics_trend", user?.id, type, days],
+    enabled: !!user,
+    queryFn: async (): Promise<HealthMetricRow[]> => {
+      const since = new Date();
+      since.setDate(since.getDate() - (days - 1));
+      const { data, error } = await supabase
+        .from("health_metrics")
+        .select("id, metric_type, value, logged_at")
+        .eq("user_id", user!.id)
+        .eq("metric_type", type)
         .gte("logged_at", since.toISOString().slice(0, 10))
         .order("logged_at", { ascending: true });
       if (error) throw error;
@@ -397,5 +422,61 @@ export function useCreateVipRequest() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["vip_request_latest", user?.id] }),
+  });
+}
+
+// ---------- Reminders (Module 2) ----------
+
+export type ReminderType = "period_upcoming" | "log_daily" | "medication" | "custom";
+
+export interface Reminder {
+  id: string;
+  type: ReminderType;
+  enabled: boolean;
+  lead_days: number;
+  time_of_day: string; // "HH:MM:SS"
+}
+
+export function useReminders() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["reminders", user?.id],
+    enabled: !!user,
+    queryFn: async (): Promise<Reminder[]> => {
+      const { data, error } = await supabase
+        .from("reminders")
+        .select("id, type, enabled, lead_days, time_of_day")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+// Bật/tắt hoặc chỉnh 1 loại reminder. Dùng upsert theo (user_id, type) vì mỗi
+// user chỉ có tối đa 1 reminder mỗi loại (trừ 'custom', chưa hỗ trợ ở bản UI đầu tiên).
+export function useUpsertReminder() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      type: ReminderType;
+      enabled: boolean;
+      lead_days?: number;
+      time_of_day?: string;
+    }) => {
+      const { error } = await supabase.from("reminders").upsert(
+        {
+          user_id: user!.id,
+          type: input.type,
+          enabled: input.enabled,
+          ...(input.lead_days != null ? { lead_days: input.lead_days } : {}),
+          ...(input.time_of_day != null ? { time_of_day: input.time_of_day } : {}),
+        },
+        { onConflict: "user_id,type" }
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["reminders", user?.id] }),
   });
 }

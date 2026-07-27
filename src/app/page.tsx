@@ -7,6 +7,7 @@ import MetricCard from "@/components/ui/MetricCard";
 import AuroraRing from "@/components/ui/AuroraRing";
 import EmptyState from "@/components/ui/EmptyState";
 import AbnormalCycleBanner from "@/components/cycle/AbnormalCycleBanner";
+import ReminderBanner from "@/components/cycle/ReminderBanner";
 import {
   useHealthMetrics,
   useCycleLogs,
@@ -78,6 +79,7 @@ export default function DashboardPage() {
       </section>
 
       {cycleLogs.length > 0 && <AbnormalCycleBanner cycleLogs={cycleLogs} />}
+      <ReminderBanner daysToNextPeriod={daysToNext} metrics={metrics} />
 
       {/* Cycle teaser card */}
       <Link href="/cycle" className="glass-card flex items-center justify-between rounded-[24px] p-5">

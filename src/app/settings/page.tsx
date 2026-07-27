@@ -20,9 +20,11 @@ import {
   Baby,
   ShieldOff,
   Check,
+  BellRing,
+  NotebookPen,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { useProfile, useUpdateProfile, UsageGoal } from "@/lib/queries";
+import { useProfile, useUpdateProfile, UsageGoal, useReminders, useUpsertReminder } from "@/lib/queries";
 import Switch from "@/components/ui/Switch";
 import SettingsRow from "@/components/ui/SettingsRow";
 
@@ -56,8 +58,30 @@ export default function SettingsPage() {
   const { signOut } = useAuth();
   const { data: profile } = useProfile();
   const updateProfile = useUpdateProfile();
+  const { data: reminders = [] } = useReminders();
+  const upsertReminder = useUpsertReminder();
 
   const [goalPickerOpen, setGoalPickerOpen] = useState(false);
+
+  // Module 2: reminders — hiện tại chỉ hỗ trợ dạng in-app banner (xem note
+  // trong supabase/sql/module2_reminders.sql), chưa có push/email thật.
+  const periodReminder = reminders.find((r) => r.type === "period_upcoming");
+  const logReminder = reminders.find((r) => r.type === "log_daily");
+  const periodReminderEnabled = periodReminder?.enabled ?? false;
+  const logReminderEnabled = logReminder?.enabled ?? false;
+  const periodLeadDays = periodReminder?.lead_days ?? 2;
+
+  function handleTogglePeriodReminder(next: boolean) {
+    upsertReminder.mutate({ type: "period_upcoming", enabled: next, lead_days: periodLeadDays });
+  }
+
+  function handleChangeLeadDays(days: number) {
+    upsertReminder.mutate({ type: "period_upcoming", enabled: true, lead_days: days });
+  }
+
+  function handleToggleLogReminder(next: boolean) {
+    upsertReminder.mutate({ type: "log_daily", enabled: next });
+  }
 
   const notifications = profile?.notifications_enabled ?? true;
   const metricUnits = profile?.metric_units ?? true;
@@ -141,6 +165,58 @@ export default function SettingsPage() {
             <span className="block text-xs text-[var(--ink-faint)]">Quản lý các buổi khám sắp tới</span>
           </span>
         </Link>
+      </SettingsSection>
+
+      <SettingsSection title="Nhắc nhở">
+        <SettingsRow
+          icon={BellRing}
+          label="Sắp đến kỳ kinh"
+          subtitle={
+            periodReminderEnabled
+              ? `Nhắc trước ${periodLeadDays} ngày`
+              : "Đang tắt"
+          }
+          color="var(--c-period)"
+          right={
+            <Switch
+              checked={periodReminderEnabled}
+              onChange={handleTogglePeriodReminder}
+              label="Nhắc sắp đến kỳ kinh"
+            />
+          }
+        />
+        {periodReminderEnabled && (
+          <div className="flex flex-col gap-1.5 px-1 py-3">
+            <span className="text-xs font-medium text-[var(--ink-soft)]">
+              Nhắc trước: <b className="text-[var(--ink)]">{periodLeadDays} ngày</b>
+            </span>
+            <input
+              type="range"
+              min={1}
+              max={5}
+              value={periodLeadDays}
+              onChange={(e) => handleChangeLeadDays(Number(e.target.value))}
+              style={{ accentColor: "var(--c-period)" }}
+            />
+          </div>
+        )}
+        <SettingsRow
+          icon={NotebookPen}
+          label="Nhắc ghi log hàng ngày"
+          subtitle={logReminderEnabled ? "Đang bật" : "Đang tắt"}
+          color="var(--c-hydration)"
+          right={
+            <Switch
+              checked={logReminderEnabled}
+              onChange={handleToggleLogReminder}
+              label="Nhắc ghi log hàng ngày"
+            />
+          }
+        />
+        <p className="px-1 pb-3 text-[11px] leading-relaxed text-[var(--ink-faint)]">
+          Nhắc nhở hiển thị dạng banner ngay trong ứng dụng khi bạn mở app — chưa
+          hỗ trợ thông báo đẩy (push) ngoài trình duyệt.
+        </p>
       </SettingsSection>
 
       <SettingsSection title="Khác">
