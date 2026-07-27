@@ -26,10 +26,19 @@ import {
   ShieldCheck as ShieldLockIcon,
   Lock,
   Delete,
+  DownloadCloud,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { useProfile, useUpdateProfile, UsageGoal, useReminders, useUpsertReminder } from "@/lib/queries";
+import {
+  useProfile,
+  useUpdateProfile,
+  UsageGoal,
+  useReminders,
+  useUpsertReminder,
+  fetchAllUserDataForExport,
+} from "@/lib/queries";
 import { hashPin, isValidPinFormat, clearSessionUnlock, markSessionUnlocked } from "@/lib/app-lock";
+import { buildFullDataExport, downloadFullDataExport } from "@/lib/export-data";
 import Switch from "@/components/ui/Switch";
 import SettingsRow from "@/components/ui/SettingsRow";
 
@@ -60,7 +69,7 @@ const GOAL_LABEL: Record<UsageGoal, string> = {
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const { data: profile } = useProfile();
   const updateProfile = useUpdateProfile();
   const { data: reminders = [] } = useReminders();
@@ -160,6 +169,27 @@ export default function SettingsPage() {
   function handleSelectGoal(goal: UsageGoal) {
     updateProfile.mutate({ usage_goal: goal });
     setGoalPickerOpen(false);
+  }
+
+  // Module 12: Xuất/Sao lưu dữ liệu (P12) — tải toàn bộ dữ liệu của user thành 1
+  // file JSON, thay thế "sao lưu Dropbox" của Clover (dữ liệu đã ở Supabase cloud
+  // sẵn nên không cần dịch vụ backup ngoài, chỉ cần bản export cá nhân).
+  const [exportingData, setExportingData] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  async function handleExportData() {
+    if (!user) return;
+    setExportingData(true);
+    setExportError(null);
+    try {
+      const raw = await fetchAllUserDataForExport(user.id);
+      const exportData = buildFullDataExport(raw);
+      downloadFullDataExport(exportData);
+    } catch {
+      setExportError("Không thể xuất dữ liệu, vui lòng thử lại.");
+    } finally {
+      setExportingData(false);
+    }
   }
 
   return (
@@ -302,6 +332,23 @@ export default function SettingsPage() {
         <p className="px-1 pb-3 text-[11px] leading-relaxed text-[var(--ink-faint)]">
           Yêu cầu nhập PIN mỗi khi mở lại ứng dụng trên trình duyệt này. Đây là lớp khoá
           bổ sung đơn giản, không thay thế mật khẩu tài khoản.
+        </p>
+      </SettingsSection>
+
+      <SettingsSection title="Dữ liệu">
+        <SettingsRow
+          icon={DownloadCloud}
+          label="Xuất dữ liệu"
+          subtitle={exportingData ? "Đang chuẩn bị file..." : "Tải toàn bộ dữ liệu về máy (JSON)"}
+          color="var(--c-hydration)"
+          onClick={exportingData ? undefined : handleExportData}
+        />
+        {exportError && (
+          <p className="px-1 pb-3 text-[11px] font-medium text-[var(--c-period)]">{exportError}</p>
+        )}
+        <p className="px-1 pb-3 text-[11px] leading-relaxed text-[var(--ink-faint)]">
+          File chứa toàn bộ dữ liệu chu kỳ, chỉ số sức khoẻ, lịch hẹn và cài đặt của bạn —
+          dùng làm bản sao lưu cá nhân. Dữ liệu vẫn luôn được lưu an toàn trên máy chủ.
         </p>
       </SettingsSection>
 

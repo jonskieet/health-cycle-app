@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
@@ -6,6 +6,7 @@ import BottomNav from "@/components/layout/BottomNav";
 import AuthGate from "@/components/auth/AuthGate";
 import AppLockGate from "@/components/auth/AppLockGate";
 import ThemeApplier from "@/components/layout/ThemeApplier";
+import PwaRegister from "@/components/layout/PwaRegister";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -21,6 +22,16 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "KVCycle — Sức khỏe & Chu kỳ",
   description: "Theo dõi sức khỏe tổng quát và chu kỳ kinh nguyệt",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "KVCycle",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#e85c8a",
 };
 
 export default function RootLayout({
@@ -48,6 +59,7 @@ export default function RootLayout({
               <div className="phone-viewport no-scrollbar">
                 <div className="flex min-h-full flex-col pb-32">
                   <ThemeApplier />
+                  <PwaRegister />
                   <AuthGate>
                     <AppLockGate>{children}</AppLockGate>
                   </AuthGate>

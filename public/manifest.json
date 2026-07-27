@@ -1,0 +1,15 @@
+{
+  "name": "KVCycle — Sức khỏe & Chu kỳ",
+  "short_name": "KVCycle",
+  "description": "Theo dõi sức khỏe tổng quát và chu kỳ kinh nguyệt",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fdeef2",
+  "theme_color": "#e85c8a",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

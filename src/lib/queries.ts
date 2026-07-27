@@ -577,3 +577,60 @@ export function useSaveFatigueTest() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fatigue_tests", user?.id] }),
   });
 }
+
+// ---------- Module 12: Xuất/Sao lưu dữ liệu (P12) ----------
+//
+// Đây là hàm thuần (không phải hook) vì export chỉ chạy 1 lần khi user bấm nút,
+// không cần giữ state/cache như các query hiển thị UI ở trên. `useHealthMetrics()`
+// phía trên chỉ lấy 7 ngày gần nhất nên không đủ cho backup — hàm này lấy TOÀN BỘ
+// lịch sử từng bảng.
+export async function fetchAllUserDataForExport(userId: string) {
+  const [profileRes, cycleLogsRes, metricsRes, appointmentsRes, remindersRes, kegelRes, fatigueRes] =
+    await Promise.all([
+      supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+      supabase
+        .from("cycle_logs")
+        .select("id, start_date, end_date, flow, symptoms, note")
+        .eq("user_id", userId)
+        .order("start_date", { ascending: false }),
+      supabase
+        .from("health_metrics")
+        .select("id, metric_type, value, logged_at")
+        .eq("user_id", userId)
+        .order("logged_at", { ascending: false }),
+      supabase
+        .from("appointments")
+        .select("id, title, doctor_name, appointment_at, note")
+        .eq("user_id", userId)
+        .order("appointment_at", { ascending: false }),
+      supabase.from("reminders").select("*").eq("user_id", userId),
+      supabase
+        .from("kegel_sessions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("fatigue_tests")
+        .select("id, score, level, answers, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false }),
+    ]);
+
+  if (profileRes.error) throw profileRes.error;
+  if (cycleLogsRes.error) throw cycleLogsRes.error;
+  if (metricsRes.error) throw metricsRes.error;
+  if (appointmentsRes.error) throw appointmentsRes.error;
+  if (remindersRes.error) throw remindersRes.error;
+  if (kegelRes.error) throw kegelRes.error;
+  if (fatigueRes.error) throw fatigueRes.error;
+
+  return {
+    profile: (profileRes.data as Profile | null) ?? null,
+    cycleLogs: (cycleLogsRes.data as CycleLogFull[]) ?? [],
+    healthMetrics: (metricsRes.data as HealthMetricRow[]) ?? [],
+    appointments: (appointmentsRes.data as Appointment[]) ?? [],
+    reminders: (remindersRes.data as Reminder[]) ?? [],
+    kegelSessions: (kegelRes.data as KegelSession[]) ?? [],
+    fatigueTests: (fatigueRes.data as FatigueTestResult[]) ?? [],
+  };
+}
