@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, Printer, FileDown } from "lucide-react";
 import { useProfile, useCycleLogs, useHealthMetrics, MetricType } from "@/lib/queries";
 import { predictCycle, buildCycleHistory } from "@/lib/cycle-utils";
+import { isVipProfile } from "@/lib/vip";
+import { buildAndDownloadReportPdf } from "@/lib/export-report";
+import LockedFeature from "@/components/profile/LockedFeature";
 
 const METRIC_LABELS: Record<MetricType, string> = {
   stress: "Stress (pts)",
@@ -19,6 +22,7 @@ export default function HealthReportPage() {
   const { data: profile } = useProfile();
   const { data: cycleLogs = [] } = useCycleLogs();
   const { data: metrics = [] } = useHealthMetrics();
+  const vip = isVipProfile(profile);
 
   const prediction = predictCycle(cycleLogs, {
     avgCycleLength: profile?.avg_cycle_length ?? 28,
@@ -34,6 +38,19 @@ export default function HealthReportPage() {
   });
   const metricDates = Array.from(metricsByDate.keys()).sort((a, b) => (a < b ? 1 : -1));
 
+  function handleExportPdf() {
+    buildAndDownloadReportPdf({
+      displayName: profile?.display_name || "Người dùng",
+      avgCycleLength: prediction.avgCycleLength,
+      avgPeriodLength: prediction.avgPeriodLength,
+      totalCyclesLogged: cycleLogs.length,
+      history,
+      metricLabels: METRIC_LABELS,
+      metricsByDate,
+      metricDates,
+    });
+  }
+
   return (
     <main className="report-page flex flex-1 flex-col gap-6 px-5 pt-8 pb-10">
       <header className="report-hide flex items-center justify-between">
@@ -43,15 +60,27 @@ export default function HealthReportPage() {
         >
           <ArrowLeft size={16} className="text-[var(--ink)]" />
         </Link>
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white"
-          style={{ background: "var(--c-sleep)" }}
-        >
-          <Printer size={15} />
-          In / Lưu PDF
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-[var(--ink)] glass-card"
+          >
+            <Printer size={15} />
+            In
+          </button>
+          <LockedFeature locked={!vip} title="Xuất PDF cho bác sĩ">
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white"
+              style={{ background: "var(--c-sleep)" }}
+            >
+              <FileDown size={15} />
+              Xuất PDF
+            </button>
+          </LockedFeature>
+        </div>
       </header>
 
       <div>

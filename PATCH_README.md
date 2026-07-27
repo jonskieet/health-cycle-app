@@ -1,42 +1,30 @@
-# Patch: Module 2 (Nhắc nhở) + Module 3 (Cân nặng & BBT)
+# Patch: Module 5 — Event/Correlation Analysis (VIP)
 
 ## Cách áp dụng
-1. Giải nén file zip này ĐÈ vào thư mục gốc dự án (giải nén sao cho thư mục
-   `src/` và `supabase/` trong zip đè lên `src/` và `supabase/` của dự án).
-2. Các file bị THAY (ghi đè hoàn toàn):
-   - `supabase/schema.sql`
-   - `src/lib/queries.ts`
-   - `src/app/log/page.tsx`
-   - `src/app/profile/page.tsx`
-   - `src/app/profile/report/page.tsx`
-   - `src/app/settings/page.tsx`
-   - `src/app/page.tsx`
-3. Các file MỚI:
-   - `supabase/sql/module2_reminders.sql`
-   - `src/components/profile/WeightBBTChart.tsx`
-   - `src/components/cycle/ReminderBanner.tsx`
+1. Giải nén đè vào gốc dự án.
+2. File MỚI: `src/lib/correlation.ts`, `src/components/profile/CorrelationChart.tsx`
+3. File THAY: `src/app/profile/page.tsx`
+4. Không có thay đổi schema Supabase, không cần dependency mới — không cần
+   chạy SQL hay `npm install` cho patch này.
 
-## Việc cần làm thủ công sau khi giải nén (bắt buộc)
-1. Mở Supabase SQL Editor của project THẬT, chạy lại toàn bộ `supabase/schema.sql`
-   (an toàn để chạy lại nhiều lần — dùng `add column if not exists` / `do $$ ... exception`).
-   Thay đổi quan trọng: constraint `health_metrics_type_check` giờ cho phép thêm
-   `'weight'` và `'bbt'`.
-2. Chạy tiếp `supabase/sql/module2_reminders.sql` để tạo bảng `reminders` (bảng mới,
-   có RLS, chỉ user thấy được reminder của chính mình).
-3. Chạy `npm install` nếu cần (không có thêm dependency mới, `recharts` đã có sẵn
-   trong `package.json`).
-4. `npx tsc --noEmit` đã chạy sạch trên máy tạo patch — nên chạy lại sau khi áp
-   dụng để chắc chắn không có xung đột với các thay đổi khác bạn đã làm thêm.
+## Tính năng
+- Trang `/profile` có thêm mục **"Phân tích tương quan"** — chọn 2 chỉ số bất
+  kỳ (stress, nhịp tim, giấc ngủ, nước uống, tâm trạng, cân nặng, BBT) và xem
+  biểu đồ chồng theo thời gian + hệ số tương quan Pearson diễn giải bằng lời
+  (vd "Tương quan trung bình, ngược chiều (r=-0.52)").
+- Khoá VIP bằng `LockedFeature`/`isVipProfile()` có sẵn — giống các tính năng
+  VIP khác trong dự án.
 
-## Tóm tắt tính năng
-- **Module 3**: trang `/log` có thêm 2 ô "Cân nặng" và "Nhiệt độ cơ bản (BBT)".
-  Trang `/profile` có thêm biểu đồ xu hướng 90 ngày (tab chuyển đổi giữa 2 loại).
-- **Module 2**: trang `/settings` có mục "Nhắc nhở" — bật/tắt nhắc sắp đến kỳ
-  kinh (chỉnh số ngày báo trước) và nhắc ghi log hàng ngày. Trang chủ hiển thị
-  banner nhắc nhở tương ứng khi điều kiện đúng. Kênh gửi hiện tại là **in-app
-  banner** (chưa có push notification thật — lý do & hướng mở rộng đã ghi rõ
-  trong `module2_reminders.sql`).
+## Phạm vi đã cân nhắc và loại bỏ (quan trọng, đọc trước khi mở rộng)
+Module này CHỈ làm tương quan giữa 2 **chỉ số** (metric), KHÔNG làm tương quan
+với **triệu chứng** (symptoms). Lý do: trong schema hiện tại, `symptoms` được
+gắn vào một *kỳ kinh* (`cycle_logs.start_date`/`end_date`), không phải log
+theo từng ngày riêng — nên không có "giá trị triệu chứng của ngày X" rõ ràng
+để so khớp với metric theo trục thời gian. Muốn làm tương quan với triệu
+chứng cần đổi model dữ liệu (thêm bảng log triệu chứng theo ngày), nên đây là
+quyết định phạm vi có chủ đích, không phải thiếu sót.
 
-Chi tiết đầy đủ đã được cập nhật vào "Nhật ký triển khai" ở cuối file
-CLOVER_GAP_ANALYSIS_AND_ROADMAP.md (bản cập nhật gửi kèm/hoặc bạn có thể yêu
-cầu tôi gửi lại file roadmap đã cập nhật).
+## Việc còn thiếu
+- Ngưỡng diễn giải mạnh/yếu/trung bình (0.2/0.4/0.7) dùng chuẩn thống kê phổ
+  biến tham khảo, chưa được kiểm chứng bởi chuyên gia y tế — chỉ mang tính
+  tham khảo (đã có disclaimer trong UI).
