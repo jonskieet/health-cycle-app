@@ -175,8 +175,8 @@ Ký hiệu: ✅ Đã có · ⚠️ Có khung nhưng chưa đủ sâu · ❌ Chư
 - [ ] Khoá VIP, đặt trong `/profile` hoặc `/profile/report`.
 
 ### Module 7 — Thư viện nội dung giáo dục
-- [ ] Thêm bảng `articles` (nếu muốn quản trị nội dung động) hoặc mở rộng file tĩnh `cycle-insights.ts` thành danh mục lớn hơn có phân loại + trang danh sách `/library` hoặc `/insights`.
-- [ ] Free: xem giới hạn số bài/tháng hoặc chỉ xem preview; VIP: xem toàn bộ — dùng lại `LockedFeature`.
+- [x] Thêm bảng `articles` (nếu muốn quản trị nội dung động) hoặc mở rộng file tĩnh `cycle-insights.ts` thành danh mục lớn hơn có phân loại + trang danh sách `/library` hoặc `/insights`.
+- [x] Free: xem giới hạn số bài/tháng hoặc chỉ xem preview; VIP: xem toàn bộ — dùng lại `LockedFeature`.
 
 ### Module 8 — Onboarding quiz mở rộng
 - [ ] Xem lại `src/app/onboarding/page.tsx` hiện tại, bổ sung câu hỏi "mục tiêu sử dụng" (theo dõi thường / mong có thai / tránh thai) → lưu vào `profiles` (thêm cột `usage_goal`).
@@ -190,8 +190,8 @@ Ký hiệu: ✅ Đã có · ⚠️ Có khung nhưng chưa đủ sâu · ❌ Chư
 - [ ] Thiết kế bộ câu hỏi ngắn (3-5 câu) trả về điểm số, lưu kết quả như một `health_metrics` entry mới hoặc bảng riêng `wellness_checks`.
 
 ### Module 11 — App Lock (PIN)
-- [ ] Thêm cột `app_lock_pin_hash` vào `profiles` (hash, không lưu plaintext).
-- [ ] UI thiết lập/nhập PIN trong `/settings`, kiểm tra khi mở app (session-based, không cần phức tạp như biometric thật vì là web).
+- [x] Thêm cột `app_lock_pin_hash` vào `profiles` (hash, không lưu plaintext).
+- [x] UI thiết lập/nhập PIN trong `/settings`, kiểm tra khi mở app (session-based, không cần phức tạp như biometric thật vì là web).
 
 ---
 
@@ -333,3 +333,36 @@ Ký hiệu: ✅ Đã có · ⚠️ Có khung nhưng chưa đủ sâu · ❌ Chư
   - Đã chạy `tsc --noEmit` + `eslint` trên toàn bộ file mới/sửa (fix 1 lỗi `react-hooks/set-state-in-effect` ở `KegelTimer.tsx` bằng cách gộp countdown + chuyển phase vào chung 1 interval callback dùng functional setState) — không còn lỗi. Đã merge patch vào bản copy đầy đủ dự án để kiểm tra type end-to-end. `next build` không chạy được trong sandbox do mạng chặn Google Fonts — không liên quan tới code patch.
   - **Còn thiếu để hoàn thiện đầy đủ**: chưa có biểu đồ xu hướng theo thời gian cho cả 2 module (mới có danh sách lịch sử dạng list, giống cách Module 3 làm trước khi có `WeightBBTChart`) — nên làm chung nếu cần; Kegel Trainer chỉ có 3 preset cố định, chưa cho tự tạo bài tập riêng; ngưỡng phân loại fatigue (33/66 điểm) là ước lượng chia đều, chưa kiểm chứng chuyên gia; timer Kegel chạy client-side bằng `setInterval` nên có thể bị trình duyệt tạm dừng nếu khoá màn hình mobile giữa chừng (giới hạn chung, cần Wake Lock API nếu muốn khắc phục, ngoài phạm vi module này).
   - Người thực hiện: Claude. File package gửi cho user: `module7_module9_kegel_fatigue.zip` (2 file SQL mới, 6 file mới, 3 file sửa).
+- **2026-07-27** — **Hoàn thành Module 7 — Thư viện nội dung giáo dục (P8).** Đã triển khai:
+  - `src/lib/articles.ts` (mới, dữ liệu tĩnh thuần, không phụ thuộc React): 11 bài viết chia 6 danh mục (Kiến thức chu kỳ, Dinh dưỡng, Khả năng sinh sản, Biện pháp tránh thai, Tâm lý & cảm xúc, Giảm triệu chứng), mỗi bài có `readMinutes`, `isPremium`, nội dung chia đoạn (`paragraphs[]`).
+  - **Quyết định phạm vi quan trọng**: dùng file tĩnh thay vì bảng `articles` trong Supabase (đúng tinh thần lựa chọn thay thế mà roadmap gốc đã đề xuất — "hoặc mở rộng file tĩnh"), vì chưa có yêu cầu CMS/quản trị nội dung động từ chủ dự án; lý do + đánh đổi đã ghi rõ trong comment đầu file để agent sau cân nhắc nếu cần chuyển sang bảng DB thật.
+  - `src/app/library/page.tsx` (mới): trang danh sách công khai (không khoá VIP ở cấp danh sách), tab lọc theo danh mục (tái sử dụng pattern tab cuộn ngang từ `SymptomAnalysis.tsx`), badge "VIP" trên thẻ bài premium.
+  - `src/app/library/[id]/page.tsx` (mới): trang chi tiết — đoạn mở đầu luôn miễn phí (preview), phần còn lại bọc `LockedFeature`/`isVipProfile()` có sẵn nếu bài là `isPremium` và user chưa VIP — đúng nguyên tắc "không tự chế cơ chế khoá mới".
+  - `src/app/profile/page.tsx`: thêm mục liên kết "Thư viện kiến thức" tới `/library` (không bọc `LockedFeature` ở mức menu vì khoá được xử lý theo từng bài viết bên trong).
+  - `src/components/layout/BottomNav.tsx`: ẩn bottom nav ở trang chi tiết `/library/[id]` (dùng `pathname.startsWith("/library/")`), giữ nguyên nav ở trang danh sách `/library`.
+  - Đã chạy `npm install` + `tsc --noEmit` + `eslint` trên toàn bộ file mới/sửa — không lỗi.
+  - **Còn thiếu để hoàn thiện đầy đủ**: chưa có tìm kiếm bài viết theo từ khoá (mới có lọc theo danh mục); nội dung cố định trong code nên muốn thêm/sửa bài phải sửa file + deploy lại, chưa có trang quản trị nội dung; chưa giới hạn "số bài/tháng" cho free (chọn hướng "xem preview mọi bài" thay vì hướng "giới hạn số lượng" — cả 2 đều được gợi ý trong roadmap gốc, đã chọn preview vì đơn giản hơn và không cần đếm/lưu lượt xem theo tháng).
+  - Người thực hiện: Claude. File package gửi cho user: `module7_content_library.zip` (2 file mới, 3 file sửa).
+- **2026-07-27** — **Hoàn thành Module 11 — App Lock (PIN).** Đã triển khai:
+  - `supabase/sql/module11_app_lock.sql` (mới): thêm cột `profiles.app_lock_pin_hash` (text, chỉ lưu hash SHA-256 hex, không bao giờ plaintext) và `profiles.app_lock_enabled` (boolean, default false).
+  - `src/lib/app-lock.ts` (mới, business logic thuần): `hashPin()` dùng Web Crypto API (`crypto.subtle.digest`, có sẵn trình duyệt, không thêm dependency), `isValidPinFormat()` (4-6 chữ số), và các helper `isSessionUnlocked()`/`markSessionUnlocked()`/`clearSessionUnlock()` dựa trên `sessionStorage` — khoá lại mỗi khi mở tab/trình duyệt mới, không cần lưu trạng thái server.
+  - **Quyết định phạm vi quan trọng** (ghi rõ trong comment đầu file): đây là khoá "chặn xem lướt qua" (deterrent lock) phù hợp mức web app cá nhân, KHÔNG tương đương bảo mật biometric/keychain thật của app native — không thay thế mật khẩu tài khoản Supabase Auth.
+  - `src/components/auth/AppLockGate.tsx` (mới): màn hình nhập PIN dạng bàn phím số (giữ đúng phong cách `glass-card`/gradient của app), tự kiểm tra khi đủ 4-6 số, có nút "Quên PIN? Đăng xuất" làm lối thoát nếu quên PIN (không có luồng khôi phục PIN riêng — hợp lý vì đây chỉ là lớp khoá bổ sung, đăng xuất/đăng nhập lại là đủ).
+  - `src/app/layout.tsx`: lồng `<AppLockGate>` bên trong `<AuthGate>` (chỉ áp dụng sau khi đã xác thực; trang `/login`/`/reset-password` không bị ảnh hưởng vì `AuthGate` trả `children` thẳng cho route công khai).
+  - `src/app/settings/page.tsx`: thêm section "Bảo mật" — switch bật/tắt khoá PIN (bật → mở modal đặt PIN mới; tắt → xoá hash + tắt cờ ngay, không yêu cầu xác nhận lại PIN cũ vì user đang ở trạng thái đã đăng nhập hợp lệ trong `/settings`), dòng "Đổi mã PIN" khi đã bật, modal đặt PIN 2 bước (nhập → nhập lại xác nhận).
+  - `src/lib/queries.ts`: thêm 2 field `app_lock_pin_hash`/`app_lock_enabled` vào interface `Profile` (không cần sửa `useUpdateProfile` vì đã nhận `Partial<Profile>` chung).
+  - Sửa 1 lỗi `react-hooks/set-state-in-effect` khi code ban đầu đồng bộ trạng thái khoá qua `useEffect` + `setState` — refactor thành tính trực tiếp `locked = lockActive && !manuallyUnlocked && !isSessionUnlocked()` ngay trong render (không cần effect), theo đúng cách đã sửa lỗi tương tự ở `KegelTimer.tsx` trước đây.
+  - Đã chạy `tsc --noEmit` + `eslint` trên toàn bộ file mới/sửa — không lỗi. `next build` không chạy được trong sandbox do mạng chặn Google Fonts — không liên quan tới code patch.
+  - **Còn thiếu để hoàn thiện đầy đủ**: không có luồng "quên PIN, đặt lại PIN mới mà không cần đăng xuất" (hiện chỉ có đăng xuất); tắt khoá PIN trong `/settings` không yêu cầu nhập lại PIN cũ để xác nhận (chấp nhận được vì user đã ở trong app, nhưng nếu muốn chặt hơn có thể thêm bước xác nhận); ô nhập PIN trong modal `/settings` dùng `<input type="password">` thay vì bàn phím số tuỳ chỉnh như màn hình khoá chính — nhất quán về mặt chức năng nhưng khác trải nghiệm, có thể đồng bộ UI sau nếu cần.
+  - Người thực hiện: Claude. File package gửi cho user: `module11_applock_module_theme.zip` (patch gộp chung với module Theme, xem entry bên dưới).
+- **2026-07-27** — **Hoàn thành module mới — Chủ đề giao diện Sáng/Tối (thu hẹp phạm vi từ P9).** Đã triển khai:
+  - **Quyết định phạm vi quan trọng**: P9 gốc gồm cả "bộ giao diện/theme" lẫn "app icon tuỳ chỉnh" — phần app icon không áp dụng được cho web app (không có khái niệm home-screen icon để đổi định kỳ như native app, PWA icon là 1 icon cố định trong manifest chứ không "đổi theo gói VIP" được) nên KHÔNG làm phần này. Phần theme cũng thu hẹp còn đúng 1 cặp Sáng/Tối (không làm nhiều bảng màu tuỳ chọn) để tận dụng tối đa hạ tầng biến CSS đã có (`--aurora-*`, `--ink*`, `--glass*`) mà không phải sửa từng component — nếu sau này muốn nhiều theme màu hơn, chỉ cần thêm khối `[data-theme="..."]` mới trong `globals.css`, không cần đổi kiến trúc.
+  - `supabase/sql/module_theme.sql` (mới): thêm cột `profiles.theme` (`'light' | 'dark'`, default `'light'`, có CHECK constraint).
+  - `src/app/globals.css`: thêm khối `[data-theme="dark"]` override các biến `--aurora-a/b/c`, `--ink*`, `--glass*`, `--bg-fallback` (biến mới, thay 2 chỗ trước đây hard-code `#f7f5fb`) — cố ý GIỮ NGUYÊN các biến `--c-*` (accent theo từng chỉ số sức khỏe) ở cả 2 theme để badge/biểu đồ/icon không bị đổi màu, tránh phải rà lại toàn bộ component đã dùng màu đó làm căn cứ nhận diện. Thêm `transition` mượt khi đổi theme.
+  - `src/components/layout/ThemeApplier.tsx` (mới): component client đọc `profiles.theme` qua `useProfile()`, gán `document.documentElement.dataset.theme`, đồng thời lưu bản sao vào `localStorage` (key `kv_theme`) để giảm hiện tượng chớp sáng.
+  - `src/app/layout.tsx`: thêm `<script>` inline chạy trước hydrate đọc `localStorage.kv_theme` để set `data-theme` sớm nhất có thể (kỹ thuật anti-FOUC tiêu chuẩn cho theme phía client, không cần cookie/SSR theme vì ngoài phạm vi 1 module nhỏ); render `<ThemeApplier />` để đồng bộ lại với giá trị thật từ Supabase sau khi profile load xong.
+  - `src/app/settings/page.tsx`: dòng "Chủ đề" trước đây là text tĩnh "Sáng" → đổi thành `Switch` bật/tắt thật, lưu ngay qua `useUpdateProfile()`.
+  - `src/lib/queries.ts`: thêm type `ThemeMode` + field `theme` vào interface `Profile`.
+  - Đã chạy `tsc --noEmit` + `eslint` — không lỗi.
+  - **Còn thiếu để hoàn thiện đầy đủ**: vài chỗ hiếm hoi hard-code màu trắng tuyệt đối thay vì dùng biến (vd nền ô nhập PIN `bg-white` trong modal đặt PIN ở `/settings` từ Module 11) chưa đổi theo theme — ảnh hưởng rất nhỏ, có thể rà thêm nếu cần độ hoàn thiện 100%; lần đầu đăng nhập trên thiết bị mới (chưa có `localStorage`) vẫn có thể chớp sáng một khung hình trước khi `ThemeApplier` kịp chạy — chấp nhận được, không cần chuyển sang theme SSR qua cookie cho quy mô hiện tại; chưa có nhiều bảng màu để chọn (chỉ Sáng/Tối), và không có "app icon tuỳ chỉnh" như P9 gốc (lý do đã nêu ở trên).
+  - Người thực hiện: Claude. File package gửi cho user: `module11_applock_module_theme.zip` (2 file SQL mới, 7 file sửa/mới: 9 file tổng).

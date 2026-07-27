@@ -4,6 +4,8 @@ import "./globals.css";
 import Providers from "./providers";
 import BottomNav from "@/components/layout/BottomNav";
 import AuthGate from "@/components/auth/AuthGate";
+import AppLockGate from "@/components/auth/AppLockGate";
+import ThemeApplier from "@/components/layout/ThemeApplier";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -28,6 +30,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" className={`${jakarta.variable} ${inter.variable}`}>
+      <head>
+        <script
+          // Chạy trước khi React hydrate để tránh "chớp sáng" nếu user đã chọn theme tối
+          // ở lần dùng trước (đọc từ localStorage, ThemeApplier sẽ đồng bộ lại với
+          // profile thật ngay sau khi load xong).
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('kv_theme');if(t==='dark')document.documentElement.dataset.theme='dark';}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="min-h-full antialiased">
         <Providers>
           <div className="phone-shell">
@@ -35,7 +47,10 @@ export default function RootLayout({
               <div className="phone-notch" />
               <div className="phone-viewport no-scrollbar">
                 <div className="flex min-h-full flex-col pb-32">
-                  <AuthGate>{children}</AuthGate>
+                  <ThemeApplier />
+                  <AuthGate>
+                    <AppLockGate>{children}</AppLockGate>
+                  </AuthGate>
                 </div>
               </div>
               <BottomNav />

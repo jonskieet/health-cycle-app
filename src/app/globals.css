@@ -1,10 +1,12 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
   /* Aurora background */
   --aurora-a: #fdeef2;
   --aurora-b: #f1e6fb;
   --aurora-c: #e8f0fe;
+  --bg-fallback: #f7f5fb;
 
   /* Ink */
   --ink: #241b2f;
@@ -30,6 +32,31 @@
   --foreground: var(--ink);
 }
 
+/* Module — Theme "Đêm dịu" (P9). Chỉ đổi các biến nền/chữ/kính (aurora, ink, glass) —
+   màu accent theo chỉ số (--c-*) giữ nguyên để badge/biểu đồ vẫn nhận diện được và
+   không phải sửa từng component. Áp dụng qua thuộc tính `data-theme="dark"` trên
+   thẻ <html>, đặt bởi `ThemeApplier` (đọc `profiles.theme`). Một số style hiếm hoi
+   hard-code màu trắng tuyệt đối (vd input PIN trong /settings) chưa đổi theo theme —
+   ghi rõ trong nhật ký triển khai, ảnh hưởng rất nhỏ tới trải nghiệm chung. */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --aurora-a: #2c2440;
+  --aurora-b: #1f2a3a;
+  --aurora-c: #241a30;
+  --bg-fallback: #14101c;
+
+  --ink: #f4f1fa;
+  --ink-soft: #b9b3cf;
+  --ink-faint: #8a84a0;
+
+  --glass: rgba(38, 30, 54, 0.6);
+  --glass-strong: rgba(38, 30, 54, 0.82);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  --background: var(--aurora-a);
+  --foreground: var(--ink);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -49,11 +76,12 @@ body {
 body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  transition: background 0.25s ease, color 0.25s ease;
   background:
     radial-gradient(120% 90% at 8% -10%, var(--aurora-a) 0%, transparent 60%),
     radial-gradient(110% 80% at 100% 0%, var(--aurora-c) 0%, transparent 55%),
     radial-gradient(140% 100% at 50% 120%, var(--aurora-b) 0%, transparent 60%),
-    #f7f5fb;
+    var(--bg-fallback);
   background-attachment: fixed;
   min-height: 100%;
 }
@@ -128,7 +156,7 @@ body {
       radial-gradient(120% 90% at 8% -10%, var(--aurora-a) 0%, transparent 60%),
       radial-gradient(110% 80% at 100% 0%, var(--aurora-c) 0%, transparent 55%),
       radial-gradient(140% 100% at 50% 120%, var(--aurora-b) 0%, transparent 60%),
-      #f7f5fb;
+      var(--bg-fallback);
   }
 
   .phone-viewport {

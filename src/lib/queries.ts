@@ -10,6 +10,8 @@ import { computeHealthScore } from "@/lib/health-score";
 
 export type UsageGoal = "track" | "conceive" | "avoid";
 
+export type ThemeMode = "light" | "dark";
+
 export interface Profile {
   id: string;
   display_name: string | null;
@@ -24,6 +26,9 @@ export interface Profile {
   usage_goal: UsageGoal | null;
   notifications_enabled: boolean;
   metric_units: boolean;
+  app_lock_pin_hash: string | null;
+  app_lock_enabled: boolean;
+  theme: ThemeMode;
 }
 
 export function useProfile() {

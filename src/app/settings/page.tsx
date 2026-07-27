@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   X,
-  Palette,
+  Moon,
+  Sun,
   Bell,
   Ruler,
   Target,
@@ -22,9 +23,13 @@ import {
   Check,
   BellRing,
   NotebookPen,
+  ShieldCheck as ShieldLockIcon,
+  Lock,
+  Delete,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useProfile, useUpdateProfile, UsageGoal, useReminders, useUpsertReminder } from "@/lib/queries";
+import { hashPin, isValidPinFormat, clearSessionUnlock, markSessionUnlocked } from "@/lib/app-lock";
 import Switch from "@/components/ui/Switch";
 import SettingsRow from "@/components/ui/SettingsRow";
 
@@ -63,6 +68,59 @@ export default function SettingsPage() {
 
   const [goalPickerOpen, setGoalPickerOpen] = useState(false);
 
+  // Module 11: App Lock (PIN) — modal thiết lập/đổi mã PIN.
+  const appLockEnabled = profile?.app_lock_enabled ?? false;
+  const [pinModalOpen, setPinModalOpen] = useState(false);
+  const [pinStep, setPinStep] = useState<"new" | "confirm">("new");
+  const [pinDraft, setPinDraft] = useState("");
+  const [pinConfirmDraft, setPinConfirmDraft] = useState("");
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [savingPin, setSavingPin] = useState(false);
+
+  function openPinSetup() {
+    setPinStep("new");
+    setPinDraft("");
+    setPinConfirmDraft("");
+    setPinError(null);
+    setPinModalOpen(true);
+  }
+
+  function closePinModal() {
+    setPinModalOpen(false);
+  }
+
+  function handleToggleAppLock(next: boolean) {
+    if (next) {
+      openPinSetup();
+    } else {
+      updateProfile.mutate({ app_lock_enabled: false, app_lock_pin_hash: null });
+      clearSessionUnlock();
+    }
+  }
+
+  function handlePinNewSubmit() {
+    if (!isValidPinFormat(pinDraft)) {
+      setPinError("Mã PIN phải gồm 4-6 chữ số");
+      return;
+    }
+    setPinError(null);
+    setPinStep("confirm");
+  }
+
+  async function handlePinConfirmSubmit() {
+    if (pinConfirmDraft !== pinDraft) {
+      setPinError("Mã PIN nhập lại không khớp");
+      setPinConfirmDraft("");
+      return;
+    }
+    setSavingPin(true);
+    const hash = await hashPin(pinDraft);
+    await updateProfile.mutateAsync({ app_lock_enabled: true, app_lock_pin_hash: hash });
+    markSessionUnlocked(); // không bắt nhập lại ngay sau khi vừa tự đặt PIN
+    setSavingPin(false);
+    setPinModalOpen(false);
+  }
+
   // Module 2: reminders — hiện tại chỉ hỗ trợ dạng in-app banner (xem note
   // trong supabase/sql/module2_reminders.sql), chưa có push/email thật.
   const periodReminder = reminders.find((r) => r.type === "period_upcoming");
@@ -94,6 +152,11 @@ export default function SettingsPage() {
     updateProfile.mutate({ metric_units: next });
   }
 
+  const isDarkTheme = profile?.theme === "dark";
+  function handleToggleTheme(next: boolean) {
+    updateProfile.mutate({ theme: next ? "dark" : "light" });
+  }
+
   function handleSelectGoal(goal: UsageGoal) {
     updateProfile.mutate({ usage_goal: goal });
     setGoalPickerOpen(false);
@@ -114,7 +177,13 @@ export default function SettingsPage() {
       </div>
 
       <SettingsSection title="Cài đặt ứng dụng">
-        <SettingsRow icon={Palette} label="Chủ đề" subtitle="Sáng (mặc định)" color="var(--c-sleep)" />
+        <SettingsRow
+          icon={isDarkTheme ? Moon : Sun}
+          label="Chủ đề"
+          subtitle={isDarkTheme ? "Tối" : "Sáng (mặc định)"}
+          color="var(--c-sleep)"
+          right={<Switch checked={isDarkTheme} onChange={handleToggleTheme} label="Chủ đề tối" />}
+        />
         <SettingsRow
           icon={Bell}
           label="Thông báo"
@@ -219,6 +288,23 @@ export default function SettingsPage() {
         </p>
       </SettingsSection>
 
+      <SettingsSection title="Bảo mật">
+        <SettingsRow
+          icon={ShieldLockIcon}
+          label="Khoá ứng dụng (PIN)"
+          subtitle={appLockEnabled ? "Đang bật" : "Đang tắt"}
+          color="var(--c-period)"
+          right={<Switch checked={appLockEnabled} onChange={handleToggleAppLock} label="Khoá ứng dụng bằng PIN" />}
+        />
+        {appLockEnabled && (
+          <SettingsRow icon={Lock} label="Đổi mã PIN" color="var(--c-sleep)" onClick={openPinSetup} />
+        )}
+        <p className="px-1 pb-3 text-[11px] leading-relaxed text-[var(--ink-faint)]">
+          Yêu cầu nhập PIN mỗi khi mở lại ứng dụng trên trình duyệt này. Đây là lớp khoá
+          bổ sung đơn giản, không thay thế mật khẩu tài khoản.
+        </p>
+      </SettingsSection>
+
       <SettingsSection title="Khác">
         <SettingsRow icon={Star} label="Đánh giá ứng dụng" color="var(--c-ovulation)" />
         <SettingsRow icon={MessageCircle} label="Phản hồi" color="var(--c-sleep)" />
@@ -270,6 +356,58 @@ export default function SettingsPage() {
                 </button>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {pinModalOpen && (
+        <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/30" onClick={closePinModal}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-card-strong flex w-full max-w-md flex-col gap-4 rounded-t-[28px] p-6"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-lg font-bold text-[var(--ink)]">
+                {pinStep === "new" ? "Đặt mã PIN mới" : "Nhập lại mã PIN"}
+              </h2>
+              <button type="button" onClick={closePinModal} className="rounded-full p-1.5 hover:bg-black/5">
+                <Delete size={18} />
+              </button>
+            </div>
+
+            <p className="text-xs text-[var(--ink-faint)]">
+              {pinStep === "new"
+                ? "Gồm 4-6 chữ số, dùng để mở khoá ứng dụng mỗi khi truy cập lại."
+                : "Nhập lại chính xác mã PIN vừa đặt để xác nhận."}
+            </p>
+
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={6}
+              autoFocus
+              value={pinStep === "new" ? pinDraft : pinConfirmDraft}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
+                if (pinStep === "new") setPinDraft(digits);
+                else setPinConfirmDraft(digits);
+                setPinError(null);
+              }}
+              placeholder="••••"
+              className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-center text-lg font-semibold tracking-[0.5em] text-[var(--ink)] outline-none"
+            />
+
+            {pinError && <p className="text-center text-xs font-medium text-[var(--c-period)]">{pinError}</p>}
+
+            <button
+              type="button"
+              disabled={savingPin}
+              onClick={pinStep === "new" ? handlePinNewSubmit : handlePinConfirmSubmit}
+              className="flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-white disabled:opacity-60"
+              style={{ background: "linear-gradient(135deg, var(--c-sleep), var(--c-period))" }}
+            >
+              {savingPin ? "Đang lưu..." : pinStep === "new" ? "Tiếp tục" : "Xác nhận"}
+            </button>
           </div>
         </div>
       )}
