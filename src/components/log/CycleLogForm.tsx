@@ -6,9 +6,9 @@
 // nền đặc (var(--surface)) thay vì glass-card-strong để không bao giờ bị
 // "trong suốt khó nhìn" khi có date picker hoặc nội dung khác đè lên.
 
-import { useMemo, useState } from "react";
-import { X, Loader2, Trash2, ChevronLeft, ChevronRight, Check } from "lucide-react";
-import { useAddCycleLog, useUpdateCycleLog, useDeleteCycleLog, CycleLogFull } from "@/lib/queries";
+import { useEffect, useMemo, useState } from "react";
+import { X, Loader2, Trash2, ChevronLeft, ChevronRight, Check, Info } from "lucide-react";
+import { useAddCycleLog, useUpdateCycleLog, useDeleteCycleLog, useCycleLogs, CycleLogFull } from "@/lib/queries";
 import {
   SYMPTOM_CATEGORIES,
   SYMPTOM_CATEGORY_LABELS,
@@ -51,7 +51,25 @@ export default function CycleLogForm({
   const addCycleLog = useAddCycleLog();
   const updateCycleLog = useUpdateCycleLog();
   const deleteCycleLog = useDeleteCycleLog();
+  const { data: allCycleLogs = [] } = useCycleLogs();
   const today = new Date().toISOString().slice(0, 10);
+
+  // Kỳ kinh "đang mở" gần nhất: chưa có end_date và bắt đầu trong vòng 10
+  // ngày đổ lại. Trước đây mỗi lần bấm "Ghi nhận" đều tạo 1 dòng mới, nên
+  // hành kinh 3 ngày liên tiếp bị tách thành 3 dòng 1-ngày rời rạc, không
+  // gộp lại được — currentDay/lịch chỉ đọc dòng mới nhất nên hiện "1 ngày".
+  // Giờ nếu đang có kỳ mở, form sẽ tự chuyển sang chế độ SỬA dòng đó.
+  const openLog = useMemo(() => {
+    if (editLog) return null;
+    const now = new Date();
+    return (
+      allCycleLogs.find((l) => {
+        if (l.end_date) return false;
+        const diffDays = Math.round((now.getTime() - new Date(l.start_date).getTime()) / 86400000);
+        return diffDays >= 0 && diffDays <= 10;
+      }) ?? null
+    );
+  }, [allCycleLogs, editLog]);
 
   const [startDate, setStartDate] = useState(editLog?.start_date ?? today);
   const [endDate, setEndDate] = useState(editLog?.end_date ?? "");
@@ -61,7 +79,32 @@ export default function CycleLogForm({
   const [activeCategory, setActiveCategory] = useState(SYMPTOM_CARD_CATEGORIES[0]);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [step, setStep] = useState(0);
+  const [continuingId, setContinuingId] = useState<string | null>(null);
+  const [continueDismissed, setContinueDismissed] = useState(false);
 
+  // Khi phát hiện kỳ đang mở (và người dùng chưa chọn "ghi kỳ mới"), nạp dữ
+  // liệu của kỳ đó vào form và ghi nhớ id để LƯU sẽ UPDATE thay vì INSERT.
+  useEffect(() => {
+    if (editLog || continueDismissed || continuingId || !openLog) return;
+    setContinuingId(openLog.id);
+    setStartDate(openLog.start_date);
+    setFlow(openLog.flow ?? "medium");
+    setSymptoms(openLog.symptoms ?? []);
+    setNote(openLog.note ?? "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openLog, editLog, continueDismissed]);
+
+  function startNewPeriodInstead() {
+    setContinuingId(null);
+    setContinueDismissed(true);
+    setStartDate(today);
+    setEndDate("");
+    setFlow("medium");
+    setSymptoms([]);
+    setNote("");
+  }
+
+  const targetId = editLog?.id ?? continuingId ?? null;
   const isEdit = !!editLog;
   const saving = addCycleLog.isPending || updateCycleLog.isPending;
   const isLastStep = step === STEPS.length - 1;
@@ -80,8 +123,8 @@ export default function CycleLogForm({
 
   async function handleSubmit() {
     const payload = { start_date: startDate, end_date: endDate || null, flow, symptoms, note };
-    if (isEdit) {
-      await updateCycleLog.mutateAsync({ id: editLog.id, ...payload });
+    if (targetId) {
+      await updateCycleLog.mutateAsync({ id: targetId, ...payload });
     } else {
       await addCycleLog.mutateAsync(payload);
     }
@@ -89,8 +132,8 @@ export default function CycleLogForm({
   }
 
   async function handleDelete() {
-    if (!editLog) return;
-    await deleteCycleLog.mutateAsync(editLog.id);
+    if (!targetId) return;
+    await deleteCycleLog.mutateAsync(targetId);
     onClose();
   }
 
@@ -110,7 +153,7 @@ export default function CycleLogForm({
 
         <div className="flex items-center justify-between px-6 pt-3">
           <h2 className="font-display text-lg font-bold text-[var(--ink)]">
-            {isEdit ? "Sửa kỳ kinh" : "Ghi nhận kỳ kinh"}
+            {isEdit ? "Sửa kỳ kinh" : continuingId ? "Tiếp tục kỳ kinh" : "Ghi nhận kỳ kinh"}
           </h2>
           <button type="button" onClick={onClose} className="rounded-full p-1.5 hover:bg-black/5">
             <X size={18} />
@@ -145,6 +188,27 @@ export default function CycleLogForm({
           {/* Bước 1: Ngày & lượng máu */}
           {step === 0 && (
             <section className="flex flex-col gap-4">
+              {continuingId && !editLog && (
+                <div
+                  className="flex items-start gap-2.5 rounded-2xl p-3.5"
+                  style={{ background: "color-mix(in srgb, var(--c-period) 10%, white)" }}
+                >
+                  <Info size={16} className="mt-0.5 shrink-0" style={{ color: "var(--c-period)" }} />
+                  <div className="flex-1 text-xs leading-relaxed text-[var(--ink-soft)]">
+                    Bạn đang có kỳ kinh chưa kết thúc, bắt đầu{" "}
+                    {new Date(startDate).toLocaleDateString("vi-VN")}. Ghi nhận hôm nay sẽ được{" "}
+                    <b className="text-[var(--ink)]">cộng thêm vào kỳ này</b>, không tạo dòng mới.
+                    <button
+                      type="button"
+                      onClick={startNewPeriodInstead}
+                      className="mt-1.5 block font-semibold underline underline-offset-2"
+                      style={{ color: "var(--c-period)" }}
+                    >
+                      Đây là kỳ kinh mới, không phải kỳ trên?
+                    </button>
+                  </div>
+                </div>
+              )}
               <AppDatePicker
                 mode="range"
                 startValue={startDate}
@@ -339,7 +403,7 @@ export default function CycleLogForm({
             </button>
           </div>
 
-          {isEdit && isLastStep && (
+          {targetId && isLastStep && (
             <>
               {!confirmingDelete ? (
                 <button

@@ -31,6 +31,42 @@ function addDays(date: Date, days: number) {
 }
 
 /**
+ * Gộp các log chồng lấn hoặc liền kề (cách nhau <=1 ngày) thành 1 kỳ kinh
+ * logic duy nhất — lấy start_date sớm nhất và end_date muộn nhất. Đây là
+ * lớp phòng vệ cho dữ liệu cũ/lỗi (VD trước khi sửa form, mỗi ngày hành
+ * kinh bị lưu thành 1 dòng riêng): nếu không gộp, 2 dòng liền kề sẽ bị tính
+ * là 2 chu kỳ cách nhau 0-1 ngày → báo "chu kỳ bất thường" sai và
+ * currentDay/lịch hiển thị sai. Không sửa dữ liệu trong DB — chỉ gộp khi
+ * tính toán hiển thị.
+ */
+export function coalesceCycleLogs<T extends CycleLog>(logs: T[]): T[] {
+  const ascending = [...logs].sort(
+    (a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+  );
+
+  const merged: T[] = [];
+  for (const log of ascending) {
+    const prev = merged[merged.length - 1];
+    if (prev) {
+      const prevEnd = prev.end_date ? new Date(prev.end_date) : new Date(prev.start_date);
+      const curStart = new Date(log.start_date);
+      // liền kề/chồng lấn nếu kỳ mới bắt đầu trong vòng 1 ngày sau khi kỳ
+      // trước đó "kết thúc" (hoặc trước khi nó kết thúc, tức chồng lấn).
+      if (diffInDays(curStart, prevEnd) <= 1) {
+        const prevEndKey = prev.end_date ?? prev.start_date;
+        const curEndKey = log.end_date ?? log.start_date;
+        const newEnd = new Date(curEndKey) > new Date(prevEndKey) ? curEndKey : prevEndKey;
+        merged[merged.length - 1] = { ...prev, end_date: newEnd };
+        continue;
+      }
+    }
+    merged.push({ ...log });
+  }
+
+  return merged.sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+}
+
+/**
  * Tính dự đoán chu kỳ dựa trên lịch sử `cycle_logs`, sắp xếp mới nhất trước.
  * Nếu chưa có đủ dữ liệu, dùng giá trị mặc định (28 ngày chu kỳ, 5 ngày hành kinh)
  * lấy từ `profiles.avg_cycle_length` / `avg_period_length`.
@@ -43,10 +79,9 @@ export function predictCycle(
   },
   today: Date = new Date()
 ): CyclePrediction {
-  const sorted = [...logs].sort(
+  const sorted = coalesceCycleLogs(logs).sort(
     (a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
   );
-
   let avgCycleLength = fallback.avgCycleLength;
   let avgPeriodLength = fallback.avgPeriodLength;
 
@@ -76,7 +111,13 @@ export function predictCycle(
     }
   }
 
-  const lastStart = sorted.length > 0 ? new Date(sorted[0].start_date) : addDays(today, -avgCycleLength / 2);
+  // Ưu tiên anchor vào kỳ đang MỞ (chưa có end_date) gần nhất — vì đó là kỳ
+  // thực sự đang diễn ra. Nếu không có kỳ nào đang mở (mọi kỳ đều đã đóng),
+  // dùng kỳ có start_date gần nhất như cũ. Việc này giúp "Ngày X/Y" hiển thị
+  // đúng ngay cả khi dữ liệu cũ còn sót vài dòng 1-ngày trùng lặp.
+  const openSorted = sorted.filter((l) => !l.end_date);
+  const anchorLog = openSorted[0] ?? sorted[0] ?? null;
+  const lastStart = anchorLog ? new Date(anchorLog.start_date) : addDays(today, -avgCycleLength / 2);
   const currentDay = Math.max(1, diffInDays(today, lastStart) + 1);
   const nextPeriodDate = addDays(lastStart, avgCycleLength);
   const ovulationDate = addDays(nextPeriodDate, -14);
@@ -130,9 +171,7 @@ export interface CycleHistoryEntry {
  * tức `history[0].cycleLength` = độ dài chu kỳ gần đây nhất đã hoàn thành.
  */
 export function buildCycleHistory(logs: CycleLog[]): CycleHistoryEntry[] {
-  const sorted = [...logs].sort(
-    (a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
-  );
+  const sorted = coalesceCycleLogs(logs);
 
   return sorted.map((log, i) => {
     const next = sorted[i + 1];

@@ -1,8 +1,16 @@
 "use client";
 
+// P11 fix: lịch trước đây tô màu "hành kinh" bằng công thức thuần suy đoán
+// (nextPeriodDate - avgCycleLength), KHÔNG đọc dữ liệu `cycle_logs` thật —
+// nên có thể lệch hẳn so với "Lịch sử gần đây" và chồng lấn với cửa sổ thụ
+// thai. Giờ: ngày hành kinh trong quá khứ/hiện tại lấy trực tiếp từ các
+// khoảng start_date→end_date đã ghi (kỳ chưa kết thúc thì tính tới hôm nay);
+// chỉ có "Rụng trứng" / "Cửa sổ thụ thai" / kỳ tiếp theo là suy đoán, và suy
+// đoán không bao giờ vẽ đè lên ngày đã có dữ liệu thật.
+
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { CyclePrediction } from "@/lib/cycle-utils";
+import { CyclePrediction, CycleLog } from "@/lib/cycle-utils";
 
 const weekdays = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 const monthNames = [
@@ -14,17 +22,43 @@ function isSameDay(a: Date, b: Date) {
   return a.toDateString() === b.toDateString();
 }
 
-function dayType(date: Date, prediction: CyclePrediction, periodLength: number) {
-  const periodStart = new Date(prediction.nextPeriodDate);
-  periodStart.setDate(periodStart.getDate() - prediction.avgCycleLength);
-  for (let i = 0; i < periodLength; i++) {
-    const d = new Date(periodStart);
-    d.setDate(d.getDate() + i);
-    if (isSameDay(d, date)) return "period";
+function toKey(d: Date) {
+  return d.toDateString();
+}
+
+function addDays(d: Date, n: number) {
+  const out = new Date(d);
+  out.setDate(out.getDate() + n);
+  return out;
+}
+
+/** Tập hợp các ngày hành kinh THẬT, dựng từ start_date→end_date của mọi log.
+ *  Kỳ chưa có end_date (đang mở) tính tới hôm nay, giới hạn tối đa 15 ngày để
+ *  tránh tô tràn lan nếu dữ liệu lỗi. */
+function buildLoggedPeriodDays(logs: CycleLog[], today: Date): Set<string> {
+  const set = new Set<string>();
+  for (const log of logs) {
+    const start = new Date(log.start_date);
+    const end = log.end_date ? new Date(log.end_date) : today;
+    let cur = start;
+    let guard = 0;
+    while (cur <= end && guard < 15) {
+      set.add(toKey(cur));
+      cur = addDays(cur, 1);
+      guard++;
+    }
   }
+  return set;
+}
+
+function dayType(
+  date: Date,
+  prediction: CyclePrediction,
+  loggedPeriodDays: Set<string>
+) {
+  if (loggedPeriodDays.has(toKey(date))) return "period";
   if (isSameDay(date, prediction.ovulationDate)) return "ovulation";
-  if (date >= prediction.fertileWindow.start && date <= prediction.fertileWindow.end)
-    return "fertile";
+  if (date >= prediction.fertileWindow.start && date <= prediction.fertileWindow.end) return "fertile";
   if (isSameDay(date, prediction.nextPeriodDate)) return "period-next";
   return null;
 }
@@ -36,7 +70,13 @@ const typeColor: Record<string, string> = {
   fertile: "var(--c-fertile)",
 };
 
-export default function CycleCalendar({ prediction }: { prediction: CyclePrediction }) {
+export default function CycleCalendar({
+  prediction,
+  cycleLogs,
+}: {
+  prediction: CyclePrediction;
+  cycleLogs: CycleLog[];
+}) {
   const [cursor, setCursor] = useState(() => {
     const d = new Date();
     d.setDate(1);
@@ -56,6 +96,7 @@ export default function CycleCalendar({ prediction }: { prediction: CyclePredict
   }, [cursor]);
 
   const today = new Date();
+  const loggedPeriodDays = useMemo(() => buildLoggedPeriodDays(cycleLogs, today), [cycleLogs]);
 
   return (
     <div className="glass-card rounded-[26px] p-5">
@@ -85,7 +126,7 @@ export default function CycleCalendar({ prediction }: { prediction: CyclePredict
         ))}
         {days.map((date, i) => {
           if (!date) return <div key={i} />;
-          const type = dayType(date, prediction, prediction.avgPeriodLength);
+          const type = dayType(date, prediction, loggedPeriodDays);
           const isToday = isSameDay(date, today);
           return (
             <div key={i} className="flex justify-center">

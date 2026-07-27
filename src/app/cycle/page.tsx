@@ -92,7 +92,7 @@ export default function CyclePage() {
             )}
           </section>
 
-          <CycleCalendar prediction={prediction} />
+          <CycleCalendar prediction={prediction} cycleLogs={cycleLogs} />
 
           <DailyInsights phase={prediction.phase} />
 
