@@ -18,6 +18,7 @@ import { isVipProfile } from "@/lib/vip";
 import CycleInsights from "@/components/profile/CycleInsights";
 import WeightBBTChart from "@/components/profile/WeightBBTChart";
 import CorrelationChart from "@/components/profile/CorrelationChart";
+import SymptomAnalysis from "@/components/profile/SymptomAnalysis";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import MembershipCard from "@/components/profile/MembershipCard";
 import LockedFeature from "@/components/profile/LockedFeature";
@@ -160,6 +161,12 @@ export default function ProfilePage() {
       <LockedFeature locked={!vip} title="Phân tích tương quan VIP">
         <CorrelationChart />
       </LockedFeature>
+
+      {cycleLogs.length > 0 && (
+        <LockedFeature locked={!vip} title="Phân tích triệu chứng VIP">
+          <SymptomAnalysis cycleLogs={cycleLogs} />
+        </LockedFeature>
+      )}
 
       <Link href="/appointments" className="glass-card flex items-center gap-3 rounded-[22px] p-4">
         <span
