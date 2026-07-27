@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Crown, Lock, Sparkles } from "lucide-react";
 
 interface MembershipCardProps {
@@ -7,6 +8,8 @@ interface MembershipCardProps {
 }
 
 export default function MembershipCard({ isVip }: MembershipCardProps) {
+  const router = useRouter();
+
   if (isVip) {
     return (
       <div
@@ -44,6 +47,7 @@ export default function MembershipCard({ isVip }: MembershipCardProps) {
       </div>
       <button
         type="button"
+        onClick={() => router.push("/upgrade")}
         className="flex items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-semibold text-white"
         style={{ background: "linear-gradient(135deg, #f6c453, #e85c8a 55%, #7c6ff0)" }}
       >

@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { Crown, Lock } from "lucide-react";
 
 interface LockedFeatureProps {
@@ -10,6 +11,7 @@ interface LockedFeatureProps {
 }
 
 export default function LockedFeature({ locked, title = "Tính năng VIP", children }: LockedFeatureProps) {
+  const router = useRouter();
   if (!locked) return <>{children}</>;
 
   return (
@@ -32,6 +34,7 @@ export default function LockedFeature({ locked, title = "Tính năng VIP", child
         <p className="text-xs text-[var(--ink-faint)]">Nâng cấp VIP để xem chi tiết</p>
         <button
           type="button"
+          onClick={() => router.push("/upgrade")}
           className="mt-1 flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-white"
           style={{ background: "linear-gradient(135deg, #f6c453, #e85c8a 55%, #7c6ff0)" }}
         >

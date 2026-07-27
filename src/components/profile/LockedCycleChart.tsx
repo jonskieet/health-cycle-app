@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Gem } from "lucide-react";
 
 // Đường minh hoạ tĩnh (không phải dữ liệu thật của user) — chỉ để cho thấy
@@ -27,6 +28,7 @@ function buildSmoothPath(points: { x: number; y: number }[]) {
 }
 
 export default function LockedCycleChart() {
+  const router = useRouter();
   const path = buildSmoothPath(ILLUSTRATIVE_POINTS);
 
   return (
@@ -91,6 +93,7 @@ export default function LockedCycleChart() {
 
       <button
         type="button"
+        onClick={() => router.push("/upgrade")}
         className="flex items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold text-white"
         style={{ background: "var(--c-period)" }}
       >

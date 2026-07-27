@@ -347,3 +347,50 @@ export function computeTodayHealthScore(rows: HealthMetricRow[]) {
     mood: latestValue(rows, "mood") ?? undefined,
   });
 }
+
+// ---------- VIP requests (Module 0 — luồng nâng cấp VIP) ----------
+
+export type VipRequestStatus = "pending" | "approved" | "rejected";
+
+export interface VipRequest {
+  id: string;
+  status: VipRequestStatus;
+  note: string | null;
+  transfer_code: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+/** Yêu cầu VIP gần nhất của user hiện tại (null nếu chưa từng gửi). */
+export function useLatestVipRequest() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["vip_request_latest", user?.id],
+    enabled: !!user,
+    queryFn: async (): Promise<VipRequest | null> => {
+      const { data, error } = await supabase
+        .from("vip_requests")
+        .select("id, status, note, transfer_code, created_at, reviewed_at")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useCreateVipRequest() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { note?: string; transfer_code: string }) => {
+      const { error } = await supabase
+        .from("vip_requests")
+        .insert({ user_id: user!.id, note: input.note ?? null, transfer_code: input.transfer_code });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["vip_request_latest", user?.id] }),
+  });
+}

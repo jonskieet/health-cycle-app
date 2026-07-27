@@ -18,7 +18,8 @@ export default function BottomNav() {
     pathname === "/login" ||
     pathname === "/onboarding" ||
     pathname === "/profile/report" ||
-    pathname === "/settings"
+    pathname === "/settings" ||
+    pathname === "/upgrade"
   )
     return null;
 
