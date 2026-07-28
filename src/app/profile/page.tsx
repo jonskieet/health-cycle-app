@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Settings,
@@ -37,10 +37,15 @@ export default function ProfilePage() {
   const toast = useToast();
   const vip = isVipProfile(profile);
 
-  const lifetimeStats = predictCycle(cycleLogs, {
-    avgCycleLength: profile?.avg_cycle_length ?? 28,
-    avgPeriodLength: profile?.avg_period_length ?? 5,
-  });
+  const profileAvgCycleLength = profile?.avg_cycle_length ?? 28;
+  const profileAvgPeriodLength = profile?.avg_period_length ?? 5;
+  // Module C4: tránh tính lại predictCycle() mỗi khi trang re-render (vd
+  // đang kéo slider chỉnh avg_cycle_length ở phần cấu hình bên dưới — đó là
+  // state override riêng, không phải giá trị dùng cho lifetimeStats này).
+  const lifetimeStats = useMemo(
+    () => predictCycle(cycleLogs, { avgCycleLength: profileAvgCycleLength, avgPeriodLength: profileAvgPeriodLength }),
+    [cycleLogs, profileAvgCycleLength, profileAvgPeriodLength]
+  );
 
   // Local override once the user starts dragging a slider; falls back to
   // the loaded profile value (or a sane default) until then.

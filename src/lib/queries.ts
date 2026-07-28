@@ -55,6 +55,10 @@ export function useProfile() {
   return useQuery({
     queryKey: ["profile", user?.id],
     enabled: !!user,
+    // Module C1: hồ sơ (tên, ngày sinh, độ dài chu kỳ mặc định, theme...)
+    // hiếm khi đổi trong 1 phiên sử dụng — 5 phút là đủ an toàn, giảm hẳn
+    // số lần gọi lại Supabase mỗi khi user chuyển qua lại giữa các tab.
+    staleTime: 5 * 60_000,
     queryFn: async (): Promise<Profile | null> => {
       const { data, error } = await supabase
         .from("profiles")
@@ -187,6 +191,10 @@ export function useHealthMetrics() {
   return useQuery({
     queryKey: ["health_metrics", user?.id],
     enabled: !!user,
+    // Module C1: đây là dữ liệu "hôm nay" — user có thể ghi nhận chỉ số ở
+    // 1 tab/thiết bị rồi quay lại Dashboard ở nơi khác gần như ngay lập
+    // tức, nên giữ staleTime ngắn hơn mặc định toàn app thay vì 30s.
+    staleTime: 10_000,
     queryFn: async (): Promise<HealthMetricRow[]> => {
       const since = new Date();
       since.setDate(since.getDate() - 6);

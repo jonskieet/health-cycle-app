@@ -20,6 +20,7 @@ import {
   HealthMetricRow,
   MetricType,
 } from "@/lib/queries";
+import { useMemo } from "react";
 import { predictCycle, phaseLabel, phaseColor, daysUntil } from "@/lib/cycle-utils";
 
 export default function DashboardPage() {
@@ -29,12 +30,18 @@ export default function DashboardPage() {
   const { data: metrics = [], isLoading: metricsLoading } = useHealthMetrics();
   const { data: upcomingAppointments } = useUpcomingAppointments();
 
-  const prediction = predictCycle(cycleLogs, {
-    avgCycleLength: profile?.avg_cycle_length ?? 28,
-    avgPeriodLength: profile?.avg_period_length ?? 5,
-  });
+  const avgCycleLength = profile?.avg_cycle_length ?? 28;
+  const avgPeriodLength = profile?.avg_period_length ?? 5;
+  // Module C4: predictCycle() sort + lặp qua toàn bộ cycleLogs — tính lại
+  // useMemo theo đúng các giá trị đầu vào thật sự ảnh hưởng kết quả, tránh
+  // tính lại mỗi khi Dashboard re-render vì lý do không liên quan (vd Toast
+  // tự ẩn, focus lại tab khiến query khác cập nhật).
+  const prediction = useMemo(
+    () => predictCycle(cycleLogs, { avgCycleLength, avgPeriodLength }),
+    [cycleLogs, avgCycleLength, avgPeriodLength]
+  );
   const daysToNext = daysUntil(prediction.nextPeriodDate);
-  const healthScore = computeTodayHealthScore(metrics);
+  const healthScore = useMemo(() => computeTodayHealthScore(metrics), [metrics]);
   const hasAnyMetrics = metrics.length > 0;
   const loading = cycleLoading || metricsLoading;
 
@@ -199,8 +206,11 @@ function MetricLink({
   color: string;
   onClick: () => void;
 }) {
-  const value = latestValue(metrics, type);
-  const series = buildWeekSeries(metrics, type).map((d) => d.value ?? 0);
+  const value = useMemo(() => latestValue(metrics, type), [metrics, type]);
+  const series = useMemo(
+    () => buildWeekSeries(metrics, type).map((d) => d.value ?? 0),
+    [metrics, type]
+  );
 
   return (
     <MetricCard

@@ -22,6 +22,19 @@ function QueryProviderWithGlobalErrorToast({ children }: { children: React.React
         mutationCache: new MutationCache({
           onError: (error) => toast.error(error),
         }),
+        // Module C1 (QUALITY_UX_ROADMAP.md) — mặc định của React Query là
+        // staleTime: 0, nghĩa là MỌI query bị coi là "cũ" ngay khi vừa fetch
+        // xong → refetch lại mỗi khi component mount lại (chuyển tab qua lại
+        // trong app) hoặc cửa sổ được focus lại, dù dữ liệu vừa lấy 1 giây
+        // trước. Đặt mặc định 30s cho toàn app (an toàn cho phần lớn dữ liệu
+        // dạng "hồ sơ cá nhân" ít đổi trong 1 phiên dùng) — các query có dữ
+        // liệu đổi nhanh hơn (vd health_metrics "hôm nay") tự override
+        // staleTime ngắn hơn ngay tại hook của nó trong queries.ts.
+        defaultOptions: {
+          queries: {
+            staleTime: 30_000,
+          },
+        },
       })
   );
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;

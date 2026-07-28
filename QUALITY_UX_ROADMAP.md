@@ -95,7 +95,7 @@ một kiểu (có form show banner đỏ trong modal, có form im lặng không 
 
 ## 3. Nhóm C — Tối ưu hiệu năng
 
-- [ ] **C1. Rà soát re-render thừa** — các trang nhiều `useQuery` cùng lúc
+- [x] **C1. Rà soát re-render thừa** — các trang nhiều `useQuery` cùng lúc
       (`/profile`, `/`) có thể đang fetch/re-render dư thừa; cân nhắc `staleTime`
       hợp lý hơn cho từng loại query (dữ liệu ít đổi như `profile` vs dữ liệu hay
       đổi như `health_metrics` hôm nay).
@@ -106,7 +106,7 @@ một kiểu (có form show banner đỏ trong modal, có form im lặng không 
 - [ ] **C3. Tối ưu ảnh/icon** — kiểm tra `public/icon-192.png`, `icon-512.png`
       hiện là ảnh tạm placeholder (ghi rõ trong nhật ký Module 13 cũ) — thay
       bằng icon thiết kế thật, nén đúng chuẩn PWA.
-- [ ] **C4. Cache hoá các phép tính nặng lặp lại** — `predictCycle()`,
+- [x] **C4. Cache hoá các phép tính nặng lặp lại** — `predictCycle()`,
       `computeSymptomFrequencies()`, `pearsonCorrelation()` đang tính lại mỗi
       render nếu component cha re-render — cân nhắc `useMemo` ở nơi gọi nếu chưa có.
 
@@ -624,3 +624,57 @@ trước tiên vì rất nhiều mục khác (A3, B1...) phụ thuộc vào có 
   - Người thực hiện: Claude. File package gửi cho user:
     `module_B3b_safe_area_cleanup.zip` (4 file: `CycleLogForm.tsx`,
     `MetricLogForm.tsx`, `AppointmentForm.tsx`, `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành Module C1 + C4 (Nhóm C — Tối ưu hiệu năng:
+  staleTime hợp lý + cache hoá phép tính nặng)**. Gộp 2 mục vì cả 2 đều khối
+  lượng nhỏ, cùng chủ đề "tránh làm việc thừa", không xuyên suốt nhiều trang
+  theo kiểu rủi ro cao.
+  - **C1 — staleTime**: `QueryClient` ở `providers.tsx` trước đây KHÔNG có
+    `defaultOptions` → mặc định `staleTime: 0` của React Query, nghĩa là mọi
+    query bị coi "cũ" ngay sau khi fetch xong, tự động gọi lại Supabase mỗi
+    khi component mount lại (chuyển tab qua lại trong app) hoặc cửa sổ được
+    focus lại. Đặt mặc định `staleTime: 30_000` (30s) cho toàn app — hợp lý
+    với phần lớn dữ liệu. Override riêng 2 chỗ đặc thù đúng như roadmap gợi
+    ý: `useProfile()` → 5 phút (hồ sơ hiếm khi đổi trong 1 phiên), và
+    `useHealthMetrics()` → 10s (dữ liệu "hôm nay", user có thể vừa ghi ở tab
+    khác quay lại ngay). Các query còn lại (cycle_logs, appointments,
+    reminders, kegel_sessions, fatigue_tests, vip_request) dùng mặc định 30s,
+    không cần override vì tần suất đổi không quá đặc biệt theo 1 trong 2
+    hướng trên.
+  - **C4 — cache hoá phép tính nặng**: `pearsonCorrelation()`
+    (`CorrelationChart.tsx`) và `computeSymptomFrequencies()`
+    (`SymptomAnalysis.tsx`) hoá ra ĐÃ được bọc `useMemo` từ trước (rà lại
+    bằng `grep`, không phải bug). Phần thật sự thiếu: `predictCycle()` (sort
+    + lặp toàn bộ `cycleLogs`) được gọi trực tiếp trong thân component ở 4
+    trang — `page.tsx` (Dashboard), `cycle/page.tsx`, `profile/page.tsx`,
+    `profile/report/page.tsx` — tính lại mỗi lần re-render dù `cycleLogs`
+    không đổi (vd gõ ghi chú, kéo slider ở phần khác của cùng trang, toast
+    tự ẩn). Đã bọc `useMemo` theo đúng dependency thật sự ảnh hưởng kết quả
+    (`cycleLogs`, `avgCycleLength`, `avgPeriodLength`) ở cả 4 nơi. Tiện thể
+    cũng `useMemo` hoá `computeTodayHealthScore()` (Dashboard) và
+    `buildCycleHistory()` (trang báo cáo). Riêng Dashboard còn có
+    `MetricLink` (5 thẻ chỉ số) mỗi thẻ tự gọi `latestValue()` +
+    `buildWeekSeries()` — cũng bọc `useMemo` theo `[metrics, type]`, tránh
+    lặp lại phép lọc mảng 5 lần mỗi render. **Không đụng** `PwaRegister.tsx`
+    (gọi `predictCycle()` bên trong `useEffect`, không phải mỗi lần render,
+    nên không thuộc phạm vi vấn đề C4 nêu ra).
+  - Lưu ý kỹ thuật nhỏ đã cân nhắc: `predictCycle()` có tham số mặc định
+    `today = new Date()` — khi bọc `useMemo` theo `cycleLogs`/độ dài chu kỳ,
+    kết quả sẽ "đóng băng" theo đúng thời điểm tính cho đến khi 1 trong các
+    dependency đó đổi (không tự động cập nhật lại khi sang ngày mới nếu
+    không có tương tác nào khác) — chấp nhận được vì đây là app di động
+    thường bị đóng/mở lại (remount) qua đêm, không giữ 1 phiên useMemo xuyên
+    nhiều ngày liên tục; không thuộc phạm vi sửa sâu hơn của module này.
+  - Đã cài `node_modules`, chạy `tsc --noEmit` + `eslint src/` toàn repo —
+    sạch. Gặp 1 lỗi tự gây ra khi sửa (trùng tên biến `avgCycleLength`/
+    `avgPeriodLength` với state override slider sẵn có ở `profile/page.tsx`)
+    — phát hiện ngay bởi `tsc`, đã đổi tên thành `profileAvgCycleLength`/
+    `profileAvgPeriodLength` để tránh nhầm với override cục bộ của người dùng
+    khi đang kéo slider.
+  - Việc tiếp theo trong roadmap: **C2** (dynamic import cho `jspdf`/
+    `recharts` — chỉ VIP mới dùng tới PDF export/biểu đồ tương quan), **C3**
+    (icon PWA thật thay placeholder — cần file thiết kế thật, không tự chế
+    được), hoặc **B5**/**Nhóm D** (giao diện).
+  - Người thực hiện: Claude. File package gửi cho user:
+    `module_C1_C4_perf.zip` (6 file sửa: `providers.tsx`, `queries.ts`,
+    `app/page.tsx`, `app/cycle/page.tsx`, `app/profile/page.tsx`,
+    `app/profile/report/page.tsx`, `QUALITY_UX_ROADMAP.md`).

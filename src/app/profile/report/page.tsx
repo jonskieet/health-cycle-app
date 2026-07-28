@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { ArrowLeft, Printer, FileDown } from "lucide-react";
 import { useProfile, useCycleLogs, useHealthMetrics, MetricType } from "@/lib/queries";
@@ -24,11 +25,16 @@ export default function HealthReportPage() {
   const { data: metrics = [] } = useHealthMetrics();
   const vip = isVipProfile(profile);
 
-  const prediction = predictCycle(cycleLogs, {
-    avgCycleLength: profile?.avg_cycle_length ?? 28,
-    avgPeriodLength: profile?.avg_period_length ?? 5,
-  });
-  const history = buildCycleHistory(cycleLogs).slice(0, 6);
+  const avgCycleLength = profile?.avg_cycle_length ?? 28;
+  const avgPeriodLength = profile?.avg_period_length ?? 5;
+  // Module C4: trang này còn build cả PDF (jspdf) khi bấm xuất — tránh tính
+  // lại predictCycle()/buildCycleHistory() (đều lặp toàn bộ cycleLogs) ở
+  // mỗi lần re-render không liên quan.
+  const prediction = useMemo(
+    () => predictCycle(cycleLogs, { avgCycleLength, avgPeriodLength }),
+    [cycleLogs, avgCycleLength, avgPeriodLength]
+  );
+  const history = useMemo(() => buildCycleHistory(cycleLogs).slice(0, 6), [cycleLogs]);
 
   const metricsByDate = new Map<string, Partial<Record<MetricType, number>>>();
   metrics.forEach((m) => {

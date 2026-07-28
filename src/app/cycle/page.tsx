@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, ChevronRight, Sparkles } from "lucide-react";
 import AuroraRing from "@/components/ui/AuroraRing";
 import CycleCalendar from "@/components/cycle/CycleCalendar";
@@ -24,10 +24,14 @@ export default function CyclePage() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInitialMessage, setChatInitialMessage] = useState<string | undefined>(undefined);
 
-  const prediction = predictCycle(cycleLogs, {
-    avgCycleLength: profile?.avg_cycle_length ?? 28,
-    avgPeriodLength: profile?.avg_period_length ?? 5,
-  });
+  const avgCycleLength = profile?.avg_cycle_length ?? 28;
+  const avgPeriodLength = profile?.avg_period_length ?? 5;
+  // Module C4: tránh tính lại predictCycle() (sort + lặp toàn bộ cycleLogs)
+  // mỗi khi trang re-render vì lý do khác (mở/đóng modal, gõ chat...).
+  const prediction = useMemo(
+    () => predictCycle(cycleLogs, { avgCycleLength, avgPeriodLength }),
+    [cycleLogs, avgCycleLength, avgPeriodLength]
+  );
   const daysToNext = daysUntil(prediction.nextPeriodDate);
   const daysToOvulation = daysUntil(prediction.ovulationDate);
   const ringPercent = Math.min(100, (prediction.currentDay / prediction.avgCycleLength) * 100);
