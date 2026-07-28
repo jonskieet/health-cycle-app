@@ -69,21 +69,21 @@ một kiểu (có form show banner đỏ trong modal, có form im lặng không 
 
 ## 2. Nhóm B — Rà soát bug & hoàn thiện chức năng hiện có
 
-- [ ] **B1. Audit toàn bộ luồng CRUD** từng module (cycle_logs, health_metrics,
+- [x] **B1. Audit toàn bộ luồng CRUD** từng module (cycle_logs, health_metrics,
       appointments, reminders, kegel_sessions, fatigue_tests, app lock, theme) —
       kiểm tra thật sự chạy đúng với schema DB hiện tại (bài học từ bug
       `recorded_date`/`logged_at` — có thể còn lệch tên cột/kiểu dữ liệu ở module
       khác chưa bị phát hiện vì chưa ai test kỹ). Cách làm: đối chiếu từng field
       trong `supabase/schema.sql` + các file `supabase/sql/module*.sql` với đúng
       tên field dùng trong `queries.ts`.
-- [ ] **B2. Rà lỗi TypeScript/ESLint triệt để trên toàn repo** — không chỉ chạy
+- [x] **B2. Rà lỗi TypeScript/ESLint triệt để trên toàn repo** — không chỉ chạy
       trên file mới sửa như các patch trước, mà chạy `tsc --noEmit` + `eslint`
       trên TOÀN BỘ `src/` một lượt, liệt kê & sửa hết warning/error còn sót từ
       các patch trước cộng dồn lại.
-- [ ] **B3. Kiểm tra responsive & an toàn vùng (safe-area) trên các trang chưa
+- [x] **B3. Kiểm tra responsive & an toàn vùng (safe-area) trên các trang chưa
       test kỹ** — đặc biệt `/kegel` (timer), `/fatigue-test` (quiz nhiều bước),
       `/library/[id]` (đọc bài dài), modal đặt PIN ở `/settings`.
-- [ ] **B4. Kiểm tra logic nghiệp vụ biên (edge case)**:
+- [x] **B4. Kiểm tra logic nghiệp vụ biên (edge case)**:
       - Chu kỳ đầu tiên chưa có dữ liệu lịch sử → app có xử lý được không hay lỗi?
       - User huỷ VIP giữa chừng khi đang xem tính năng khoá VIP → có bị treo UI không?
       - Nhập giá trị âm/quá lớn ở các ô số (cân nặng, BBT, nhịp tim) → có validate chặn không?
@@ -384,3 +384,208 @@ trước tiên vì rất nhiều mục khác (A3, B1...) phụ thuộc vào có 
   - Người thực hiện: Claude. File package gửi cho user: `module_A5_confirm_dialog.zip`
     (4 file: 1 file mới `ConfirmDialog.tsx`, 3 file sửa — `CycleLogForm.tsx`,
     `AppointmentForm.tsx`, `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành Module B1 (Audit toàn bộ luồng CRUD đối chiếu
+  schema DB)**, mở đầu Nhóm B. Khối lượng nhỏ (chỉ 1 bug tìm thấy, 1 file sửa)
+  nên gộp cùng chờ đóng gói với mục kế tiếp nếu cũng nhỏ; ở đây đóng gói ngay
+  vì bug tìm được thuộc loại "im lặng mất dữ liệu ngữ cảnh", nên đóng gói sớm.
+  - **Cách làm**: đối chiếu từng field trong `supabase/schema.sql` +
+    `supabase/sql/module*.sql` với đúng tên cột dùng trong toàn bộ code
+    (`grep -rn ".from(\"" src/` để liệt kê MỌI nơi gọi Supabase, không chỉ
+    trong `queries.ts`).
+  - **Phát hiện chính**: `src/lib/queries.ts` (nơi tập trung hầu hết CRUD)
+    đã đúng schema 100% — 7 bảng (`profiles`, `cycle_logs`, `health_metrics`,
+    `appointments`, `vip_requests`, `reminders`, `kegel_sessions`,
+    `fatigue_tests`) đều khớp tên cột, đã alias `logged_at:recorded_date` từ
+    bug cũ. Mọi nơi gọi `useUpdateProfile()` (EditProfileModal, profile,
+    settings, onboarding) đều truyền đúng tên field theo `Profile` interface.
+  - **Bug thật tìm thấy** ở `src/app/api/ai-chat/route.ts` (route gọi
+    Supabase TRỰC TIẾP, không qua `queries.ts` nên không được hưởng fix
+    trước đó): query `health_metrics` vẫn dùng tên cột cũ `logged_at` (cả
+    trong `.select()` lẫn `.order()`) — cột thật trong DB là
+    `recorded_date`. Vì `error` của Promise.all không được kiểm tra, lỗi
+    Postgres 42703 (column does not exist) bị nuốt âm thầm, khiến
+    `healthMetrics` luôn là mảng rỗng → trợ lý AI trong app **luôn trả lời
+    mà không có ngữ cảnh chỉ số sức khoẻ thật của user**, không ai biết vì
+    app không crash, chỉ trả lời "kém chính xác hơn" một cách khó nhận ra.
+  - **Sửa**: đổi `.select("metric_type, value, logged_at")` +
+    `.order("logged_at", ...)` thành `.select("metric_type, value,
+    logged_at:recorded_date")` + `.order("recorded_date", ...)` (dùng alias
+    giống cách `queries.ts` đã làm, để không phải đổi type
+    `{ logged_at: string }` hay `buildSystemPrompt`/`.map()` dùng
+    `m.logged_at` phía dưới). Đồng thời thêm log lỗi cho cả 3 query context
+    (`profile`, `cycleLogs`, `healthMetrics`) trong route này — trước đây
+    không kiểm tra `error` ở cả 3, chỉ sửa cách xử lý lỗi tối thiểu (log,
+    không chặn luồng chính) để tránh tái diễn kiểu lỗi âm thầm tương tự với
+    2 query còn lại trong tương lai.
+  - **Các module khác đã audit, không có bug**: `vip_requests`, `reminders`
+    (upsert theo `user_id,type` — khớp unique constraint), `kegel_sessions`,
+    `fatigue_tests`, `app_lock` (`app_lock_pin_hash`/`app_lock_enabled` ở
+    `settings/page.tsx`), `theme` — tất cả field đều khớp các file SQL tương
+    ứng trong `supabase/sql/`.
+  - Đã chạy `npm install` + `tsc --noEmit` toàn bộ + `eslint src/` toàn repo
+    — không lỗi mới. 3 vấn đề tồn đọng từ trước (`react-hooks/set-state-in-effect`
+    ở `CycleLogForm.tsx`/`AppDatePicker.tsx`, 1 warning `exhaustive-deps` ở
+    `CycleCalendar.tsx`) vẫn còn nguyên, để dành cho **B2** — không sửa lạc
+    đề ở đây dù đã thấy lại khi chạy eslint.
+  - Việc tiếp theo trong roadmap: **B2** (dọn 3 lỗi ESLint tồn đọng nêu
+    trên + rà lỗi TypeScript toàn repo triệt để hơn) hoặc **B4** (kiểm tra
+    edge case nghiệp vụ: chu kỳ đầu chưa có dữ liệu, huỷ VIP giữa chừng,
+    validate số âm, lệch timezone).
+  - Người thực hiện: Claude. File package gửi cho user: `module_B1_audit_crud.zip`
+    (2 file sửa: `src/app/api/ai-chat/route.ts`, `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành Module B2 (dọn triệt để TypeScript/ESLint toàn
+  repo)**. Khối lượng nhỏ (3 vấn đề tồn đọng đã biết trước, không phát sinh gì
+  mới khi rà toàn bộ `src/`), đóng gói ngay 1 mình.
+  - Chạy `tsc --noEmit` + `eslint src/` trên TOÀN BỘ repo (không chỉ file mới
+    sửa) — `tsc` sạch từ trước, chỉ còn đúng 3 vấn đề ESLint đã ghi nhận ở
+    các entry trước (2 lỗi `set-state-in-effect`, 1 warning `exhaustive-deps`).
+  - `CycleLogForm.tsx`: effect nạp dữ liệu "kỳ đang mở" vào form (đồng bộ
+    state với query async load xong, chỉ chạy 1 lần nhờ guard `continuingId`)
+    — không viết lại vì đây đúng là use-case hợp lệ của effect theo React
+    docs (đồng bộ với hệ thống ngoài/dữ liệu async), refactor sẽ phức tạp
+    hơn lợi ích. Thêm `// eslint-disable-next-line react-hooks/set-state-in-effect`
+    ngay trước `setContinuingId(...)` (dòng cụ thể bị flag, không phải toàn
+    effect) kèm giải thích.
+  - `AppDatePicker.tsx`: effect reset con trỏ tháng + bước chọn range mỗi khi
+    sheet MỞ LẠI — cùng loại pattern hợp lệ (đồng bộ UI theo prop khi 1 cờ
+    `open` bật lên, không phải mỗi lần props đổi liên tục). Thêm disable
+    tương tự chỉ ở dòng `setCursor(...)` bị flag thật (rule chỉ báo setState
+    ĐẦU TIÊN trong effect, các setState sau đó như `setRangeStep` không bị
+    báo — xác nhận lại bằng cách chạy eslint sau khi sửa, thấy "unused
+    eslint-disable directive" nên bỏ bớt disable thừa).
+  - `CycleCalendar.tsx`: warning thật (không phải false positive) — biến
+    `today = new Date()` được tạo ở ngoài `useMemo` nhưng dùng làm dependency
+    ngầm bên trong qua closure mà không khai báo trong mảng deps. **Không**
+    đơn giản là thêm `today` vào deps, vì `new Date()` khác reference mỗi
+    render nên sẽ làm `useMemo` luôn tính lại, mất hết tác dụng memo hoá (memo
+    hoá là mục đích chính của việc dùng `useMemo` ở đây, tránh tính lại
+    `buildLoggedPeriodDays` mỗi khi component cha re-render vì lý do khác).
+    Sửa: gọi `new Date()` trực tiếp bên trong hàm tính của `useMemo` thay vì
+    đóng gói biến ngoài — dep array giờ chỉ còn `[cycleLogs]`, đúng ý định ban
+    đầu. Biến `today` ở ngoài vẫn giữ nguyên vì còn dùng riêng cho việc tô
+    "hôm nay" trong lúc render lưới ngày (`isToday = isSameDay(date, today)`)
+    — 2 lần gọi `new Date()` lệch nhau vài mili-giây trong cùng 1 render
+    không ảnh hưởng vì cả hai chỉ dùng ở độ chính xác cấp ngày.
+  - Đã chạy lại `tsc --noEmit` + `eslint src/` toàn repo sau khi sửa: **0 lỗi,
+    0 warning** trên toàn bộ `src/` — Nhóm B2 đóng hoàn toàn sạch, không còn
+    nợ kỹ thuật ESLint/TS nào tồn đọng từ các patch trước cộng dồn lại.
+  - Việc tiếp theo trong roadmap: **B3** (kiểm tra responsive & safe-area ở
+    `/kegel`, `/fatigue-test`, `/library/[id]`, modal PIN `/settings`) hoặc
+    **B4** (edge case nghiệp vụ: chu kỳ đầu chưa có dữ liệu, huỷ VIP giữa
+    chừng, validate số âm, lệch timezone).
+  - Người thực hiện: Claude. File package gửi cho user: `module_B2_lint_clean.zip`
+    (4 file sửa: `CycleLogForm.tsx`, `AppDatePicker.tsx`, `CycleCalendar.tsx`,
+    `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành Module B3 (Responsive & safe-area cho 4 khu
+  vực chưa test kỹ)**. Khối lượng nhỏ (1 bug thật + 3 khu vực xác nhận ổn),
+  đóng gói ngay.
+  - **Cách làm**: kiểm tra cấu trúc CSS gốc (`.phone-shell/.phone-frame/
+    .phone-viewport` trong `globals.css`) trước để hiểu mô hình responsive
+    của toàn app — xác nhận dưới 640px app chiếm trọn viewport thật (không
+    phải khung điện thoại giả lập chỉ hiện ở desktop ≥640px), và layout gốc
+    (`layout.tsx`) đã có `pb-32` bọc toàn bộ nội dung để chừa chỗ cho
+    `BottomNav` (chính `BottomNav` đã tự `position:fixed` trên mobile thật +
+    tự padding `env(safe-area-inset-bottom)` — xử lý đúng từ trước).
+  - **`/kegel`, `/fatigue-test`**: `BottomNav` chủ động ẩn ở 2 route này
+    (danh sách loại trừ trong `BottomNav.tsx`), nhưng `pb-32` của layout vẫn
+    áp dụng vô điều kiện cho mọi trang → thừa khoảng trắng ở cuối trang khi
+    không có nav, nhưng KHÔNG phải bug an toàn vùng (128px luôn đủ bù safe-
+    area 34px của các dòng máy có home indicator) — chỉ là thẩm mỹ dư thừa,
+    để dành cho Nhóm D (không phải phạm vi B3). `KegelTimer` (vòng tròn
+    220px) và `FatigueQuiz` (câu hỏi/list lựa chọn) đều dùng flex-col responsive
+    tự nhiên, không có `grid-cols`/width cứng nào có thể vỡ ở màn 320px.
+  - **`/library/[id]`**: đọc bài dài, không có phần tử `fixed`/thanh hành
+    động cố định nào — chỉ cuộn dọc bình thường trong `pb-10` + `pb-32` toàn
+    cục, an toàn.
+  - **Bug thật tìm thấy — modal đặt PIN ở `/settings`**: đây là bottom sheet
+    riêng (`fixed inset-0`, độc lập với layout gốc, KHÔNG được `pb-32` bảo
+    vệ vì đó là padding cho nội dung cuộn của trang chứ không áp dụng cho
+    sheet fixed). Trước đây chỉ có `p-6` cố định, chạm sát đáy màn hình thật
+    → trên điện thoại có thanh cử chỉ (home indicator/notch) nút "Tiếp tục"/
+    "Xác nhận" bị dính sát mép hoặc khó bấm chính xác vào vùng cuối cùng.
+    Sửa bằng cách thêm `style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}`
+    — đúng pattern đã dùng ở `AiChatSheet.tsx`/`BottomNav.tsx`/`Toast.tsx`
+    (Tailwind không có sẵn lớp cho giá trị `env()` động nên phải style trực
+    tiếp).
+  - **Phát hiện thêm, KHÔNG sửa trong module này** (ghi lại để tránh quên):
+    cùng loại thiếu `safe-area-inset-bottom` này còn lặp lại ở nhiều sheet
+    `fixed inset-0 items-end` khác trong app — `CycleLogForm.tsx`,
+    `MetricLogForm.tsx`, `AppointmentForm.tsx`, `HealthCheckIns.tsx`,
+    `DailyInsights.tsx` (trong khi `AiChatSheet.tsx` đã có). Đây là vấn đề hệ
+    thống rộng hơn phạm vi B3 (chỉ giới hạn 4 khu vực named trong roadmap) —
+    nếu sửa hết sẽ thành "khối lượng lớn" theo đúng quy tắc đóng gói ở đầu
+    file này, nên để lại làm 1 module riêng sau (gợi ý đặt tên B3b hoặc gộp
+    vào D — chuẩn hoá safe-area cho MỌI bottom sheet dùng chung 1 class/hook
+    thay vì copy `style` từng nơi).
+  - Đã chạy `tsc --noEmit` + `eslint src/` toàn repo — sạch, không lỗi mới.
+  - Việc tiếp theo trong roadmap: **B4** (edge case nghiệp vụ) hoặc **B5**
+    (cần agent có mạng đầy đủ để `next build` thật — sandbox này bị chặn
+    Google Fonts nên bỏ qua), hoặc mục mới phát hiện ở trên (chuẩn hoá
+    safe-area cho mọi bottom sheet).
+  - Người thực hiện: Claude. File package gửi cho user: `module_B3_safe_area.zip`
+    (2 file: `settings/page.tsx`, `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành Module B4 (Kiểm tra logic nghiệp vụ biên/edge
+  case)**. Đi lần lượt 4 ý roadmap nêu; 2 ý không có bug, 2 ý có bug thật
+  (1 nhỏ, 1 lớn/xuyên suốt) — gộp chung vì cùng 1 mục B4 duy nhất trong
+  checklist, không tách nhỏ thêm.
+  1. **Chu kỳ đầu tiên chưa có dữ liệu lịch sử**: `predictCycle([])` đã có
+     fallback hợp lý (`avgCycleLength/avgPeriodLength` mặc định 28/5, anchor
+     giả định giữa chu kỳ) — không lỗi/crash. `page.tsx` và `cycle/page.tsx`
+     đều tự kiểm `cycleLogs.length === 0` để hiện UI "Chưa có dữ liệu chu kỳ"
+     riêng thay vì hiện số liệu giả. **Không có bug.**
+  2. **Huỷ VIP giữa chừng khi đang xem tính năng khoá**: `isVipProfile()`
+     được tính lại trực tiếp từ `useProfile()` ở MỌI nơi dùng (`LockedFeature`,
+     `library`, `upgrade`, `profile`, `profile/report`) — không có state cục
+     bộ nào cache lại trạng thái VIP nên không thể "treo UI" theo kiểu hiện
+     dữ liệu VIP cũ đã hết hạn. **Không có bug**, nhưng ghi nhận 1 khoảng
+     trống tính năng (không phải bug): app hiện KHÔNG có nút "Huỷ VIP" tự
+     phục vụ nào — `is_vip` chỉ đổi được bằng service_role (đúng theo thiết
+     kế bảo mật trong `schema.sql`), nên câu hỏi "huỷ giữa chừng" trong thực
+     tế chưa có đường vào UI để test được. Để dành làm 1 tính năng riêng nếu
+     sau này cần cho phép user tự huỷ.
+  3. **Validate số âm/quá lớn ở ô số**: `MetricLogForm` (cân nặng/BBT/nhịp
+     tim...) dùng stepper +/- và slider `type="range"` giới hạn cứng bởi
+     `config.min/max` — không thể nhập số ngoài khoảng bằng UI. `avg_cycle_length`/
+     `avg_period_length` ở `/profile` cũng dùng `type="range"`. **Bug thật**
+     duy nhất: ô "Năm sinh" (`EditProfileModal.tsx`) dùng
+     `<input type="number" min max>` nhưng nút "Lưu lại" là `type="button"`
+     gọi thẳng `onClick` (không phải native form submit) — nên `min`/`max`
+     của HTML chỉ là gợi ý thị giác (mũi tên tăng/giảm), KHÔNG chặn được gì;
+     gõ tay số âm/0/99999 vẫn lưu thẳng xuống DB vì `birth_year` cũng không
+     có CHECK constraint. Sửa: validate thật trong `handleSave()` (kiểm tra
+     `Number.isInteger` + khoảng 1930→năm hiện tại) trước khi gọi mutation,
+     báo lỗi qua `toast.error()` nếu sai, không lưu.
+  4. **Lệch timezone/giờ hệ thống VN**: **bug thật, quan trọng nhất module
+     này** — phát hiện pattern `new Date().toISOString().slice(0, 10)` dùng
+     ở 6 chỗ để lấy "hôm nay" dạng chuỗi cho DB. `toISOString()` LUÔN quy đổi
+     về UTC trước khi cắt chuỗi; với user VN (UTC+7, không DST), từ 00:00 đến
+     06:59 giờ VN thì giờ UTC tương ứng vẫn là NGÀY HÔM TRƯỚC → mọi lượt ghi
+     nhận (chỉ số sức khoẻ, bắt đầu kỳ kinh) trong khung giờ này bị lưu NHẦM
+     SANG NGÀY TRƯỚC một cách âm thầm, không có lỗi/cảnh báo nào — chỉ lộ ra
+     khi soi lại lịch sử thấy sai ngày. Đã viết test thủ công tái hiện chính
+     xác bug (2h sáng 28/7 giờ VN → `toISOString().slice(0,10)` trả về
+     "2026-07-27"). **Sửa**: tạo `src/lib/date-key.ts` (hàm `toLocalDateKey()`/
+     `todayLocalKey()` dùng getter LOCAL `getFullYear/getMonth/getDate`, không
+     đi qua UTC — cùng cách `AppDatePicker.toKey()` đã làm đúng từ trước,
+     nhưng hàm đó chỉ cục bộ trong file, giờ tách ra dùng chung). Áp dụng ở:
+     `queries.ts` (`useHealthMetrics`, `useMetricTrend`, `useLogMetric`,
+     `buildWeekSeries` — 4/6 chỗ, quan trọng nhất vì đây là nơi QUYẾT ĐỊNH
+     `recorded_date` lưu xuống DB), `ReminderBanner.tsx` (banner "đã log hôm
+     nay chưa"), `CycleLogForm.tsx` (`start_date` mặc định khi ghi kỳ kinh
+     mới). **Không đụng** `appointment_at`/`created_at`/`exported_at` (đúng
+     là cần timestamp UTC thật, không phải "ngày theo giờ máy") và
+     `export-report.ts:filenameDate` (chỉ ảnh hưởng TÊN FILE PDF xuất ra lúc
+     nửa đêm, không phải dữ liệu — chấp nhận được, không sửa để tránh lan
+     rộng ngoài phạm vi cốt lõi của module này).
+  - Đã chạy `tsc --noEmit` + `eslint src/` toàn repo sau khi sửa — sạch,
+    không lỗi mới.
+  - Việc tiếp theo trong roadmap: **B5** (cần agent có mạng đầy đủ để chạy
+    `next build` thật — sandbox này bị chặn Google Fonts, bỏ qua được), hoặc
+    bắt đầu **Nhóm C** (tối ưu hiệu năng — C1 rà re-render thừa), hoặc dọn
+    nốt phát hiện tồn đọng từ B3 (chuẩn hoá safe-area cho mọi bottom sheet
+    còn thiếu: `CycleLogForm`, `MetricLogForm`, `AppointmentForm`,
+    `HealthCheckIns`, `DailyInsights`).
+  - Người thực hiện: Claude. File package gửi cho user: `module_B4_edge_cases.zip`
+    (6 file: 1 file mới `date-key.ts`, 5 file sửa — `queries.ts`,
+    `ReminderBanner.tsx`, `CycleLogForm.tsx`, `EditProfileModal.tsx`,
+    `QUALITY_UX_ROADMAP.md`).

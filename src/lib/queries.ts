@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { CycleLog } from "@/lib/cycle-utils";
 import { computeHealthScore } from "@/lib/health-score";
+import { toLocalDateKey, todayLocalKey } from "@/lib/date-key";
 
 // ---------- Lỗi Supabase ----------
 
@@ -193,7 +194,7 @@ export function useHealthMetrics() {
         .from("health_metrics")
         .select("id, metric_type, value, logged_at:recorded_date")
         .eq("user_id", user!.id)
-        .gte("recorded_date", since.toISOString().slice(0, 10))
+        .gte("recorded_date", toLocalDateKey(since))
         .order("recorded_date", { ascending: true });
       if (error) throwSupabaseError(error);
       return data ?? [];
@@ -217,7 +218,7 @@ export function useMetricTrend(type: MetricType, days: number = 90) {
         .select("id, metric_type, value, logged_at:recorded_date")
         .eq("user_id", user!.id)
         .eq("metric_type", type)
-        .gte("recorded_date", since.toISOString().slice(0, 10))
+        .gte("recorded_date", toLocalDateKey(since))
         .order("recorded_date", { ascending: true });
       if (error) throwSupabaseError(error);
       return data ?? [];
@@ -235,7 +236,7 @@ export function useLogMetric() {
       logged_at?: string;
       note?: string;
     }) => {
-      const logged_at = input.logged_at ?? new Date().toISOString().slice(0, 10);
+      const logged_at = input.logged_at ?? todayLocalKey();
       const { error } = await supabase.from("health_metrics").upsert(
         {
           user_id: user!.id,
@@ -379,7 +380,7 @@ export function buildWeekSeries(rows: HealthMetricRow[], type: MetricType) {
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    const iso = d.toISOString().slice(0, 10);
+    const iso = toLocalDateKey(d);
     days.push({ date: iso, label: DAY_LABELS[d.getDay()], value: byDate.get(iso) ?? null });
   }
   return days;

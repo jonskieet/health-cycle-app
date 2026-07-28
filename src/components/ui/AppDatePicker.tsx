@@ -76,11 +76,17 @@ export default function AppDatePicker(props: Props) {
   // Trong chế độ range: bước 1 chọn ngày bắt đầu, bước 2 chọn ngày kết thúc.
   const [rangeStep, setRangeStep] = useState<"start" | "end">("start");
 
+  // Reset con trỏ tháng + bước chọn range mỗi khi sheet MỞ LẠI (đồng bộ UI
+  // với giá trị `props.value`/`startValue` hiện tại) — chỉ chạy khi `open`
+  // đổi từ false -> true, không phải mỗi lần props đổi trong lúc đang mở,
+  // nên không có cascading render lặp. Không thể tính trong lúc render vì
+  // `cursor` cần giữ nguyên khi user bấm next/prev tháng lúc sheet đang mở.
   useEffect(() => {
     if (!open) return;
     const anchor = isRange
       ? fromKey((props as RangeProps).startValue) ?? new Date()
       : fromKey((props as SingleProps).value) ?? new Date();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCursor(new Date(anchor.getFullYear(), anchor.getMonth(), 1));
     setRangeStep("start");
     // eslint-disable-next-line react-hooks/exhaustive-deps

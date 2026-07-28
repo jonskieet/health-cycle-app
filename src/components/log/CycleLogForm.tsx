@@ -11,6 +11,7 @@ import { X, Loader2, Trash2, ChevronLeft, ChevronRight, Check, Info } from "luci
 import { useAddCycleLog, useUpdateCycleLog, useDeleteCycleLog, useCycleLogs, CycleLogFull } from "@/lib/queries";
 import { useToast } from "@/components/ui/Toast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { todayLocalKey } from "@/lib/date-key";
 import {
   SYMPTOM_CATEGORIES,
   SYMPTOM_CATEGORY_LABELS,
@@ -54,7 +55,10 @@ export default function CycleLogForm({
   const updateCycleLog = useUpdateCycleLog();
   const deleteCycleLog = useDeleteCycleLog();
   const { data: allCycleLogs = [] } = useCycleLogs();
-  const today = new Date().toISOString().slice(0, 10);
+  // B4: trước đây `new Date().toISOString().slice(0, 10)` — nếu user ghi
+  // nhận kỳ kinh bắt đầu vào khoảng 00:00-06:59 giờ VN, `start_date` mặc định
+  // bị lưu NHẦM SANG NGÀY HÔM TRƯỚC (xem giải thích ở `lib/date-key.ts`).
+  const today = todayLocalKey();
 
   // Kỳ kinh "đang mở" gần nhất: chưa có end_date và bắt đầu trong vòng 10
   // ngày đổ lại. Trước đây mỗi lần bấm "Ghi nhận" đều tạo 1 dòng mới, nên
@@ -87,8 +91,17 @@ export default function CycleLogForm({
 
   // Khi phát hiện kỳ đang mở (và người dùng chưa chọn "ghi kỳ mới"), nạp dữ
   // liệu của kỳ đó vào form và ghi nhớ id để LƯU sẽ UPDATE thay vì INSERT.
+  // Đây là pattern "đồng bộ state form với dữ liệu async từ ngoài" (query
+  // `useCycleLogs()` load xong sau lần render đầu) — không thể tính trực
+  // tiếp trong lúc render vì cần giữ lại state đã sửa của user sau đó
+  // (vd user gõ note rồi lại re-render do query khác invalidate). Rule
+  // `set-state-in-effect` khuyến nghị tránh setState trong effect để ngăn
+  // cascading render, nhưng ở đây effect chỉ chạy 1 lần khi `openLog` xuất
+  // hiện lần đầu (guard `continuingId` chặn chạy lại) nên không có vòng lặp
+  // cascading thật sự — tắt cả 2 rule tại đây thay vì viết lại phức tạp hơn.
   useEffect(() => {
     if (editLog || continueDismissed || continuingId || !openLog) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setContinuingId(openLog.id);
     setStartDate(openLog.start_date);
     setFlow(openLog.flow ?? "medium");

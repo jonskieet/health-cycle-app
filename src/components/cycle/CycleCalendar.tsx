@@ -96,7 +96,17 @@ export default function CycleCalendar({
   }, [cursor]);
 
   const today = new Date();
-  const loggedPeriodDays = useMemo(() => buildLoggedPeriodDays(cycleLogs, today), [cycleLogs]);
+  // `today` chỉ dùng làm fallback ngày kết thúc cho kỳ đang mở (chưa có
+  // end_date) bên trong `buildLoggedPeriodDays`, chỉ cần chính xác đến từng
+  // ngày — không đưa biến `today` ở trên vào mảng deps của useMemo bên dưới
+  // vì `new Date()` khác reference mỗi render, sẽ làm useMemo luôn tính lại
+  // và mất hết tác dụng memo hoá. Gọi `new Date()` riêng ngay trong hàm tính
+  // memo thay vì tái dùng biến `today` — 2 giá trị lệch nhau tối đa vài mili-
+  // giây trong cùng 1 lần render, không ảnh hưởng vì đều chỉ dùng cấp độ ngày.
+  const loggedPeriodDays = useMemo(
+    () => buildLoggedPeriodDays(cycleLogs, new Date()),
+    [cycleLogs]
+  );
 
   return (
     <div className="glass-card rounded-[26px] p-5">

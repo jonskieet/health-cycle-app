@@ -448,6 +448,15 @@ export default function SettingsPage() {
           <div
             onClick={(e) => e.stopPropagation()}
             className="glass-card-strong flex w-full max-w-md flex-col gap-4 rounded-t-[28px] p-6"
+            // B3: modal này là bottom sheet chạm sát đáy màn hình thật (không nằm
+            // trong `pb-32` của layout — đó là padding cho NỘI DUNG trang cuộn,
+            // còn sheet `fixed inset-0` này độc lập, tự tính lại từ viewport).
+            // Trước đây chỉ có `p-6` cố định nên trên điện thoại có thanh cử chỉ ở
+            // đáy (home indicator, notch) nút "Tiếp tục"/"Xác nhận" bị che một phần
+            // hoặc dính sát mép, khó bấm. Style trực tiếp vì Tailwind không có sẵn
+            // lớp cho `env()` động — cùng cách các sheet khác trong app đã dùng
+            // (`AiChatSheet.tsx`, `BottomNav.tsx`, `Toast.tsx`).
+            style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
           >
             <div className="flex items-center justify-between">
               <h2 className="font-display text-lg font-bold text-[var(--ink)]">

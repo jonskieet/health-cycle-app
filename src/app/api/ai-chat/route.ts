@@ -213,7 +213,11 @@ export async function POST(req: NextRequest) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || req.headers.get("origin") || "https://kvcycle.app";
 
     // ---------- Lấy ngữ cảnh chu kỳ của user ----------
-    const [{ data: profile }, { data: cycleLogs }, { data: healthMetrics }] = await Promise.all([
+    const [
+      { data: profile, error: profileError },
+      { data: cycleLogs, error: cycleLogsError },
+      { data: healthMetrics, error: healthMetricsError },
+    ] = await Promise.all([
       supabase
         .from("profiles")
         .select("avg_cycle_length, avg_period_length")
@@ -225,13 +229,28 @@ export async function POST(req: NextRequest) {
         .eq("user_id", user.id)
         .order("start_date", { ascending: false })
         .limit(6),
+      // Bug B1: cột thật trong DB là `recorded_date`, không phải `logged_at`
+      // (cùng loại bug đã sửa ở queries.ts trước đây — sót lại ở đây vì route
+      // này gọi Supabase trực tiếp, không qua queries.ts). Trước khi sửa,
+      // Postgres trả lỗi 42703 (column does not exist), nhưng `error` không
+      // được kiểm tra ở dưới nên `data` âm thầm null → AI luôn nhận
+      // `healthMetrics: []`, mất hoàn toàn ngữ cảnh chỉ số sức khoẻ mà không
+      // ai biết. Alias lại thành `logged_at` để không phải đổi type/logic
+      // phía dưới (buildSystemPrompt, `.map` dùng `m.logged_at`).
       supabase
         .from("health_metrics")
-        .select("metric_type, value, logged_at")
+        .select("metric_type, value, logged_at:recorded_date")
         .eq("user_id", user.id)
-        .order("logged_at", { ascending: false })
+        .order("recorded_date", { ascending: false })
         .limit(10),
     ]);
+
+    // Không chặn AI trả lời nếu 1 trong 3 query context lỗi (vd RLS, cột đổi
+    // tên...) — chỉ log để dễ phát hiện, AI vẫn trả lời với ngữ cảnh rỗng còn
+    // hơn là user không dùng được tính năng chat.
+    if (profileError) console.error("[ai-chat] Lỗi lấy profile:", profileError);
+    if (cycleLogsError) console.error("[ai-chat] Lỗi lấy cycle_logs:", cycleLogsError);
+    if (healthMetricsError) console.error("[ai-chat] Lỗi lấy health_metrics:", healthMetricsError);
 
     const logs: CycleLog[] = (cycleLogs ?? []).map((l) => ({
       id: l.id,

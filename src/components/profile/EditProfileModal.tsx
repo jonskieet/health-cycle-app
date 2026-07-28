@@ -34,7 +34,24 @@ export default function EditProfileModal({
 
   async function handleSave() {
     const trimmedName = nameDraft.trim();
-    const parsedYear = birthYearDraft.trim() ? Number(birthYearDraft.trim()) : null;
+    const trimmedYear = birthYearDraft.trim();
+
+    // B4: `type="number"` + `min`/`max` trên <input> chỉ là gợi ý thị giác
+    // của trình duyệt (mũi tên tăng/giảm), KHÔNG chặn submit thật vì nút "Lưu
+    // lại" là `type="button"` gọi thẳng `handleSave` qua onClick, không phải
+    // native form submit — nên constraint validation của HTML không bao giờ
+    // chạy. DB cũng không có CHECK constraint cho `birth_year` (chỉ khai báo
+    // kiểu `int`), nên trước đây user có thể lưu năm sinh âm/0/99999... mà
+    // không bị chặn ở đâu cả. Validate thật ở đây trước khi gọi mutation.
+    if (trimmedYear) {
+      const parsedYear = Number(trimmedYear);
+      const currentYear = new Date().getFullYear();
+      if (!Number.isInteger(parsedYear) || parsedYear < 1930 || parsedYear > currentYear) {
+        toast.error(`Năm sinh không hợp lệ. Vui lòng nhập từ 1930 đến ${currentYear}.`);
+        return;
+      }
+    }
+    const parsedYear = trimmedYear ? Number(trimmedYear) : null;
 
     try {
       await updateProfile.mutateAsync({

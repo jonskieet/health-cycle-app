@@ -9,6 +9,7 @@ import { useState } from "react";
 import { BellRing, NotebookPen, X } from "lucide-react";
 import Link from "next/link";
 import { useReminders, HealthMetricRow } from "@/lib/queries";
+import { todayLocalKey } from "@/lib/date-key";
 
 interface ReminderBannerProps {
   daysToNextPeriod: number;
@@ -22,7 +23,11 @@ export default function ReminderBanner({ daysToNextPeriod, metrics }: ReminderBa
   const periodReminder = reminders.find((r) => r.type === "period_upcoming");
   const logReminder = reminders.find((r) => r.type === "log_daily");
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  // B4: trước đây dùng `toISOString().slice(0, 10)` — quy đổi UTC trước khi
+  // format nên từ 00:00 đến 06:59 giờ VN vẫn còn tính là NGÀY HÔM QUA, khiến
+  // banner "Nhắc log hôm nay" hiện sai (báo chưa log dù đã log ngay trước đó
+  // trong đêm, hoặc ngược lại). Xem giải thích đầy đủ ở `lib/date-key.ts`.
+  const todayStr = todayLocalKey();
   const loggedToday = metrics.some((m) => m.logged_at === todayStr);
 
   // Ưu tiên 1: sắp đến kỳ kinh trong vòng lead_days ngày.
