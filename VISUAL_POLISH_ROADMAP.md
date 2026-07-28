@@ -35,12 +35,13 @@ toàn app dựa trên ảnh thật, và có thêm 1 vài phát hiện là **bug 
 - [x] ~~E2. Vùng đầu trang Chu kỳ bị cắt/lấn~~ — **Cùng kết luận như E1**, cùng
   nguyên nhân (ảnh chụp giữa lúc cuộn khiến phần trên bị cuộn khuất lên trên,
   không phải lỗi safe-area). Không sửa.
-- [ ] **E3. Card lịch sử (`Lịch sử gần đây`) lệch hệ thống thiết kế** — toàn
-  app dùng `glass-card` (nền trắng mờ, bo góc lớn, đổ bóng nhẹ) cho MỌI khối
-  nội dung, nhưng danh sách lịch sử chu kỳ hiện là các hàng phẳng ngăn cách
-  bằng đường kẻ mảnh (giống bảng dữ liệu web, không giống phong cách "glass
-  card" mềm mại của phần còn lại) — cần bọc lại từng dòng (hoặc cả khối) theo
-  đúng ngôn ngữ thị giác đã thiết lập.
+- [x] **E3. Card lịch sử (`Lịch sử gần đây`) — thêm đường phân cách dòng** —
+  **đính chính**: khối này vốn ĐÃ nằm trong `glass-card` (nhận định ban đầu
+  "lệch hệ thống thiết kế" là chưa kiểm tra code kỹ, không đúng — xem Nhật ký).
+  Vấn đề thật, đã sửa: các dòng trong danh sách không có gì phân tách (chỉ
+  cách nhau `gap-1`), dễ dính liền khó đọc khi có nhiều mục — đã thêm
+  `divide-y` mảnh (tông đen mờ, cùng họ với màu hover đã dùng sẵn) + tăng nhẹ
+  padding dọc mỗi dòng.
 
 ## 2. Nhóm F — Hệ thống icon: thống nhất 1 ngôn ngữ hình khối duy nhất
 
@@ -188,4 +189,25 @@ dùng ở `QUALITY_UX_ROADMAP.md` — ngày thực hiện, module nào, làm gì
   - Đã chạy `tsc --noEmit` + `eslint src/` toàn repo — sạch.
   - Người thực hiện: Claude. File package gửi cho user:
     `module_E_metriccard_header.zip` (2 file: `components/ui/MetricCard.tsx`,
+    `VISUAL_POLISH_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành E3 (kèm đính chính nhận định ban đầu)**.
+  - Đọc lại code `app/cycle/page.tsx` phần "Lịch sử gần đây": khối này ĐÃ nằm
+    trong `glass-card rounded-[24px] p-5` từ trước — nhận định ban đầu trong
+    roadmap ("lệch hệ thống thiết kế, giống bảng dữ liệu web") là **sai**, viết
+    dựa trên cảm nhận nhìn ảnh mà chưa đọc code (giống trường hợp E1/E2). Vấn
+    đề thật: các `<li>` trong `<ul>` chỉ cách nhau `gap-1` (4px), KHÔNG có
+    đường phân cách nào — khi danh sách nhiều mục các dòng dính liền, khó tách
+    bằng mắt dù nội dung khác nhau.
+  - **Đã sửa**: `<ul>` đổi `flex flex-col gap-1` → `flex flex-col divide-y
+    divide-black/[0.06]` (đường kẻ rất mảnh, cùng tông đen mờ đã dùng cho
+    trạng thái hover `hover:bg-black/[0.03]` — nhất quán, không lạc tông với
+    phần còn lại của card); tăng padding dọc mỗi dòng từ `py-2.5` lên `py-3`
+    cho thoáng hơn khi có đường kẻ ngăn.
+  - Đã chạy `tsc --noEmit` + `eslint src/` toàn repo — sạch.
+  - **Rút kinh nghiệm cho các module E-I còn lại**: từ nay trước khi ghi nhận
+    1 mục là "bug"/"lệch hệ thống", LUÔN đọc code thật trước (không chỉ dựa
+    ảnh chụp) — đã xảy ra 2 lần sai (E1, E2) trong cùng roadmap này vì bỏ qua
+    bước đó.
+  - Người thực hiện: Claude. File package gửi cho user:
+    `module_E3_history_dividers.zip` (2 file: `app/cycle/page.tsx`,
     `VISUAL_POLISH_ROADMAP.md`).

@@ -149,13 +149,19 @@ export default function CyclePage() {
             <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--ink-faint)]">
               Lịch sử gần đây
             </p>
-            <ul className="flex flex-col gap-1">
+            {/* E3 (đã đính chính trong Nhật ký — section này vốn ĐÃ nằm trong
+                glass-card, không lệch hệ thống thẻ như ghi chú ban đầu):
+                vấn đề thật là các dòng không có gì phân tách, dính liền khó
+                đọc khi danh sách dài. Thêm `divide-y` mảnh, cùng tông màu đen
+                mờ đã dùng cho hover (`black/[0.03]`) — đủ để mắt tách dòng mà
+                không phá vỡ vẻ mềm mại chung. */}
+            <ul className="flex flex-col divide-y divide-black/[0.06]">
               {cycleLogs.map((log) => (
                 <li key={log.id}>
                   <button
                     type="button"
                     onClick={() => setEditingLog(log)}
-                    className="flex w-full items-center justify-between rounded-2xl px-2 py-2.5 text-sm transition-colors hover:bg-black/[0.03]"
+                    className="flex w-full items-center justify-between rounded-2xl px-2 py-3 text-sm transition-colors hover:bg-black/[0.03]"
                   >
                     <span className="text-[var(--ink)]">
                       {new Date(log.start_date).toLocaleDateString("vi-VN")} –{" "}
