@@ -130,7 +130,7 @@ một kiểu (có form show banner đỏ trong modal, có form im lặng không 
       bộ copy tiếng Việt trong UI (không phải trong comment code), đổi các câu
       quá kỹ thuật thành gần gũi, ấm áp hơn — nhất quán giọng văn "người bạn đồng
       hành" xuyên suốt app (đã có phần nào ở nội dung theo pha chu kỳ, cần lan ra toàn app).
-- [ ] **D5. Trang chủ — làm nổi bật thông tin quan trọng nhất trước** — kiểm tra
+- [x] **D5. Trang chủ — làm nổi bật thông tin quan trọng nhất trước** — kiểm tra
       lại thứ tự ưu tiên hiển thị trên `/` (chu kỳ hôm nay → nhắc nhở → check-in
       nhanh → insight) có đúng thứ tự người dùng cần nhìn thấy đầu tiên không,
       tránh dồn quá nhiều card cùng một hàng gây rối mắt.
@@ -904,3 +904,37 @@ trước tiên vì rất nhiều mục khác (A3, B1...) phụ thuộc vào có 
   - Đã chạy `tsc --noEmit` + `eslint src/` toàn repo — sạch.
   - Người thực hiện: Claude. File package gửi cho user: `module_D4_copy_tone.zip`
     (2 file: `components/cycle/AbnormalCycleBanner.tsx`, `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành Module D5 (trang chủ — thứ tự ưu tiên hiển
+  thị)**. Đây là module xuyên suốt bố cục trang chủ (rủi ro regression cao dù
+  chỉ 1 file) nên chỉ làm riêng mục này, không gộp thêm.
+  - **Phát hiện**: thứ tự cũ là Health Score ring (insight tổng hợp) → banner
+    nhắc nhở → thẻ chu kỳ → lịch hẹn → metric cards (check-in) — NGƯỢC với thứ
+    tự roadmap đề ra ("chu kỳ hôm nay → nhắc nhở → check-in nhanh → insight").
+    Health Score ring được đặt trên cùng từ trước (comment cũ gọi là "signature
+    element" — ưu tiên thị giác), nhưng về bản chất đây là điểm TỔNG HỢP tính
+    từ chính các chỉ số hiển thị bên dưới nó — xếp trước cả dữ liệu gốc là
+    ngược logic thông tin, và không phải thứ đổi mỗi ngày (không giống trạng
+    thái chu kỳ — thứ luôn đổi và cần biết ngay khi mở app).
+  - **Đã sửa**: sắp lại `app/page.tsx` theo đúng thứ tự roadmap yêu cầu — thẻ
+    chu kỳ hôm nay lên đầu, kế tiếp 2 banner nhắc nhở (cảnh báo bất
+    thường + nhắc log/kỳ kinh) + lịch hẹn sắp tới, rồi tới lưới check-in nhanh
+    (metric cards/empty-state/skeleton), và Health Score ring chuyển xuống
+    CUỐI CÙNG như 1 khối "insight" tổng kết. KHÔNG đổi nội dung/logic bên trong
+    từng section (copy, style, data-fetching) — chỉ đổi thứ tự JSX.
+  - **Về "tránh dồn nhiều card 1 hàng"** (vế còn lại của D5): rà lại, các
+    section hiện tại đều đã là 1 hàng full-width riêng biệt (chu kỳ, từng
+    banner, lịch hẹn), trừ lưới chỉ số vốn đã là grid 2 cột có chủ đích (thiết
+    kế "check-in nhanh" dạng thẻ nhỏ, không phải vấn đề "dồn nhiều card gây
+    rối mắt") — không có gì cần sửa thêm ở khía cạnh này.
+  - Đã chạy `tsc --noEmit` + `eslint src/` toàn repo — sạch. **Lưu ý cho agent
+    sau**: đây là thay đổi thứ tự hiển thị khá lớn về mặt trải nghiệm (Health
+    Score không còn là thứ đầu tiên nhìn thấy) — nếu chủ dự án phản hồi muốn
+    giữ Health Score ở đầu (vd vì lý do thương hiệu/thị giác), có thể revert
+    riêng phần thứ tự này mà không ảnh hưởng các phần khác của D5.
+  - **Nhóm D coi như đã hoàn thành phần khả thi trong sandbox này** (D1 còn 1
+    phần nhỏ chờ xác nhận chủ dự án về scale chữ; D2-D5 đã xong; D6 xong từ
+    trước). Việc còn lại của toàn roadmap: **B5** (cần agent có mạng đầy đủ để
+    `next build` qua bước Google Fonts), **C3** (icon PWA thật — cần file thiết
+    kế), và phần scale chữ còn lại của **D1**.
+  - Người thực hiện: Claude. File package gửi cho user: `module_D5_home_order.zip`
+    (2 file: `app/page.tsx`, `QUALITY_UX_ROADMAP.md`).

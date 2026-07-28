@@ -47,49 +47,17 @@ export default function DashboardPage() {
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-5 pt-6">
-      {/* Signature element: Health Score ring */}
-      <section className="glass-card-strong flex items-center gap-5 rounded-[28px] p-6">
-        <AuroraRing percent={healthScore ?? 0} colorFrom="#7c6ff0" colorTo="#e85c8a">
-          {healthScore != null ? (
-            <>
-              <span className="font-display text-3xl font-extrabold text-[var(--ink)]">
-                {healthScore}
-              </span>
-              <span className="text-[10px] text-[var(--ink-faint)]">/ 100</span>
-            </>
-          ) : (
-            <span className="text-xs text-[var(--ink-faint)]">Chưa có dữ liệu</span>
-          )}
-        </AuroraRing>
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--ink-faint)]">
-            Điểm sức khỏe
-          </p>
-          <p className="mt-1 font-display text-base font-bold text-[var(--ink)]">
-            {healthScore == null
-              ? "Ghi nhận chỉ số để bắt đầu"
-              : healthScore >= 80
-              ? "Trên mức trung bình"
-              : healthScore >= 60
-              ? "Ở mức trung bình"
-              : "Cần chú ý hơn"}
-          </p>
-          <p className="mt-1 text-xs text-[var(--ink-soft)]">
-            {healthScore == null ? (
-              <Link href="/log" className="font-semibold text-[var(--c-sleep)]">
-                Ghi nhận chỉ số đầu tiên →
-              </Link>
-            ) : (
-              "Dựa trên nhịp tim, giấc ngủ, stress & hydration hôm nay"
-            )}
-          </p>
-        </div>
-      </section>
+      {/* D5: thứ tự ưu tiên hiển thị — chu kỳ hôm nay → nhắc nhở → check-in
+          nhanh → insight (Health Score). Trước đây Health Score ring nằm
+          TRÊN CÙNG (là "signature element" thị giác), nhưng đây là điểm TỔNG
+          HỢP tính từ các chỉ số đã ghi — về bản chất là "insight", nên đúng
+          thứ tự người dùng cần thấy đầu tiên là trạng thái chu kỳ hôm nay
+          (thông tin tức thời nhất, đổi mỗi ngày) và nhắc nhở (hành động cần
+          làm), rồi mới tới việc ghi nhanh chỉ số, và insight tổng hợp xem sau
+          cùng. Không đổi nội dung/logic bên trong từng section, chỉ đổi thứ
+          tự xuất hiện. */}
 
-      {cycleLogs.length > 0 && <AbnormalCycleBanner cycleLogs={cycleLogs} />}
-      <ReminderBanner daysToNextPeriod={daysToNext} metrics={metrics} />
-
-      {/* Cycle teaser card */}
+      {/* Chu kỳ hôm nay */}
       <Link href="/cycle" className="glass-card flex items-center justify-between rounded-[24px] p-5">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--ink-faint)]">
@@ -120,6 +88,10 @@ export default function DashboardPage() {
           <Droplets size={20} />
         </span>
       </Link>
+
+      {/* Nhắc nhở */}
+      {cycleLogs.length > 0 && <AbnormalCycleBanner cycleLogs={cycleLogs} />}
+      <ReminderBanner daysToNextPeriod={daysToNext} metrics={metrics} />
 
       {/* Nearest appointments — chỉ hiện khi có lịch hẹn trong 7 ngày tới */}
       {upcomingAppointments && upcomingAppointments.length > 0 && (
@@ -160,7 +132,7 @@ export default function DashboardPage() {
         </Link>
       )}
 
-      {/* Metric cards grid */}
+      {/* Check-in nhanh — metric cards grid */}
       {loading ? (
         <section className="grid grid-cols-2 gap-4">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -185,6 +157,45 @@ export default function DashboardPage() {
           </div>
         </section>
       )}
+
+      {/* Insight — Health Score ring (tổng hợp từ các chỉ số ở trên) */}
+      <section className="glass-card-strong flex items-center gap-5 rounded-[28px] p-6">
+        <AuroraRing percent={healthScore ?? 0} colorFrom="#7c6ff0" colorTo="#e85c8a">
+          {healthScore != null ? (
+            <>
+              <span className="font-display text-3xl font-extrabold text-[var(--ink)]">
+                {healthScore}
+              </span>
+              <span className="text-[10px] text-[var(--ink-faint)]">/ 100</span>
+            </>
+          ) : (
+            <span className="text-xs text-[var(--ink-faint)]">Chưa có dữ liệu</span>
+          )}
+        </AuroraRing>
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--ink-faint)]">
+            Điểm sức khỏe
+          </p>
+          <p className="mt-1 font-display text-base font-bold text-[var(--ink)]">
+            {healthScore == null
+              ? "Ghi nhận chỉ số để bắt đầu"
+              : healthScore >= 80
+              ? "Trên mức trung bình"
+              : healthScore >= 60
+              ? "Ở mức trung bình"
+              : "Cần chú ý hơn"}
+          </p>
+          <p className="mt-1 text-xs text-[var(--ink-soft)]">
+            {healthScore == null ? (
+              <Link href="/log" className="font-semibold text-[var(--c-sleep)]">
+                Ghi nhận chỉ số đầu tiên →
+              </Link>
+            ) : (
+              "Dựa trên nhịp tim, giấc ngủ, stress & hydration hôm nay"
+            )}
+          </p>
+        </div>
+      </section>
     </main>
   );
 }
