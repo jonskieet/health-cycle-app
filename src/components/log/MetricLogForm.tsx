@@ -12,8 +12,9 @@
 // có 1 thanh slider trần, để nhập nhanh + trực quan hơn.
 
 import { useState } from "react";
-import { X, Loader2, LucideIcon, Minus, Plus, AlertTriangle } from "lucide-react";
+import { X, Loader2, LucideIcon, Minus, Plus } from "lucide-react";
 import { useLogMetric, MetricType } from "@/lib/queries";
+import { useToast } from "@/components/ui/Toast";
 
 interface MetricConfig {
   type: MetricType;
@@ -47,8 +48,8 @@ export default function MetricLogForm({
   onClose: () => void;
 }) {
   const logMetric = useLogMetric();
+  const toast = useToast();
   const [value, setValue] = useState(config.default);
-  const [error, setError] = useState<string | null>(null);
   const Icon = config.icon;
 
   function step(dir: 1 | -1) {
@@ -57,18 +58,16 @@ export default function MetricLogForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
     try {
       await logMetric.mutateAsync({ metric_type: config.type, value });
+      toast.success(`Đã lưu ${config.label.toLowerCase()}: ${value} ${config.unit}`);
       onClose();
-    } catch (err) {
-      // Không đóng modal khi lỗi — người dùng không bị mất giá trị vừa chỉnh,
-      // và biết rõ lần lưu này thất bại thay vì tưởng đã lưu thành công.
-      setError(
-        err instanceof Error
-          ? `Lưu thất bại: ${err.message}`
-          : "Lưu thất bại. Vui lòng thử lại."
-      );
+    } catch {
+      // Module A1: KHÔNG tự gọi toast.error ở đây nữa — MutationCache global
+      // (providers.tsx) đã tự hiện toast lỗi cho MỌI mutation trong app, gọi
+      // thêm ở đây sẽ hiện toast trùng 2 lần. Catch rỗng này chỉ để chặn
+      // không cho chạy xuống `onClose()` phía dưới, giữ modal mở + giữ giá
+      // trị người dùng vừa chỉnh khi lưu thất bại.
     }
   }
 
@@ -96,16 +95,6 @@ export default function MetricLogForm({
             <X size={18} />
           </button>
         </div>
-
-        {error && (
-          <div
-            className="flex items-start gap-2 rounded-2xl p-3 text-xs leading-relaxed"
-            style={{ background: "color-mix(in srgb, var(--c-heart) 12%, white)", color: "var(--c-heart)" }}
-          >
-            <AlertTriangle size={15} className="mt-0.5 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
 
         {/* Stepper trung tâm: số to + nút +/- hai bên, dễ bấm hơn kéo slider nhỏ. */}
         <div className="flex flex-col items-center gap-4 py-2">
@@ -174,7 +163,7 @@ export default function MetricLogForm({
         <button
           type="submit"
           disabled={logMetric.isPending}
-          className="flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-white disabled:opacity-60"
+          className="press-feedback flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-white disabled:opacity-60"
           style={{ background: config.color }}
         >
           {logMetric.isPending && <Loader2 size={16} className="animate-spin" />}

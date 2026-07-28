@@ -7,8 +7,9 @@
 // "trong suốt khó nhìn" khi có date picker hoặc nội dung khác đè lên.
 
 import { useEffect, useMemo, useState } from "react";
-import { X, Loader2, Trash2, ChevronLeft, ChevronRight, Check, Info, AlertTriangle } from "lucide-react";
+import { X, Loader2, Trash2, ChevronLeft, ChevronRight, Check, Info } from "lucide-react";
 import { useAddCycleLog, useUpdateCycleLog, useDeleteCycleLog, useCycleLogs, CycleLogFull } from "@/lib/queries";
+import { useToast } from "@/components/ui/Toast";
 import {
   SYMPTOM_CATEGORIES,
   SYMPTOM_CATEGORY_LABELS,
@@ -81,7 +82,7 @@ export default function CycleLogForm({
   const [step, setStep] = useState(0);
   const [continuingId, setContinuingId] = useState<string | null>(null);
   const [continueDismissed, setContinueDismissed] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const toast = useToast();
 
   // Khi phát hiện kỳ đang mở (và người dùng chưa chọn "ghi kỳ mới"), nạp dữ
   // liệu của kỳ đó vào form và ghi nhớ id để LƯU sẽ UPDATE thay vì INSERT.
@@ -124,23 +125,33 @@ export default function CycleLogForm({
 
   async function handleSubmit() {
     const payload = { start_date: startDate, end_date: endDate || null, flow, symptoms, note };
-    setSaveError(null);
     try {
       if (targetId) {
         await updateCycleLog.mutateAsync({ id: targetId, ...payload });
       } else {
         await addCycleLog.mutateAsync(payload);
       }
+      toast.success(isEdit || targetId ? "Đã cập nhật kỳ kinh" : "Đã ghi nhận kỳ kinh mới");
       onClose();
-    } catch (err) {
-      setSaveError(err instanceof Error ? `Lưu thất bại: ${err.message}` : "Lưu thất bại. Vui lòng thử lại.");
+    } catch {
+      // Module A1: lỗi đã được MutationCache global (providers.tsx) tự hiện
+      // toast — catch rỗng này chỉ để KHÔNG chạy xuống onClose(), giữ modal
+      // mở + không mất dữ liệu 4 bước người dùng vừa nhập.
     }
   }
 
   async function handleDelete() {
     if (!targetId) return;
-    await deleteCycleLog.mutateAsync(targetId);
-    onClose();
+    try {
+      // Trước đây KHÔNG có try/catch ở đây — nếu xoá thất bại (VD mất mạng),
+      // modal vẫn đóng như xoá thành công, người dùng bị đánh lừa. Module A1
+      // fix: bắt lỗi để không tự đóng modal (toast lỗi do global lo).
+      await deleteCycleLog.mutateAsync(targetId);
+      toast.success("Đã xoá kỳ kinh");
+      onClose();
+    } catch {
+      // toast lỗi do MutationCache global xử lý.
+    }
   }
 
   const symptomCount = useMemo(
@@ -384,15 +395,6 @@ export default function CycleLogForm({
         </div>
 
         <div className="flex flex-col gap-2 px-6 pb-6 pt-3" style={{ borderTop: "1px solid rgba(0,0,0,0.05)" }}>
-          {saveError && (
-            <div
-              className="flex items-start gap-2 rounded-2xl p-3 text-xs leading-relaxed"
-              style={{ background: "color-mix(in srgb, var(--c-heart) 12%, white)", color: "var(--c-heart)" }}
-            >
-              <AlertTriangle size={15} className="mt-0.5 shrink-0" />
-              <span>{saveError}</span>
-            </div>
-          )}
           <div className="flex gap-2">
             {step > 0 && (
               <button

@@ -233,6 +233,36 @@ body {
   }
 }
 
+/* Module A1/A2 (QUALITY_UX_ROADMAP.md) — Toast + phản hồi khi bấm nút dùng chung. */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.toast-item {
+  animation: toast-in 0.22s ease-out;
+}
+
+/* Class dùng chung cho MỌI nút bấm chính trong app (thay vì mỗi nơi tự viết
+   active:scale-9x riêng lẻ, không đồng bộ). Rất nhẹ tay (0.97) để không tạo
+   cảm giác "nảy" giật cục, phù hợp thẩm mỹ mềm mại của app. */
+.press-feedback {
+  transition: transform 0.12s ease, opacity 0.12s ease, filter 0.12s ease;
+}
+.press-feedback:active {
+  transform: scale(0.97);
+  filter: brightness(0.97);
+}
+.press-feedback:disabled {
+  transform: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

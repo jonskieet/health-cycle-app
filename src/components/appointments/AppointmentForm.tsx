@@ -8,6 +8,7 @@ import {
   useUpdateAppointment,
   useDeleteAppointment,
 } from "@/lib/queries";
+import { useToast } from "@/components/ui/Toast";
 
 function toLocalInputValue(iso: string) {
   const d = new Date(iso);
@@ -27,6 +28,7 @@ export default function AppointmentForm({
   const addAppointment = useAddAppointment();
   const updateAppointment = useUpdateAppointment();
   const deleteAppointment = useDeleteAppointment();
+  const toast = useToast();
 
   const defaultWhen = () => {
     const d = new Date();
@@ -50,29 +52,42 @@ export default function AppointmentForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const appointment_at = new Date(when).toISOString();
-    if (isEdit) {
-      await updateAppointment.mutateAsync({
-        id: editAppointment.id,
-        title,
-        doctor_name: doctorName || null,
-        appointment_at,
-        note: note || null,
-      });
-    } else {
-      await addAppointment.mutateAsync({
-        title,
-        doctor_name: doctorName || null,
-        appointment_at,
-        note: note || null,
-      });
+    try {
+      // Module A1: bọc try/catch — trước đây không có, nếu lưu lỗi thì
+      // không có gì báo cho người dùng biết (chỉ im lặng không đóng modal,
+      // dễ hiểu lầm là app bị treo). Lỗi giờ tự hiện qua toast toàn cục.
+      if (isEdit) {
+        await updateAppointment.mutateAsync({
+          id: editAppointment.id,
+          title,
+          doctor_name: doctorName || null,
+          appointment_at,
+          note: note || null,
+        });
+      } else {
+        await addAppointment.mutateAsync({
+          title,
+          doctor_name: doctorName || null,
+          appointment_at,
+          note: note || null,
+        });
+      }
+      toast.success(isEdit ? "Đã cập nhật lịch hẹn" : "Đã thêm lịch hẹn");
+      onClose();
+    } catch {
+      // toast lỗi do MutationCache global xử lý (providers.tsx).
     }
-    onClose();
   }
 
   async function handleDelete() {
     if (!editAppointment) return;
-    await deleteAppointment.mutateAsync(editAppointment.id);
-    onClose();
+    try {
+      await deleteAppointment.mutateAsync(editAppointment.id);
+      toast.success("Đã xoá lịch hẹn");
+      onClose();
+    } catch {
+      // toast lỗi do MutationCache global xử lý.
+    }
   }
 
   return (
