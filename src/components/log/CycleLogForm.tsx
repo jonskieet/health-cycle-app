@@ -408,7 +408,10 @@ export default function CycleLogForm({
           )}
         </div>
 
-        <div className="flex flex-col gap-2 px-6 pb-6 pt-3" style={{ borderTop: "1px solid rgba(0,0,0,0.05)" }}>
+        <div
+          className="flex flex-col gap-2 px-6 pt-3"
+          style={{ borderTop: "1px solid rgba(0,0,0,0.05)", paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
+        >
           <div className="flex gap-2">
             {step > 0 && (
               <button

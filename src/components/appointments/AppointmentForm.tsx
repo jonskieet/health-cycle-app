@@ -96,7 +96,8 @@ export default function AppointmentForm({
       <form
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="glass-card-strong flex w-full max-w-md flex-col gap-4 rounded-t-[28px] p-6"
+        className="glass-card-strong flex w-full max-w-md flex-col gap-4 rounded-t-[28px] px-6 pt-6"
+        style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))" }}
       >
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg font-bold text-[var(--ink)]">

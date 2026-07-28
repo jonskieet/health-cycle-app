@@ -589,3 +589,38 @@ trước tiên vì rất nhiều mục khác (A3, B1...) phụ thuộc vào có 
     (6 file: 1 file mới `date-key.ts`, 5 file sửa — `queries.ts`,
     `ReminderBanner.tsx`, `CycleLogForm.tsx`, `EditProfileModal.tsx`,
     `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành nốt phần tồn đọng từ B3 (chuẩn hoá safe-area
+  cho mọi bottom sheet `fixed inset-0 items-end` còn thiếu)**. Khối lượng nhỏ
+  (3 file, cùng 1 pattern lặp lại, không rủi ro regression), đóng gói ngay,
+  không gộp thêm mục khác.
+  - **Rà lại 5 sheet đã ghi nhận ở B4**: `HealthCheckIns.tsx` và
+    `DailyInsights.tsx` hoá ra ĐÃ có `paddingBottom: max(2rem, env(...))` từ
+    trước (ghi nhận cũ trong B3 không chính xác) — không cần sửa. 3 sheet còn
+    lại thực sự thiếu: `CycleLogForm.tsx`, `MetricLogForm.tsx`,
+    `AppointmentForm.tsx`.
+  - **`CycleLogForm.tsx`**: footer nút "Lưu/Tiếp tục" (`div` có `border-top`,
+    trước đó `pb-6` cố định) → đổi thành `paddingBottom: max(1.5rem, env(safe-area-inset-bottom, 0px))`,
+    bỏ class `pb-6` tĩnh.
+  - **`MetricLogForm.tsx`**: khác 2 sheet kia — không có `<div>` footer riêng,
+    nút "Lưu" là phần tử cuối cùng ngay trong chính thẻ `<form>` (`p-6 pt-3`)
+    → chuyển padding-bottom của cả `<form>` sang style động, giữ `px-6 pt-3`
+    ở className.
+  - **`AppointmentForm.tsx`**: tương tự `MetricLogForm` — nút "Lưu"/"Xoá" nằm
+    trực tiếp trong `<form className="... p-6">` → tách `px-6 pt-6` ở
+    className, `paddingBottom` động ở style.
+  - Tất cả đều theo đúng 1 pattern đã dùng ở `AiChatSheet.tsx`/`BottomNav.tsx`/
+    `Toast.tsx`/`HealthCheckIns.tsx`: `max(giá trị cố định cũ, env(safe-area-inset-bottom, 0px))`
+    — giữ nguyên khoảng cách thị giác trên desktop/máy không có home
+    indicator, chỉ cộng thêm khi thiết bị thật sự cần.
+  - Đã cài `node_modules` (`npm install`, mạng cho phép registry.npmjs.org)
+    và chạy `tsc --noEmit` + `eslint src/` toàn repo lần này — sạch, không
+    lỗi/warning nào (khác các lần patch trước chỉ soát bằng mắt vì sandbox
+    thiếu `node_modules`).
+  - Việc tiếp theo trong roadmap: **B5** (vẫn cần agent có mạng đủ để chạy
+    `next build` thật vì bị chặn Google Fonts — môi trường lần này cũng chưa
+    thử được `next build`), hoặc bắt đầu **Nhóm C** (C1 rà re-render thừa —
+    khối lượng vừa, có thể làm cùng lúc với C4 vì cùng chủ đề `useMemo`/
+    tính toán nặng).
+  - Người thực hiện: Claude. File package gửi cho user:
+    `module_B3b_safe_area_cleanup.zip` (4 file: `CycleLogForm.tsx`,
+    `MetricLogForm.tsx`, `AppointmentForm.tsx`, `QUALITY_UX_ROADMAP.md`).

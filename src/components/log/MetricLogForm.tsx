@@ -76,8 +76,12 @@ export default function MetricLogForm({
       <form
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="flex w-full max-w-md flex-col gap-5 rounded-t-[28px] p-6 pt-3"
-        style={{ background: "var(--surface)", boxShadow: "0 -8px 40px -8px rgba(36,27,47,0.35)" }}
+        className="flex w-full max-w-md flex-col gap-5 rounded-t-[28px] px-6 pt-3"
+        style={{
+          background: "var(--surface)",
+          boxShadow: "0 -8px 40px -8px rgba(36,27,47,0.35)",
+          paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 0px))",
+        }}
       >
         <div className="mx-auto h-1 w-10 rounded-full" style={{ background: "var(--ink-faint)", opacity: 0.4 }} />
 
