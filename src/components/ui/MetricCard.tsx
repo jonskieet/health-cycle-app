@@ -40,20 +40,23 @@ export default function MetricCard({
         <span className="text-xs text-[var(--ink-faint)]">Hôm nay</span>
       </div>
 
-      <div className="flex items-end justify-between">
-        <div>
-          <div className="font-display text-[26px] font-bold leading-none text-[var(--ink)]">
-            {value}
-            {unit && (
-              <span className="ml-1 font-sans text-sm font-normal text-[var(--ink-faint)]">
-                {unit}
-              </span>
-            )}
-          </div>
-          <div className="mt-1.5 text-xs text-[var(--ink-soft)]">{status}</div>
+      {/* E1: trước đây value + MiniBars nằm chung 1 hàng `justify-between`,
+          tranh chỗ nhau trong bề ngang hẹp của card 2 cột trên điện thoại —
+          nguyên nhân chính khiến biểu đồ tràn ra ngoài (xem ghi chú trong
+          MiniBars.tsx). Tách MiniBars xuống hàng riêng, full-width — luôn có
+          đúng phần không gian của card, không phải tranh chỗ với text. */}
+      <div>
+        <div className="font-display text-[26px] font-bold leading-none text-[var(--ink)]">
+          {value}
+          {unit && (
+            <span className="ml-1 font-sans text-sm font-normal text-[var(--ink-faint)]">
+              {unit}
+            </span>
+          )}
         </div>
-        <MiniBars data={chart} color={color} />
+        <div className="mt-1.5 text-xs text-[var(--ink-soft)]">{status}</div>
       </div>
+      <MiniBars data={chart} color={color} />
     </button>
   );
 }
