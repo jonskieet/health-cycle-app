@@ -43,13 +43,20 @@ function formatValue(v: number, step: number) {
 export default function MetricLogForm({
   config,
   onClose,
+  lastValue,
 }: {
   config: MetricConfig;
   onClose: () => void;
+  /** D3: giá trị lần ghi nhận gần nhất (nếu có) — dùng làm mặc định thay vì
+      hằng số cứng, và hiện thêm 1 chip "Như lần trước" bên cạnh các preset cố
+      định (nếu có). Hợp lý cho các chỉ số như cân nặng — nơi preset cố định
+      kiểu 55/60/65kg không có ý nghĩa chung cho mọi người, nhưng "giống lần
+      trước" luôn hữu ích vì cân nặng ít đổi giữa các lần đo liên tiếp. */
+  lastValue?: number;
 }) {
   const logMetric = useLogMetric();
   const toast = useToast();
-  const [value, setValue] = useState(config.default);
+  const [value, setValue] = useState(lastValue ?? config.default);
   const Icon = config.icon;
 
   function step(dir: 1 | -1) {
@@ -144,9 +151,22 @@ export default function MetricLogForm({
             <span>{config.max}</span>
           </div>
 
-          {config.presets && config.presets.length > 0 && (
+          {(lastValue !== undefined || (config.presets && config.presets.length > 0)) && (
             <div className="flex flex-wrap justify-center gap-2 pt-1">
-              {config.presets.map((p) => (
+              {lastValue !== undefined && (
+                <button
+                  type="button"
+                  onClick={() => setValue(clamp(lastValue, config.min, config.max))}
+                  className="rounded-full px-3.5 py-1.5 text-xs font-semibold transition active:scale-95"
+                  style={{
+                    background: value === lastValue ? config.color : "var(--surface-soft)",
+                    color: value === lastValue ? "#fff" : "var(--ink-soft)",
+                  }}
+                >
+                  Như lần trước ({lastValue} {config.unit})
+                </button>
+              )}
+              {config.presets?.map((p) => (
                 <button
                   key={p}
                   type="button"

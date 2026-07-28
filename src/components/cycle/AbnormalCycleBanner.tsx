@@ -23,18 +23,22 @@ export default function AbnormalCycleBanner({ cycleLogs }: { cycleLogs: CycleLog
 
   const messages: string[] = [];
   if (summary.previousCycleAbnormal && summary.previousCycleLength != null) {
+    // D4: câu cũ đọc như báo cáo xét nghiệm ("dài X ngày — ngoài khoảng bình
+    // thường Y-Z ngày") — đổi giọng gần gũi hơn, vẫn giữ nguyên số liệu chính
+    // xác (đây là banner cảnh báo hiện chủ động hằng ngày, cần đúng mực nhưng
+    // không nên gây cảm giác như đọc kết quả xét nghiệm y khoa).
     messages.push(
-      `Chu kỳ gần nhất dài ${summary.previousCycleLength} ngày — ngoài khoảng bình thường ${NORMAL_CYCLE_RANGE.min}-${NORMAL_CYCLE_RANGE.max} ngày.`
+      `Chu kỳ gần nhất của bạn kéo dài ${summary.previousCycleLength} ngày, hơi ngoài mức thường gặp (${NORMAL_CYCLE_RANGE.min}-${NORMAL_CYCLE_RANGE.max} ngày).`
     );
   }
   if (summary.previousPeriodAbnormal && summary.previousPeriodLength != null) {
     messages.push(
-      `Số ngày hành kinh gần nhất là ${summary.previousPeriodLength} ngày — ngoài khoảng bình thường ${NORMAL_PERIOD_RANGE.min}-${NORMAL_PERIOD_RANGE.max} ngày.`
+      `Kỳ kinh gần nhất kéo dài ${summary.previousPeriodLength} ngày, hơi ngoài mức thường gặp (${NORMAL_PERIOD_RANGE.min}-${NORMAL_PERIOD_RANGE.max} ngày).`
     );
   }
   if (summary.irregular && summary.cycleLengthDelta != null) {
     messages.push(
-      `Độ dài chu kỳ đang biến động khá nhiều — lệch ${summary.cycleLengthDelta} ngày so với chu kỳ trước đó.`
+      `Độ dài chu kỳ gần đây thay đổi khá nhiều, chênh khoảng ${summary.cycleLengthDelta} ngày so với lần trước.`
     );
   }
 

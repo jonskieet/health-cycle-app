@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { HeartPulse, Moon, Droplets, Smile, Flame, Droplet, Scale, Thermometer } from "lucide-react";
 import CycleLogForm from "@/components/log/CycleLogForm";
 import MetricLogForm from "@/components/log/MetricLogForm";
-import { MetricType } from "@/lib/queries";
+import { MetricType, useMetricTrend } from "@/lib/queries";
 
 const metricConfigs: Record<Exclude<MetricType, never>, {
   type: MetricType;
@@ -52,6 +52,16 @@ function LogPageInner() {
   const searchParams = useSearchParams();
   const [open, setOpen] = useState<string | null>(() => searchParams.get("type"));
 
+  // D3: cân nặng không có preset cố định hợp lý (không như nhịp tim/giấc ngủ —
+  // mỗi người 1 khoảng cân nặng rất khác nhau) — thay vào đó lấy giá trị lần
+  // ghi nhận gần nhất (trong 14 ngày) làm mặc định + chip "Như lần trước",
+  // giảm số lần phải gõ tay vì cân nặng thường ít đổi giữa các lần đo liên tiếp.
+  // Hook luôn gọi (Rules of Hooks không cho gọi có điều kiện) nhưng nhẹ — chỉ
+  // query 14 ngày, TanStack Query tự cache/staleTime nên không tốn thêm gì
+  // đáng kể khi user không mở modal cân nặng; chỉ giá trị đọc ra được gate lại.
+  const { data: weightTrend } = useMetricTrend("weight", 14);
+  const lastWeight = open === "weight" ? weightTrend?.at(-1)?.value : undefined;
+
   return (
     <main className="flex flex-1 flex-col gap-6 px-5 pt-8">
       <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Ghi nhận hôm nay</h1>
@@ -76,7 +86,11 @@ function LogPageInner() {
 
       {open === "cycle" && <CycleLogForm onClose={() => setOpen(null)} />}
       {open && open !== "cycle" && open in metricConfigs && (
-        <MetricLogForm config={metricConfigs[open as MetricType]} onClose={() => setOpen(null)} />
+        <MetricLogForm
+          config={metricConfigs[open as MetricType]}
+          onClose={() => setOpen(null)}
+          lastValue={open === "weight" ? lastWeight : undefined}
+        />
       )}
     </main>
   );

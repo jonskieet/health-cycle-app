@@ -117,16 +117,16 @@ một kiểu (có form show banner đỏ trong modal, có form im lặng không 
       phản (contrast ratio đạt chuẩn WCAG AA cho text trên nền gradient/glass),
       và thống nhất khoảng cách/kích thước chữ giữa các trang (một số trang cũ
       có thể chưa theo đúng scale mới nhất).
-- [ ] **D2. Làm mềm & "nữ tính hoá" các chi tiết nhỏ** — bo góc nhất quán, dùng
+- [x] **D2. Làm mềm & "nữ tính hoá" các chi tiết nhỏ** — bo góc nhất quán, dùng
       nhiều đường cong/soft-shadow hơn là góc vuông cứng, icon minh hoạ (đã có ở
       Sprint 1 cho triệu chứng) — mở rộng phong cách này sang các icon khác
       trong app (Kegel, Fatigue test, Library) cho đồng bộ toàn app thay vì chỉ
       riêng phần triệu chứng.
-- [ ] **D3. Đơn giản hoá thao tác nhập liệu** — rà lại toàn bộ form nhập số
+- [x] **D3. Đơn giản hoá thao tác nhập liệu** — rà lại toàn bộ form nhập số
       (cân nặng, BBT, nhịp tim...) đảm bảo có nút +/- lớn dễ bấm bằng ngón tay
       cái (một tay cầm điện thoại), có preset nhanh (đã có ở nhịp tim: 60/72/90 —
       áp dụng pattern này cho các chỉ số số khác nếu hợp lý), giảm số lần phải gõ bàn phím.
-- [ ] **D4. Ngôn ngữ thân thiện, giảm thuật ngữ y khoa khô khan** — rà soát toàn
+- [x] **D4. Ngôn ngữ thân thiện, giảm thuật ngữ y khoa khô khan** — rà soát toàn
       bộ copy tiếng Việt trong UI (không phải trong comment code), đổi các câu
       quá kỹ thuật thành gần gũi, ấm áp hơn — nhất quán giọng văn "người bạn đồng
       hành" xuyên suốt app (đã có phần nào ở nội dung theo pha chu kỳ, cần lan ra toàn app).
@@ -818,3 +818,89 @@ trước tiên vì rất nhiều mục khác (A3, B1...) phụ thuộc vào có 
     icon thật / mạng đầy đủ tương ứng).
   - Người thực hiện: Claude. File package gửi cho user: `module_D1_contrast.zip`
     (2 file: `src/app/globals.css`, `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành Module D2 (mở rộng phong cách "icon minh hoạ"
+  ra ngoài phần triệu chứng)**. Khối lượng nhỏ (4 file), đóng gói ngay.
+  - **`src/components/ui/BlobIcon.tsx` (mới)**: tách phần "vẽ blob" (bo góc bất
+    đối xứng, gradient 2 sắc độ, box-shadow màu theo icon) ra khỏi
+    `SymptomIcon.tsx` thành component tổng quát, nhận thẳng `bg`/`fg` thay vì
+    `SymptomCategory` — để Kegel/Fatigue (không có khái niệm category triệu
+    chứng) dùng lại được mà không cần định nghĩa category giả.
+  - **`SymptomIcon.tsx`**: refactor để gọi `BlobIcon` bên trong (chỉ còn nhiệm
+    vụ tra màu theo category) — không đổi props/cách gọi ở bất kỳ nơi nào đang
+    dùng `SymptomIcon` (an toàn, không cần sửa `CycleLogForm.tsx`/
+    `SymptomAnalysis.tsx`).
+  - **`app/kegel/page.tsx`**: khối tròn phẳng chứa icon `HeartPulse` ở mỗi thẻ
+    preset (Người mới/Trung cấp/Nâng cao) → đổi sang `<BlobIcon active />` cùng
+    tông màu period, đồng bộ thẩm mỹ với thẻ chọn triệu chứng ở `/log`.
+  - **`components/fatigue/FatigueQuiz.tsx`**: khối tròn phẳng hiển thị điểm số
+    kết quả → đổi sang hình blob cùng công thức border-radius (viết tay, không
+    dùng thẳng `BlobIcon` vì đây là số điểm chứ không phải icon lucide).
+  - **Đã kiểm tra nhưng KHÔNG đổi**: icon trạng thái nhỏ (Check/Clock) trong
+    dòng lịch sử tập Kegel — đây là icon trạng thái (hoàn thành/dở dang), không
+    phải icon minh hoạ, đổi sang blob sẽ gây hiểu nhầm là 1 mục khác; Thư viện
+    (`/library`) rà lại không có khối icon minh hoạ nào (chỉ có pill danh mục +
+    badge VIP dạng chữ) nên KHÔNG có gì để đổi ở D2 cho trang này — roadmap gốc
+    liệt kê Library nhưng thực tế không áp dụng được, ghi rõ để agent sau không
+    tưởng nhầm là bỏ sót.
+  - Đã cài `node_modules`, chạy `tsc --noEmit` + `eslint src/` toàn repo — sạch.
+  - Việc tiếp theo trong roadmap: D3 (đơn giản hoá thao tác nhập liệu — nút
+    +/- lớn, preset nhanh cho các ô số khác ngoài nhịp tim), hoặc D4/D5, hoặc
+    nốt phần scale chữ còn lại của D1 (cần xác nhận từ chủ dự án).
+  - Người thực hiện: Claude. File package gửi cho user: `module_D2_blob_icons.zip`
+    (4 file: `src/components/ui/BlobIcon.tsx` (mới), `SymptomIcon.tsx`,
+    `app/kegel/page.tsx`, `components/fatigue/FatigueQuiz.tsx`,
+    `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành Module D3 (đơn giản hoá thao tác nhập liệu)**.
+  Khối lượng nhỏ (2 file sửa), đóng gói ngay.
+  - **Rà soát trước khi làm**: stepper +/- lớn (44px, dễ bấm 1 tay) + slider +
+    preset đã có sẵn từ trước cho `MetricLogForm.tsx` (P12 redesign) — áp dụng
+    cho MỌI chỉ số qua 1 component chung, không cần sửa gì thêm phần này.
+    5/6 chỉ số (stress, nhịp tim, giấc ngủ, nước uống, tâm trạng, BBT) đã có
+    preset cố định hợp lý — chỉ riêng **cân nặng** chưa có preset.
+  - **Tại sao KHÔNG thêm preset cố định kiểu 50/60/70kg cho cân nặng**: khác
+    với nhịp tim/giấc ngủ (có khoảng giá trị chung hợp lý cho mọi người), cân
+    nặng mỗi người một khác — preset cố định sẽ không đúng với đa số user,
+    phản tác dụng ("hợp lý" mà roadmap D3 yêu cầu cân nhắc). Thay vào đó:
+    - `MetricLogForm.tsx`: thêm prop tuỳ chọn `lastValue` — nếu có, dùng làm
+      giá trị mặc định khi mở modal (thay vì hằng số cứng `default`), và hiện
+      thêm 1 chip "Như lần trước (X kg)" cạnh preset cố định (nếu chỉ số đó có).
+    - `app/log/page.tsx`: dùng `useMetricTrend("weight", 14)` lấy giá trị cân
+      nặng ghi nhận gần nhất, truyền vào `MetricLogForm` qua `lastValue` khi mở
+      modal cân nặng. Cân nặng thường ít đổi giữa các lần đo liên tiếp nên
+      "giống lần trước" hữu ích hơn nhiều so với đoán 1 con số chung.
+  - Đã cài `node_modules`, chạy `tsc --noEmit` + `eslint src/` toàn repo — sạch.
+  - **Còn lại của D3 nếu cần mở rộng thêm** (chưa làm, không thuộc phạm vi nhỏ
+    của module này): áp dụng cùng pattern `lastValue`/"Như lần trước" cho BBT
+    (nhiệt độ cơ bản cũng ít đổi ngày qua ngày, dù đã có preset cố định gần
+    đúng nên độ ưu tiên thấp hơn cân nặng).
+  - Người thực hiện: Claude. File package gửi cho user: `module_D3_input_ux.zip`
+    (3 file: `components/log/MetricLogForm.tsx`, `app/log/page.tsx`,
+    `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành Module D4 (ngôn ngữ thân thiện, giảm thuật ngữ
+  khô khan)**. Khối lượng nhỏ (1 file sửa), đóng gói ngay.
+  - **Cách rà**: grep toàn bộ chuỗi tiếng Việt trong JSX chứa từ khoá y khoa/kỹ
+    thuật (`chỉ số`, `triệu chứng`, `xét nghiệm`, `chẩn đoán`, `y khoa`...),
+    đọc lại từng chỗ trong ngữ cảnh hiển thị thực tế.
+  - **Đánh giá tổng thể**: phần lớn copy hiện tại ĐÃ ổn (label form cần chính
+    xác/kỹ thuật là đúng, không nên "làm mềm" — VD "Ngày sinh (tuỳ chọn)",
+    "Bác sĩ / Phòng khám" — làm mềm những chỗ này sẽ giảm rõ ràng chứ không
+    tăng thân thiện). Onboarding, banner nhắc log hằng ngày, disclaimer y khoa
+    ở Fatigue Quiz — đều đã đúng giọng văn phù hợp với từng ngữ cảnh (disclaimer
+    NÊN giữ chính xác/nghiêm túc vì lý do an toàn, không nên làm mềm).
+  - **1 chỗ tìm thấy đúng vấn đề D4 nêu**: `AbnormalCycleBanner.tsx` — 3 câu
+    cảnh báo chu kỳ/kỳ kinh bất thường đọc như báo cáo xét nghiệm ("dài X ngày
+    — ngoài khoảng bình thường Y-Z ngày"), trong khi đây là banner cảnh báo
+    SỨC KHỎE hiện chủ động hằng ngày ở trang chủ — ngữ cảnh nhạy cảm nhất
+    trong app để giọng văn khô khan (dễ gây lo lắng không cần thiết). Đã đổi
+    thành câu văn gần gũi hơn ("kéo dài X ngày, hơi ngoài mức thường gặp
+    (Y-Z ngày)"), vẫn giữ NGUYÊN số liệu chính xác — không đổi dòng disclaimer
+    y khoa phía dưới (giữ chính xác/nghiêm túc có chủ đích, đúng tinh thần D4
+    chỉ giảm khô khan ở phần có thể mềm hoá, không phải mọi nơi).
+  - **Quyết định phạm vi quan trọng**: KHÔNG đổi các câu tương tự ở
+    `CycleInsights.tsx` (`/profile`, phần phân tích VIP chi tiết) — đây là màn
+    hình dữ liệu/biểu đồ, ngữ cảnh khác banner cảnh báo hằng ngày, người dùng
+    chủ động vào xem để phân tích kỹ nên ngôn ngữ chính xác/số liệu ở đây phù
+    hợp hơn là "làm mềm".
+  - Đã chạy `tsc --noEmit` + `eslint src/` toàn repo — sạch.
+  - Người thực hiện: Claude. File package gửi cho user: `module_D4_copy_tone.zip`
+    (2 file: `components/cycle/AbnormalCycleBanner.tsx`, `QUALITY_UX_ROADMAP.md`).
