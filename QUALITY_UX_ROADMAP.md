@@ -62,7 +62,7 @@ một kiểu (có form show banner đỏ trong modal, có form im lặng không 
       (lịch sử metric, lịch sử chu kỳ, danh sách lịch hẹn, danh sách bài viết...)
       đều có skeleton lúc `isLoading` và empty-state thân thiện lúc rỗng (tái
       dùng `EmptyState` đã có nếu còn thiếu ở đâu đó).
-- [ ] **A5. Confirm dialog nhất quán cho hành động Xoá** — rà soát mọi nút "Xoá"
+- [x] **A5. Confirm dialog nhất quán cho hành động Xoá** — rà soát mọi nút "Xoá"
       (cycle log, metric, appointment, reminder...) đều có bước xác nhận giống
       nhau (hiện có thể mỗi nơi làm 1 kiểu: `window.confirm` thô hoặc không hỏi
       gì cả) — làm 1 `<ConfirmDialog>` dùng chung, style đồng bộ `glass-card`.
@@ -351,3 +351,36 @@ trước tiên vì rất nhiều mục khác (A3, B1...) phụ thuộc vào có 
     `appointments/page.tsx`, `kegel/page.tsx`, `fatigue-test/page.tsx`,
     `cycle/page.tsx`, `profile/page.tsx`, `page.tsx`, `WeightBBTChart.tsx`,
     `CorrelationChart.tsx`, `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành Module A5 (ConfirmDialog dùng chung) — đóng
+  toàn bộ Nhóm A.** Khối lượng nhỏ, làm gọn trong 1 lượt.
+  - **Audit trước khi sửa**: không có `window.confirm` thô nào trong repo. Chỉ
+    2 nơi có hành động Xoá thật (`CycleLogForm.tsx`, `AppointmentForm.tsx`),
+    và cả 2 đã tự vẽ 1 thanh xác nhận inline gần giống hệt nhau (copy-paste,
+    lệch nhau nhỏ ở màu nền — `var(--surface-soft)` vs `bg-black/[0.03]`).
+    `useDeleteHealthMetric()` trong `queries.ts` được định nghĩa nhưng
+    KHÔNG có UI nào gọi tới (dead code, chưa có nút Xoá metric) — không phải
+    phạm vi module này, để nguyên. Reminder cũng chưa có hành động Xoá (chỉ
+    bật/tắt qua switch) — không áp dụng ConfirmDialog ở đó.
+  - `src/components/ui/ConfirmDialog.tsx` (mới): modal xác nhận dùng chung —
+    props `open/title/description/confirmLabel/cancelLabel/isLoading/onConfirm/onCancel`.
+    Hiện giữa màn hình (khác với các bottom-sheet form khác trong app) để tách
+    biệt rõ ràng với sheet phía sau, `z-40` (cao hơn `z-30` của các sheet) nên
+    luôn đè lên trên form Xoá/Sửa đang mở. **Quyết định quan trọng**: backdrop
+    của `ConfirmDialog` tự `e.stopPropagation()` trong `onClick` — vì component
+    được dùng lồng bên trong các form vốn có `onClick={onClose}` phủ toàn màn
+    hình; nếu không chặn, bấm ra ngoài `ConfirmDialog` để huỷ xác nhận sẽ vô
+    tình bấm trúng luôn overlay của form cha, đóng mất cả form đang sửa.
+  - `CycleLogForm.tsx`, `AppointmentForm.tsx`: thay khối UI xác nhận inline
+    (nút Huỷ + nút Xoá vẽ tay) bằng `<ConfirmDialog>` — nút "Xoá kỳ kinh
+    này"/"Xoá lịch hẹn này" giờ chỉ mở dialog (`setConfirmingDelete(true)`),
+    không tự vẽ trạng thái xác nhận nữa. Logic `handleDelete()`/`isPending`
+    giữ nguyên, chỉ đổi phần hiển thị.
+  - Đã chạy `npm install` + `tsc --noEmit` toàn bộ + `eslint src/` toàn repo —
+    không lỗi mới, 3 vấn đề có sẵn từ trước vẫn để dành cho **B2**.
+  - **Nhóm A (Trải nghiệm tương tác) nay đã đóng hoàn toàn** — A1 → A5 đều
+    `[x]`. Việc tiếp theo trong roadmap: bắt đầu **Nhóm B** (rà soát bug &
+    hoàn thiện chức năng hiện có), bắt đầu từ **B1** (audit CRUD từng module
+    đối chiếu schema DB) hoặc **B2** (dọn 3 lỗi ESLint tồn đọng đã nêu ở trên).
+  - Người thực hiện: Claude. File package gửi cho user: `module_A5_confirm_dialog.zip`
+    (4 file: 1 file mới `ConfirmDialog.tsx`, 3 file sửa — `CycleLogForm.tsx`,
+    `AppointmentForm.tsx`, `QUALITY_UX_ROADMAP.md`).

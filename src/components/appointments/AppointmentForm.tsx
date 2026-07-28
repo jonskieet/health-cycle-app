@@ -9,6 +9,7 @@ import {
   useDeleteAppointment,
 } from "@/lib/queries";
 import { useToast } from "@/components/ui/Toast";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 function toLocalInputValue(iso: string) {
   const d = new Date(iso);
@@ -160,42 +161,26 @@ export default function AppointmentForm({
         </button>
 
         {isEdit && (
-          <>
-            {!confirmingDelete ? (
-              <button
-                type="button"
-                onClick={() => setConfirmingDelete(true)}
-                className="flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold"
-                style={{ color: "var(--c-heart)" }}
-              >
-                <Trash2 size={16} />
-                Xoá lịch hẹn này
-              </button>
-            ) : (
-              <div className="flex items-center gap-2 rounded-2xl bg-black/[0.03] p-3">
-                <span className="flex-1 text-xs text-[var(--ink-soft)]">Xoá vĩnh viễn lịch hẹn này?</span>
-                <button
-                  type="button"
-                  onClick={() => setConfirmingDelete(false)}
-                  className="rounded-full px-3 py-1.5 text-xs font-semibold text-[var(--ink-soft)]"
-                >
-                  Huỷ
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={deleteAppointment.isPending}
-                  className="flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
-                  style={{ background: "var(--c-heart)" }}
-                >
-                  {deleteAppointment.isPending && <Loader2 size={12} className="animate-spin" />}
-                  Xoá
-                </button>
-              </div>
-            )}
-          </>
+          <button
+            type="button"
+            onClick={() => setConfirmingDelete(true)}
+            className="flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold"
+            style={{ color: "var(--c-heart)" }}
+          >
+            <Trash2 size={16} />
+            Xoá lịch hẹn này
+          </button>
         )}
       </form>
+
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="Xoá lịch hẹn này?"
+        description="Dữ liệu đã xoá sẽ không thể khôi phục lại."
+        isLoading={deleteAppointment.isPending}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmingDelete(false)}
+      />
     </div>
   );
 }
