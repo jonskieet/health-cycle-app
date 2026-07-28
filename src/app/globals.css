@@ -10,7 +10,12 @@
 
   /* Ink */
   --ink: #241b2f;
-  --ink-soft: #74708a;
+  /* D1 (kiểm toán màu & typography): #74708a cũ chỉ đạt 3.94–4.22:1 trên nền
+     --aurora-* / --bg-fallback (KHÔNG đạt AA cho chữ thường, cần ≥4.5:1) — đổi
+     sang #636076 (đậm hơn chút, cùng tông tím-xám) để đạt tối thiểu 4.5:1 trên
+     MỌI nền hiện có trong app (thấp nhất 5.04:1 trên bg-fallback), vẫn giữ đúng
+     thẩm mỹ tím-hồng nữ tính, không đổi --ink-faint (xem ghi chú Nhật ký D1). */
+  --ink-soft: #636076;
   --ink-faint: #a8a3ba;
 
   /* Glass surface */

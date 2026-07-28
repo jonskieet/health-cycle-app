@@ -777,3 +777,44 @@ trước tiên vì rất nhiều mục khác (A3, B1...) phụ thuộc vào có 
     `CorrelationChart.tsx`, `HealthCheckIns.tsx`, `AiChatSheet.tsx`,
     `CycleLogForm.tsx`, `ReminderBanner.tsx`, `AbnormalCycleBanner.tsx`,
     `app/cycle/page.tsx`, `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Tiếp tục Module D1 (một phần): kiểm toán & sửa contrast
+  ratio của `--ink-soft`**. Khối lượng nhỏ (1 file CSS, chỉ 1 biến màu) nên chỉ
+  làm phần này, CHƯA đóng `[x]` D1 (còn phần rà đồng bộ typography scale giữa
+  các trang — xem lý do để lại bên dưới).
+  - **Cách kiểm toán**: tính contrast ratio (công thức WCAG) của `--ink`,
+    `--ink-soft`, `--ink-faint` so với TẤT CẢ nền hiện có trong app
+    (`--aurora-a/b/c`, `--surface`, `--surface-soft`, `--bg-fallback`), cả theme
+    sáng lẫn tối — 36 tổ hợp mỗi theme.
+  - **Phát hiện**: `--ink-soft` (`#74708a`) theme sáng chỉ đạt 3.94–4.22:1 trên
+    nền `--aurora-*`/`--bg-fallback` — KHÔNG đạt chuẩn AA cho chữ thường
+    (cần ≥4.5:1), dù đạt trên `--surface` (4.74:1). Biến này dùng khá rộng cho
+    text phụ (mô tả, nhãn) trực tiếp trên nền aurora ở nhiều trang → bug thật,
+    không phải cố ý.
+  - **Đã sửa**: đổi `--ink-soft` theme sáng từ `#74708a` → `#636076` (đậm hơn
+    chút, giữ nguyên tông tím-xám) — đạt tối thiểu 5.04:1 trên MỌI nền hiện có
+    (kể cả nền xấu nhất `--bg-fallback`). Theme tối không cần sửa (`--ink-soft`
+    đã đạt 7.18–9.29:1 sẵn).
+  - **Đã kiểm tra nhưng CHƯA sửa (để dành, đúng tinh thần ghi chú C1 cũ)**:
+    `--ink-faint` (`#a8a3ba` sáng / `#8a84a0` tối) vẫn KHÔNG đạt AA ở nhiều tổ
+    hợp (2.03–2.44:1 sáng; 4.06–4.65:1 tối, một số nền tối cũng chưa đạt) —
+    đúng như nhật ký C1 đã ghi trước đó. Giữ nguyên quyết định cũ: biến này chủ
+    yếu dùng cho nhãn/mốc thời gian rất nhỏ (không phải nội dung chính, ngưỡng
+    AA cho "large text" chỉ cần 3:1 nên phần lớn chỗ dùng vẫn tạm ổn về mặt
+    thực tế dù không đạt ngưỡng chữ thường tuyệt đối), và đổi giá trị sẽ ảnh
+    hưởng thị giác ở hàng chục nơi cùng lúc — vẫn là việc "khối lượng lớn" nên
+    KHÔNG gộp vào module nhỏ này.
+  - **Phần còn lại của D1 (rà đồng bộ typography scale giữa các trang)**: đã
+    grep sơ bộ các cỡ chữ arbitrary (`text-[9px]`/`[10px]`/`[11px]`) — rải rác
+    ở ~20 file cho nhãn/caption rất nhỏ, nhưng KHÔNG có 1 "scale chuẩn" nào được
+    định nghĩa sẵn trong code để đối chiếu đúng/sai (khác với vấn đề contrast ở
+    trên vốn có công thức khách quan để kiểm chứng) — việc thống nhất cỡ chữ
+    giữa các trang mang tính chủ quan thẩm mỹ, cần chủ dự án xác nhận 1 scale cụ
+    thể (VD 9/10/11/12/14/16px dùng khi nào) trước khi agent sau sửa hàng loạt,
+    tránh sửa lạc thẩm mỹ không đúng ý chủ dự án. Để lại phần này cho D1 lần
+    sau, có thể hỏi chủ dự án trước khi làm.
+  - Đã cài `node_modules`, chạy `tsc --noEmit` + `eslint src/` toàn repo — sạch.
+  - Việc tiếp theo trong roadmap: hoàn thành nốt D1 (scale chữ, cần xác nhận từ
+    chủ dự án) hoặc chuyển sang D2/D3/D4/D5, hoặc C3/B5 (vẫn cần file
+    icon thật / mạng đầy đủ tương ứng).
+  - Người thực hiện: Claude. File package gửi cho user: `module_D1_contrast.zip`
+    (2 file: `src/app/globals.css`, `QUALITY_UX_ROADMAP.md`).
