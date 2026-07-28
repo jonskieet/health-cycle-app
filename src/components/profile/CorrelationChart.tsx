@@ -54,7 +54,7 @@ function MetricSelect({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value as MetricType)}
-      className="flex-1 rounded-2xl border border-black/[0.08] bg-white/70 px-3 py-2 text-sm font-medium text-[var(--ink)]"
+      className="flex-1 rounded-2xl border border-black/[0.08] bg-[color-mix(in_srgb,var(--surface)_70%,transparent)] px-3 py-2 text-sm font-medium text-[var(--ink)]"
     >
       {METRIC_OPTIONS.filter((m) => m !== exclude).map((m) => (
         <option key={m} value={m}>

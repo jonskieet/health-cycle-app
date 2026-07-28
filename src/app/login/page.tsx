@@ -220,7 +220,7 @@ export default function LoginPage() {
                 className="relative flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors"
                 style={
                   step === "signin"
-                    ? { background: "white", color: "var(--ink)", boxShadow: "0 4px 12px rgba(36,27,47,0.08)" }
+                    ? { background: "var(--surface)", color: "var(--ink)", boxShadow: "0 4px 12px rgba(36,27,47,0.08)" }
                     : { color: "var(--ink-soft)" }
                 }
               >
@@ -232,7 +232,7 @@ export default function LoginPage() {
                 className="relative flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors"
                 style={
                   step === "signup"
-                    ? { background: "white", color: "var(--ink)", boxShadow: "0 4px 12px rgba(36,27,47,0.08)" }
+                    ? { background: "var(--surface)", color: "var(--ink)", boxShadow: "0 4px 12px rgba(36,27,47,0.08)" }
                     : { color: "var(--ink-soft)" }
                 }
               >

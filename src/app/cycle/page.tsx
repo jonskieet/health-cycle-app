@@ -95,7 +95,7 @@ export default function CyclePage() {
             {profile?.usage_goal === "conceive" && (
               <p
                 className="w-full rounded-2xl px-3 py-2.5 text-center text-xs font-medium"
-                style={{ background: "color-mix(in srgb, var(--c-fertile) 18%, white)", color: "var(--ink)" }}
+                style={{ background: "color-mix(in srgb, var(--c-fertile) 18%, var(--surface))", color: "var(--ink)" }}
               >
                 🌷 Cửa sổ thụ thai: {prediction.fertileWindow.start.toLocaleDateString("vi-VN")} –{" "}
                 {prediction.fertileWindow.end.toLocaleDateString("vi-VN")}

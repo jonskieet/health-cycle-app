@@ -43,7 +43,7 @@ export default function AbnormalCycleBanner({ cycleLogs }: { cycleLogs: CycleLog
   return (
     <section
       className="flex items-start gap-3 rounded-[22px] p-4"
-      style={{ background: "color-mix(in srgb, var(--c-period) 12%, white)" }}
+      style={{ background: "color-mix(in srgb, var(--c-period) 12%, var(--surface))" }}
     >
       <span
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white"

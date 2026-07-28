@@ -47,7 +47,7 @@ export default function ReminderBanner({ daysToNextPeriod, metrics }: ReminderBa
     return (
       <div
         className="glass-card flex items-center gap-3 rounded-[20px] p-4"
-        style={{ background: "color-mix(in srgb, var(--c-period) 10%, white)" }}
+        style={{ background: "color-mix(in srgb, var(--c-period) 10%, var(--surface))" }}
       >
         <span
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
@@ -74,7 +74,7 @@ export default function ReminderBanner({ daysToNextPeriod, metrics }: ReminderBa
   return (
     <div
       className="glass-card flex items-center gap-3 rounded-[20px] p-4"
-      style={{ background: "color-mix(in srgb, var(--c-hydration) 10%, white)" }}
+      style={{ background: "color-mix(in srgb, var(--c-hydration) 10%, var(--surface))" }}
     >
       <span
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"

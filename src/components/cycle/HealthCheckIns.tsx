@@ -105,7 +105,7 @@ function QuizModal({ quiz, onClose }: { quiz: CheckInQuiz; onClose: () => void }
                   key={opt}
                   type="button"
                   onClick={() => choose(i)}
-                  className="rounded-2xl border border-black/[0.06] bg-white/60 px-4 py-3 text-left text-sm text-[var(--ink)] transition-colors hover:bg-white active:scale-[0.99]"
+                  className="rounded-2xl border border-black/[0.06] bg-[color-mix(in_srgb,var(--surface)_60%,transparent)] px-4 py-3 text-left text-sm text-[var(--ink)] transition-colors hover:bg-[var(--surface)] active:scale-[0.99]"
                 >
                   {opt}
                 </button>

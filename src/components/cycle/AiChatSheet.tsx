@@ -129,7 +129,7 @@ export default function AiChatSheet({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Nhập câu hỏi của bạn..."
-              className="flex-1 rounded-full border border-black/[0.06] bg-white/60 px-4 py-2.5 text-sm text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)]"
+              className="flex-1 rounded-full border border-black/[0.06] bg-[color-mix(in_srgb,var(--surface)_60%,transparent)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none placeholder:text-[var(--ink-faint)]"
             />
             <button
               type="submit"

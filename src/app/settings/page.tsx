@@ -486,7 +486,7 @@ export default function SettingsPage() {
                 setPinError(null);
               }}
               placeholder="••••"
-              className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-center text-lg font-semibold tracking-[0.5em] text-[var(--ink)] outline-none"
+              className="rounded-2xl border border-black/10 bg-[var(--surface)] px-4 py-3 text-center text-lg font-semibold tracking-[0.5em] text-[var(--ink)] outline-none"
             />
 
             {pinError && <p className="text-center text-xs font-medium text-[var(--c-period)]">{pinError}</p>}

@@ -134,7 +134,7 @@ một kiểu (có form show banner đỏ trong modal, có form im lặng không 
       lại thứ tự ưu tiên hiển thị trên `/` (chu kỳ hôm nay → nhắc nhở → check-in
       nhanh → insight) có đúng thứ tự người dùng cần nhìn thấy đầu tiên không,
       tránh dồn quá nhiều card cùng một hàng gây rối mắt.
-- [ ] **D6. Dark mode — hoàn thiện 100%** — Module theme (Sáng/Tối) đã làm ở
+- [x] **D6. Dark mode — hoàn thiện 100%** — Module theme (Sáng/Tối) đã làm ở
       roadmap trước còn vài chỗ hard-code màu trắng chưa đổi theo theme (đã ghi
       trong nhật ký cũ) — rà quét toàn bộ `bg-white`/`text-black` cứng còn sót
       trong `src/` và thay bằng biến theme.
@@ -712,3 +712,68 @@ trước tiên vì rất nhiều mục khác (A3, B1...) phụ thuộc vào có 
   - Người thực hiện: Claude. File package gửi cho user: `module_C2_bundle.zip`
     (3 file: `app/profile/page.tsx`, `app/profile/report/page.tsx`,
     `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành Module D6 (Dark mode — rà quét màu cứng chưa
+  đổi theo theme)**. Chuyển hẳn sang Nhóm D vì Nhóm C đã xong 3/4 mục khả thi
+  trong sandbox này (C3 cần file icon thiết kế thật, không tự chế được).
+  Khối lượng: rà toàn bộ `src/` bằng `grep` (không phải xuyên suốt mù mờ —
+  tìm được danh sách cụ thể, hữu hạn), sửa đúng các chỗ xác nhận là bug thật.
+  - **Cách rà**: `grep` toàn bộ `bg-white`/`text-black` và mọi
+    `color-mix(in srgb, ..., white)`/`background: "white"` literal trong
+    `src/`. Với mỗi kết quả, kiểm tra xem có VĂN BẢN dùng biến theme
+    (`var(--ink)`/`var(--ink-soft)`/`var(--ink-faint)`) đặt TRỰC TIẾP trên
+    nền đó không — đây mới là bug thật (dark mode đổi `--ink*` sang màu
+    sáng, nhưng nền vẫn `white`/gần-trắng cứng → chữ gần như biến mất). Badge
+    tròn nhỏ chỉ chứa icon màu chính nó (không phải `--ink`) thì KHÔNG phải
+    bug — đây là pattern thiết kế cố ý (badge tròn giữ nền sáng dịu bất kể
+    theme để icon màu nổi rõ, giống nhiều app khác), không sửa để tránh đổi
+    thẩm mỹ ngoài phạm vi roadmap yêu cầu.
+  - **6 bug thật tìm thấy & sửa** (nền cứng + chữ theo `--ink*` ngồi trực
+    tiếp trên đó):
+    1. `settings/page.tsx` — input đặt mã PIN: `bg-white` → `bg-[var(--surface)]`.
+    2. `LockedFeature.tsx` — lớp phủ khoá VIP: `bg-white/40` →
+       `bg-[color-mix(in_srgb,var(--surface)_40%,transparent)]`.
+    3. `CorrelationChart.tsx` — `<select>` chọn chỉ số: `bg-white/70` →
+       tương tự, mix 70%.
+    4. `HealthCheckIns.tsx` — nút đáp án trắc nghiệm mệt mỏi: `bg-white/60` +
+       `hover:bg-white` → mix 60% + `hover:bg-[var(--surface)]`.
+    5. `AiChatSheet.tsx` — ô nhập câu hỏi chat AI: `bg-white/60` → mix 60%.
+    6. `login/page.tsx` — tab toggle "Đăng nhập/Đăng ký" (trạng thái được
+       chọn): `background: "white"` → `background: "var(--surface)"`.
+  - **3 banner có văn bản ngồi trên nền `color-mix(..., white)`** (khác kiểu
+    trên — không phải Tailwind class mà inline `color-mix` literal `white`,
+    dễ bị bỏ sót nếu chỉ grep `bg-white`): `CycleLogForm.tsx` (banner "kỳ
+    kinh chưa kết thúc"), `ReminderBanner.tsx` (cả 2 nhánh period/log),
+    `AbnormalCycleBanner.tsx` ("Có điểm cần chú ý"), `cycle/page.tsx`
+    (banner "Cửa sổ thụ thai") — đổi tham số cuối của `color-mix()` từ
+    literal `white` sang `var(--surface)` để tự đổi theo theme thay vì đứng
+    yên.
+  - **Đã kiểm tra kỹ nhưng KHÔNG sửa** (xác nhận không phải bug, để tránh
+    sửa lạc phạm vi thẩm mỹ ngoài roadmap):
+    - `Switch.tsx` (`bg-white` — núm gạt công tắc, quy ước chung giữ trắng
+      bất kể theme).
+    - `MembershipCard.tsx` (`bg-white/20` — badge trên nền gradient VIP cố
+      định riêng, không phải bề mặt theme).
+    - `login/page.tsx` nút Google/Apple (`bg-white`/`bg-black` — màu
+      thương hiệu OAuth cố định theo quy chuẩn Google/Apple, không đổi theo
+      theme app).
+    - Toàn bộ badge tròn nhỏ dùng `color-mix(..., NN%, white)` chỉ chứa
+      icon/số màu chính nó (`MetricCard`, `EmptyState`, `ConfirmDialog`,
+      `FatigueQuiz`, `library` (2 trang), `reset-password`, `login` (2 chỗ
+      OTP/mail), `log/page.tsx`, `kegel/page.tsx`) — không có chữ `--ink*`
+      trên nền đó, giữ nguyên theo đúng dụng ý thiết kế ban đầu.
+  - Đã cài `node_modules`, chạy `tsc --noEmit` + `eslint src/` toàn repo —
+    sạch, không lỗi.
+  - Việc tiếp theo trong roadmap: **C3** (icon PWA thật — vẫn cần bạn cung
+    cấp file thiết kế), **B5** (vẫn chặn ở Google Fonts trong sandbox này),
+    hoặc các mục còn lại của Nhóm D (D1 kiểm toán contrast toàn diện hơn —
+    lưu ý: `--ink-faint` (`#a8a3ba`) hiện chỉ đạt ~2.44:1 trên nền trắng,
+    KHÔNG đạt chuẩn AA cho text thường (cần ≥4.5:1) — nhưng phần lớn nơi
+    dùng biến này là nhãn/mốc thời gian rất nhỏ chứ không phải nội dung
+    chính; đổi giá trị biến này sẽ ảnh hưởng thị giác ở HÀNG CHỤC nơi cùng
+    lúc (rủi ro regression cao, đúng loại "khối lượng lớn" cần làm riêng 1
+    module không gộp gì khác) — để dành, chưa sửa trong module D6 này).
+  - Người thực hiện: Claude. File package gửi cho user: `module_D6_dark_mode.zip`
+    (10 file: `settings/page.tsx`, `login/page.tsx`, `LockedFeature.tsx`,
+    `CorrelationChart.tsx`, `HealthCheckIns.tsx`, `AiChatSheet.tsx`,
+    `CycleLogForm.tsx`, `ReminderBanner.tsx`, `AbnormalCycleBanner.tsx`,
+    `app/cycle/page.tsx`, `QUALITY_UX_ROADMAP.md`).

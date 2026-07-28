@@ -222,7 +222,7 @@ export default function CycleLogForm({
               {continuingId && !editLog && (
                 <div
                   className="flex items-start gap-2.5 rounded-2xl p-3.5"
-                  style={{ background: "color-mix(in srgb, var(--c-period) 10%, white)" }}
+                  style={{ background: "color-mix(in srgb, var(--c-period) 10%, var(--surface))" }}
                 >
                   <Info size={16} className="mt-0.5 shrink-0" style={{ color: "var(--c-period)" }} />
                   <div className="flex-1 text-xs leading-relaxed text-[var(--ink-soft)]">

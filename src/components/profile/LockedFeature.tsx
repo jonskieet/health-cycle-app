@@ -23,7 +23,7 @@ export default function LockedFeature({ locked, title = "Tính năng VIP", child
       >
         {children}
       </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 rounded-[24px] bg-white/40 px-6 text-center backdrop-blur-[1px]">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 rounded-[24px] bg-[color-mix(in_srgb,var(--surface)_40%,transparent)] px-6 text-center backdrop-blur-[1px]">
         <span
           className="flex h-10 w-10 items-center justify-center rounded-full text-white"
           style={{ background: "linear-gradient(135deg, #f6c453, #e85c8a 55%, #7c6ff0)" }}
