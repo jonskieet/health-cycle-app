@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Battery } from "lucide-react";
 import FatigueQuiz from "@/components/fatigue/FatigueQuiz";
 import EmptyState from "@/components/ui/EmptyState";
+import { SkeletonRows } from "@/components/ui/Skeleton";
 import { useFatigueTests } from "@/lib/queries";
 
 const LEVEL_LABEL: Record<string, string> = {
@@ -42,6 +43,7 @@ export default function FatigueTestPage() {
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--ink-faint)]">
           Lịch sử kết quả
         </p>
+        {isLoading && <SkeletonRows rows={3} />}
         {!isLoading && history.length === 0 && (
           <EmptyState
             icon={Battery}

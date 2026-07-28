@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Stethoscope, ChevronRight } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
+import { SkeletonRows } from "@/components/ui/Skeleton";
 import AppointmentForm from "@/components/appointments/AppointmentForm";
 import { Appointment, useAppointments } from "@/lib/queries";
 
@@ -52,7 +53,9 @@ export default function AppointmentsPage() {
         </button>
       </header>
 
-      {!isLoading && appointments.length === 0 ? (
+      {isLoading ? (
+        <SkeletonRows rows={3} />
+      ) : appointments.length === 0 ? (
         <div className="flex flex-col gap-4">
           <EmptyState
             icon={Stethoscope}

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import MetricCard from "@/components/ui/MetricCard";
 import AuroraRing from "@/components/ui/AuroraRing";
 import EmptyState from "@/components/ui/EmptyState";
+import { Skeleton } from "@/components/ui/Skeleton";
 import AbnormalCycleBanner from "@/components/cycle/AbnormalCycleBanner";
 import ReminderBanner from "@/components/cycle/ReminderBanner";
 import {
@@ -153,7 +154,13 @@ export default function DashboardPage() {
       )}
 
       {/* Metric cards grid */}
-      {!loading && !hasAnyMetrics ? (
+      {loading ? (
+        <section className="grid grid-cols-2 gap-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className={`h-24 w-full rounded-[22px] ${i === 4 ? "col-span-2" : ""}`} />
+          ))}
+        </section>
+      ) : !hasAnyMetrics ? (
         <EmptyState
           title="Chưa có chỉ số nào hôm nay"
           description="Ghi nhận nhịp tim, giấc ngủ, stress, nước uống hoặc tâm trạng để KVCycle bắt đầu theo dõi sức khỏe của bạn."

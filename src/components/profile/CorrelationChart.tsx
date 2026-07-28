@@ -25,6 +25,7 @@ import {
   YAxis,
 } from "recharts";
 import EmptyState from "@/components/ui/EmptyState";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { MetricType, useMetricTrend } from "@/lib/queries";
 import { alignMetricsByDate, pearsonCorrelation, interpretCorrelation } from "@/lib/correlation";
 
@@ -116,7 +117,9 @@ export default function CorrelationChart() {
         <MetricSelect value={metricB} onChange={handleChangeB} exclude={metricA} />
       </div>
 
-      {!isLoading && chartData.filter((d) => d.a != null && d.b != null).length < 3 ? (
+      {isLoading ? (
+        <Skeleton className="h-[190px] w-full" />
+      ) : chartData.filter((d) => d.a != null && d.b != null).length < 3 ? (
         <EmptyState
           title="Chưa đủ dữ liệu"
           description={`Cần ít nhất 3 ngày có cả ${configA.label.toLowerCase()} và ${configB.label.toLowerCase()} để phân tích tương quan.`}

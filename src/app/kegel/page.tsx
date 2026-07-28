@@ -7,6 +7,7 @@ import { KEGEL_PRESETS, KegelPreset, buildKegelSequence, totalSequenceSeconds, f
 import { useKegelSessions } from "@/lib/queries";
 import KegelTimer from "@/components/kegel/KegelTimer";
 import EmptyState from "@/components/ui/EmptyState";
+import { SkeletonRows } from "@/components/ui/Skeleton";
 
 function formatWhen(iso: string) {
   const d = new Date(iso);
@@ -83,6 +84,7 @@ export default function KegelPage() {
             <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--ink-faint)]">
               Lịch sử tập luyện
             </p>
+            {isLoading && <SkeletonRows rows={3} />}
             {!isLoading && sessions.length === 0 && (
               <EmptyState
                 icon={HeartPulse}

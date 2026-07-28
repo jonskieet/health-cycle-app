@@ -273,6 +273,31 @@ body {
   }
 }
 
+/* Module A4 (QUALITY_UX_ROADMAP.md) — skeleton loading dùng chung, thay thế
+   khoảng trắng im lặng lúc `isLoading` ở các danh sách (lịch sử metric, lịch
+   sử chu kỳ, lịch hẹn...). Rule prefers-reduced-motion ở trên đã tự động ép
+   animation-duration về gần 0 nên không cần lặp lại riêng cho .skeleton. */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton {
+  border-radius: 14px;
+  background: linear-gradient(
+    100deg,
+    rgba(36, 27, 47, 0.06) 30%,
+    rgba(36, 27, 47, 0.12) 45%,
+    rgba(36, 27, 47, 0.06) 60%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
 /* Recharts (và trình duyệt) mặc định vẽ viền focus quanh các phần tử SVG
    khi được bấm (dot, surface, wrapper) — bỏ viền này để khớp với phong cách
    phẳng/glass của app, chỉ giữ hiệu ứng tooltip/active dot có chủ đích. */

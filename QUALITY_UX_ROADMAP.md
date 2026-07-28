@@ -53,15 +53,12 @@ một kiểu (có form show banner đỏ trong modal, có form im lặng không 
       cho TẤT CẢ nút bấm chính (Lưu, Xoá, các nút icon tròn +/-, chip chọn triệu
       chứng, nút chuyển tab...). Ưu tiên các trang: `/log`, `/cycle`, `/profile`,
       `/appointments`, `/settings`.
-- [ ] **A3. Trạng thái loading rõ ràng cho mọi nút submit** — rà soát toàn bộ
+- [x] **A3. Trạng thái loading rõ ràng cho mọi nút submit** — rà soát toàn bộ
       `useMutation` trong `queries.ts`, đảm bảo mọi nút "Lưu"/"Xoá"/"Gửi" đều
       disable + hiện spinner/label "Đang lưu..." trong lúc `isPending`, tránh
       double-submit khi user bấm nhiều lần liên tiếp (đặc biệt quan trọng trên
-      mobile — dễ bấm nhầm 2 lần). *(Phần "toast thành công" cho các luồng còn
-      thiếu đã làm — xem nhật ký 2026-07-28 lần 2. Còn thiếu: rà disable/spinner
-      cho các switch/toggle trong `settings.tsx`, và `.mutate()` fire-and-forget
-      ở `FatigueQuiz.tsx`/`KegelTimer.tsx` chưa theo dõi `isPending` ở UI.)*
-- [ ] **A4. Empty state & skeleton loading nhất quán** — kiểm tra mọi danh sách
+      mobile — dễ bấm nhầm 2 lần).
+- [x] **A4. Empty state & skeleton loading nhất quán** — kiểm tra mọi danh sách
       (lịch sử metric, lịch sử chu kỳ, danh sách lịch hẹn, danh sách bài viết...)
       đều có skeleton lúc `isLoading` và empty-state thân thiện lúc rỗng (tái
       dùng `EmptyState` đã có nếu còn thiếu ở đâu đó).
@@ -272,3 +269,85 @@ trước tiên vì rất nhiều mục khác (A3, B1...) phụ thuộc vào có 
   - Người thực hiện: Claude. File package gửi cho user: `module_A3_success_toasts.zip`
     (6 file sửa: `EditProfileModal.tsx`, `profile/page.tsx`, `settings/page.tsx`,
     `upgrade/page.tsx`, `onboarding/page.tsx`, `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành nốt Module A3 (đóng mục)**: disable/label rõ ràng
+  cho toggle/switch và các nút `.mutate()` fire-and-forget còn thiếu theo dõi
+  `isPending`. Khối lượng nhỏ, đóng gói cùng lúc.
+  - `src/components/ui/Switch.tsx`: thêm prop `disabled?: boolean` (mặc định
+    không có, không phá vỡ chỗ gọi cũ) — `aria-disabled` + `disabled` +
+    `disabled:opacity-50` để có phản hồi thị giác rõ ràng khi khoá.
+  - `src/app/settings/page.tsx`: truyền `disabled={updateProfile.isPending}` cho
+    3 switch dùng chung mutation này (chủ đề, thông báo, hệ mét) và switch khoá
+    PIN (`appLockEnabled`); truyền `disabled={upsertReminder.isPending}` cho 2
+    switch nhắc nhở (sắp đến kỳ kinh, nhắc log hàng ngày) + slider chọn số ngày
+    nhắc trước (tránh kéo slider bắn liên tiếp nhiều request trong lúc request
+    trước chưa xong). **Quyết định**: dùng chung `isPending` của 1 instance
+    mutation cho nhiều switch liên quan (thay vì tách riêng state loading cho
+    từng switch) — chấp nhận được vì thời gian pending rất ngắn (1 update
+    profile/reminder), đổi lại code đơn giản hơn nhiều so với quản lý loading
+    riêng lẻ cho từng field.
+  - `src/components/fatigue/FatigueQuiz.tsx`: `saveTest.mutate()` được gọi
+    ngay sau khi set kết quả nên UI kết quả hiện lập tức trước khi mutation
+    xong — thêm dòng chữ "Đang lưu kết quả..." dưới phần gợi ý khi
+    `saveTest.isPending`, và disable nút "Làm lại bài test" trong lúc đó để
+    tránh reset state khi request lưu kết quả trước còn dang dở.
+  - `src/components/kegel/KegelTimer.tsx`: `logSession.mutate()` đã được chặn
+    gọi 2 lần từ trước bằng `savedRef` (không có bug double-submit thực sự) —
+    module này chỉ bổ sung phản hồi trực quan: disable nút "Xong" ở màn hoàn
+    thành + đổi label thành "Đang lưu..." trong lúc `logSession.isPending`, để
+    nhất quán với các nút submit khác trong app.
+  - Đã chạy `npm install` + `tsc --noEmit` toàn bộ + `eslint src/` toàn repo —
+    không lỗi mới. 3 vấn đề có sẵn từ trước (`react-hooks/set-state-in-effect`
+    ở `CycleLogForm.tsx`/`AppDatePicker.tsx`, 1 warning `exhaustive-deps` ở
+    `CycleCalendar.tsx`) vẫn còn nguyên, để lại cho **B2** xử lý — không sửa lạc
+    đề ở đây.
+  - Mục **A3** nay đã đóng hoàn toàn `[x]`. Việc tiếp theo trong roadmap:
+    **A4** (empty state & skeleton loading nhất quán) hoặc **A5** (Confirm
+    dialog dùng chung cho hành động Xoá) — cả hai đều thuộc Nhóm A còn lại.
+  - Người thực hiện: Claude. File package gửi cho user: `module_A3_close.zip`
+    (5 file sửa: `Switch.tsx`, `settings/page.tsx`, `FatigueQuiz.tsx`,
+    `KegelTimer.tsx`, `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành Module A4 (Empty state & skeleton loading nhất
+  quán)**. Khối lượng lớn (xuyên suốt 7 trang/component) nên chỉ làm 1 mục,
+  không gộp thêm B/C/D.
+  - **Vấn đề gốc phát hiện khi audit**: rất nhiều nơi dùng pattern
+    `isLoading ? null : ...` hoặc `!isLoading && ...` — nghĩa là trong lúc tải,
+    màn hình chỉ có khoảng trắng im lặng (không phải skeleton, không phải
+    empty-state), dễ khiến người dùng tưởng app bị treo hoặc đã hết dữ liệu.
+  - `src/components/ui/Skeleton.tsx` (mới): 3 component dùng chung —
+    `Skeleton` (1 khối shimmer tuỳ biến qua `className`), `SkeletonRows` (danh
+    sách chia divider, khớp layout icon tròn + 2 dòng text — dùng cho lịch sử
+    metric/kegel/fatigue-test/lịch hẹn), `SkeletonCard` (khối card lớn có thể
+    kèm vòng tròn, dùng cho dashboard chu kỳ).
+  - `src/app/globals.css`: thêm `@keyframes skeleton-shimmer` + class
+    `.skeleton` (gradient di chuyển ngang) — tự động tôn trọng
+    `prefers-reduced-motion` nhờ rule global đã có sẵn từ Module A1/A2, không
+    cần khai báo riêng.
+  - Áp dụng skeleton thay khoảng trắng im lặng ở:
+    - `appointments/page.tsx`: `SkeletonRows` cho danh sách lịch hẹn.
+    - `kegel/page.tsx`: `SkeletonRows` cho lịch sử tập luyện.
+    - `fatigue-test/page.tsx`: `SkeletonRows` cho lịch sử kết quả.
+    - `cycle/page.tsx`: `SkeletonCard` (có vòng tròn) + `SkeletonRows` thay cho
+      `isLoading ? null` ở toàn khối dashboard dự đoán chu kỳ.
+    - `profile/page.tsx`: skeleton khớp layout khối "Thông số chu kỳ mặc định"
+      (2 thanh trượt + 1 nút) — trước đây khối này biến mất hoàn toàn lúc tải.
+    - `page.tsx` (trang chủ): skeleton dạng lưới 5 ô thay cho lưới thẻ chỉ số
+      sức khoẻ lúc `cycleLoading || metricsLoading`.
+    - `WeightBBTChart.tsx`, `CorrelationChart.tsx`: skeleton dạng khối chữ nhật
+      khớp chiều cao biểu đồ thật, tách rõ khỏi nhánh "chưa đủ dữ liệu" (trước
+      đây 2 trạng thái "đang tải" và "chưa đủ dữ liệu" bị gộp chung điều kiện
+      `!isLoading && ...`, khiến lúc đang tải hiển thị nhầm sang layout rỗng).
+  - **Phạm vi KHÔNG đụng tới** (đã có sẵn cách xử lý hợp lý, không phải bug):
+    `library/page.tsx` dùng dữ liệu tĩnh cục bộ từ `articles.ts` (không phải
+    async query từ Supabase) nên không cần skeleton; `log/page.tsx` cũng chỉ
+    có danh sách loại chỉ số tĩnh, không phải dữ liệu tải về.
+  - Đã chạy `npm install` + `tsc --noEmit` toàn bộ + `eslint src/` toàn repo —
+    không lỗi mới, 3 vấn đề có sẵn từ trước vẫn để dành cho **B2** (không sửa
+    lạc đề ở đây, xem chi tiết trong entry Module A3 phía trên).
+  - Việc tiếp theo trong roadmap: **A5** (`<ConfirmDialog>` dùng chung thay
+    `window.confirm` cho hành động Xoá) để đóng nốt Nhóm A, hoặc bắt đầu
+    Nhóm B (audit bug/schema).
+  - Người thực hiện: Claude. File package gửi cho user: `module_A4_skeleton.zip`
+    (10 file: 1 file mới `Skeleton.tsx`, 9 file sửa — `globals.css`,
+    `appointments/page.tsx`, `kegel/page.tsx`, `fatigue-test/page.tsx`,
+    `cycle/page.tsx`, `profile/page.tsx`, `page.tsx`, `WeightBBTChart.tsx`,
+    `CorrelationChart.tsx`, `QUALITY_UX_ROADMAP.md`).

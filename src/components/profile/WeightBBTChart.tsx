@@ -9,6 +9,7 @@ import { useState } from "react";
 import { Scale, Thermometer } from "lucide-react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import EmptyState from "@/components/ui/EmptyState";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { useMetricTrend } from "@/lib/queries";
 
 type Tab = "weight" | "bbt";
@@ -60,6 +61,8 @@ export default function WeightBBTChart() {
           })}
         </div>
       </div>
+
+      {isLoading && <Skeleton className="h-[180px] w-full" />}
 
       {!isLoading && chartData.length === 0 && (
         <EmptyState

@@ -137,11 +137,12 @@ export default function KegelTimer({ preset, onFinished }: KegelTimerProps) {
           </p>
           <button
             type="button"
+            disabled={logSession.isPending}
             onClick={onFinished}
-            className="rounded-full px-6 py-2.5 text-sm font-semibold text-white"
+            className="rounded-full px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
             style={{ background: "var(--c-mood)" }}
           >
-            Xong
+            {logSession.isPending ? "Đang lưu..." : "Xong"}
           </button>
         </div>
       ) : (

@@ -27,6 +27,7 @@ import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import MembershipCard from "@/components/profile/MembershipCard";
 import LockedFeature from "@/components/profile/LockedFeature";
 import EditProfileModal from "@/components/profile/EditProfileModal";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -248,6 +249,21 @@ export default function ProfilePage() {
         </span>
         <ChevronRight size={16} className="text-[var(--ink-faint)]" />
       </Link>
+
+      {isLoading && (
+        <section className="glass-card flex flex-col gap-5 rounded-[24px] p-5">
+          <Skeleton className="h-3 w-1/3" />
+          <div className="flex flex-col gap-1.5">
+            <Skeleton className="h-3.5 w-1/2" />
+            <Skeleton className="h-2 w-full" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Skeleton className="h-3.5 w-1/2" />
+            <Skeleton className="h-2 w-full" />
+          </div>
+          <Skeleton className="h-11 w-full rounded-2xl" />
+        </section>
+      )}
 
       {!isLoading && (
         <section className="glass-card flex flex-col gap-5 rounded-[24px] p-5">

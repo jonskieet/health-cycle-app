@@ -220,21 +220,42 @@ export default function SettingsPage() {
           label="Chủ đề"
           subtitle={isDarkTheme ? "Tối" : "Sáng (mặc định)"}
           color="var(--c-sleep)"
-          right={<Switch checked={isDarkTheme} onChange={handleToggleTheme} label="Chủ đề tối" />}
+          right={
+            <Switch
+              checked={isDarkTheme}
+              onChange={handleToggleTheme}
+              label="Chủ đề tối"
+              disabled={updateProfile.isPending}
+            />
+          }
         />
         <SettingsRow
           icon={Bell}
           label="Thông báo"
           subtitle={notifications ? "Đang bật" : "Đang tắt"}
           color="var(--c-heart)"
-          right={<Switch checked={notifications} onChange={handleToggleNotifications} label="Thông báo" />}
+          right={
+            <Switch
+              checked={notifications}
+              onChange={handleToggleNotifications}
+              label="Thông báo"
+              disabled={updateProfile.isPending}
+            />
+          }
         />
         <SettingsRow
           icon={Ruler}
           label="Hệ mét"
           subtitle={metricUnits ? "cm, kg" : "inch, lb"}
           color="var(--c-hydration)"
-          right={<Switch checked={metricUnits} onChange={handleToggleUnits} label="Hệ mét" />}
+          right={
+            <Switch
+              checked={metricUnits}
+              onChange={handleToggleUnits}
+              label="Hệ mét"
+              disabled={updateProfile.isPending}
+            />
+          }
         />
       </SettingsSection>
 
@@ -289,6 +310,7 @@ export default function SettingsPage() {
               checked={periodReminderEnabled}
               onChange={handleTogglePeriodReminder}
               label="Nhắc sắp đến kỳ kinh"
+              disabled={upsertReminder.isPending}
             />
           }
         />
@@ -303,6 +325,7 @@ export default function SettingsPage() {
               max={5}
               value={periodLeadDays}
               onChange={(e) => handleChangeLeadDays(Number(e.target.value))}
+              disabled={upsertReminder.isPending}
               style={{ accentColor: "var(--c-period)" }}
             />
           </div>
@@ -317,6 +340,7 @@ export default function SettingsPage() {
               checked={logReminderEnabled}
               onChange={handleToggleLogReminder}
               label="Nhắc ghi log hàng ngày"
+              disabled={upsertReminder.isPending}
             />
           }
         />
@@ -332,7 +356,14 @@ export default function SettingsPage() {
           label="Khoá ứng dụng (PIN)"
           subtitle={appLockEnabled ? "Đang bật" : "Đang tắt"}
           color="var(--c-period)"
-          right={<Switch checked={appLockEnabled} onChange={handleToggleAppLock} label="Khoá ứng dụng bằng PIN" />}
+          right={
+            <Switch
+              checked={appLockEnabled}
+              onChange={handleToggleAppLock}
+              label="Khoá ứng dụng bằng PIN"
+              disabled={updateProfile.isPending}
+            />
+          }
         />
         {appLockEnabled && (
           <SettingsRow icon={Lock} label="Đổi mã PIN" color="var(--c-sleep)" onClick={openPinSetup} />

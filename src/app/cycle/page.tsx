@@ -10,6 +10,7 @@ import HealthCheckIns from "@/components/cycle/HealthCheckIns";
 import AiChatSheet from "@/components/cycle/AiChatSheet";
 import AbnormalCycleBanner from "@/components/cycle/AbnormalCycleBanner";
 import EmptyState from "@/components/ui/EmptyState";
+import { SkeletonCard, SkeletonRows } from "@/components/ui/Skeleton";
 import CycleLogForm from "@/components/log/CycleLogForm";
 import { useCycleLogs, useProfile, CycleLogFull } from "@/lib/queries";
 import { predictCycle, phaseLabel, phaseColor, daysUntil } from "@/lib/cycle-utils";
@@ -45,7 +46,12 @@ export default function CyclePage() {
         </button>
       </header>
 
-      {isLoading ? null : cycleLogs.length === 0 ? (
+      {isLoading ? (
+        <div className="flex flex-col gap-6">
+          <SkeletonCard withRing />
+          <SkeletonRows rows={3} />
+        </div>
+      ) : cycleLogs.length === 0 ? (
         <EmptyState
           title="Chưa có dữ liệu chu kỳ"
           description="Ghi nhận ngày bắt đầu kỳ kinh gần nhất để KVCycle bắt đầu dự đoán chu kỳ cho bạn."

@@ -69,10 +69,15 @@ export default function FatigueQuiz() {
           Đây là bài tự đánh giá tham khảo, không thay thế chẩn đoán y khoa.
         </p>
 
+        {saveTest.isPending && (
+          <p className="text-xs font-medium text-[var(--ink-faint)]">Đang lưu kết quả...</p>
+        )}
+
         <button
           type="button"
+          disabled={saveTest.isPending}
           onClick={handleRestart}
-          className="flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold text-white"
+          className="flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
           style={{ background: "var(--c-sleep)" }}
         >
           <RotateCcw size={14} />
