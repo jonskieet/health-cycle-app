@@ -27,17 +27,19 @@ export default function MetricCard({
       onClick={onClick}
       className="glass-card flex w-full flex-col gap-4 rounded-[26px] p-5 text-left transition-transform active:scale-[0.98]"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span
-            className="flex h-8 w-8 items-center justify-center rounded-full"
-            style={{ background: `color-mix(in srgb, ${color} 18%, white)` }}
-          >
-            <Icon size={16} style={{ color }} strokeWidth={2.25} />
-          </span>
-          <span className="text-sm font-semibold text-[var(--ink)]">{title}</span>
-        </div>
-        <span className="text-xs text-[var(--ink-faint)]">Hôm nay</span>
+      {/* Bỏ nhãn "Hôm nay" thừa ở góc phải header — đã hiển thị lại ngay dưới
+          value (biến `status`) rồi, để cả 2 chỗ vừa dư thừa vừa khiến chữ
+          "Hôm nay" dính sát tên hoạt động do không đủ chỗ trong hàng header
+          hẹp (đặc biệt các tên dài như "Nhịp tim" bị xuống dòng đúng ngay chỗ
+          nhãn thừa này). */}
+      <div className="flex items-center gap-2">
+        <span
+          className="flex h-8 w-8 items-center justify-center rounded-full"
+          style={{ background: `color-mix(in srgb, ${color} 18%, white)` }}
+        >
+          <Icon size={16} style={{ color }} strokeWidth={2.25} />
+        </span>
+        <span className="text-sm font-semibold text-[var(--ink)]">{title}</span>
       </div>
 
       {/* E1: trước đây value + MiniBars nằm chung 1 hàng `justify-between`,

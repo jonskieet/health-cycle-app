@@ -26,20 +26,15 @@ toàn app dựa trên ảnh thật, và có thêm 1 vài phát hiện là **bug 
 
 ## 1. Nhóm E — Bug thị giác cần sửa trước (ưu tiên cao nhất, có bằng chứng ảnh)
 
-- [ ] **E1. Bottom nav che nội dung ở trang Chu kỳ (`/cycle`)** — ảnh chụp cho
-  thấy khối "Hôm nay bạn có thể mong đợi" + nút hỏi trợ lý AI + 2 thẻ insight
-  "Vận động"/"Năng suất" bị thanh bottom-nav (`Tổng quan / Chu kỳ / Ghi nhận /
-  Cá nhân`) đè lên phần cuối, chữ "Câu chuyện hàng ngày" bị cắt nửa chìm dưới
-  thanh nav. Cần kiểm tra: (a) `padding-bottom`/`safe-area` của trang `/cycle`
-  có đủ chừa chỗ cho bottom nav cố định (`position: fixed`) không — B3 trước
-  đó đã audit safe-area nhưng có thể route này thêm nội dung mới (insight
-  cards) sau đó nên bị lệch lại; (b) `z-index` của bottom nav so với nội dung
-  cuộn. Test bằng cách cuộn xuống đáy thật của trang, không chỉ xem ảnh tĩnh.
-- [ ] **E2. Vùng đầu trang Chu kỳ bị cắt/lấn** — ảnh cho thấy số "/ 38" (một
-  phần của AuroraRing) và mũi tên điều hướng tháng (`<` `>`) của lịch bị dính
-  sát/lấn vào status bar hệ thống, thiếu khoảng đệm trên. Kiểm tra lại
-  `safe-area-inset-top` cho riêng route `/cycle` (có thể ring + header co cụm
-  khác các trang còn lại vì cấu trúc scroll riêng).
+- [x] ~~E1. Bottom nav che nội dung ở trang Chu kỳ (`/cycle`)~~ — **Đã xác
+  minh qua code, KHÔNG phải bug** (xem Nhật ký 2026-07-28): nav dùng kính mờ
+  (`backdrop-filter`) có chủ đích, nội dung trượt qua dưới khi cuộn là đúng
+  thiết kế; `pb-32` đủ dư so với chiều cao nav thật. Ảnh gốc chỉ là 1 khung
+  hình giữa lúc đang cuộn, không phải trạng thái đứng yên bị lỗi. Giữ nguyên
+  code, không sửa.
+- [x] ~~E2. Vùng đầu trang Chu kỳ bị cắt/lấn~~ — **Cùng kết luận như E1**, cùng
+  nguyên nhân (ảnh chụp giữa lúc cuộn khiến phần trên bị cuộn khuất lên trên,
+  không phải lỗi safe-area). Không sửa.
 - [ ] **E3. Card lịch sử (`Lịch sử gần đây`) lệch hệ thống thiết kế** — toàn
   app dùng `glass-card` (nền trắng mờ, bo góc lớn, đổ bóng nhẹ) cho MỌI khối
   nội dung, nhưng danh sách lịch sử chu kỳ hiện là các hàng phẳng ngăn cách
@@ -169,3 +164,28 @@ dùng ở `QUALITY_UX_ROADMAP.md` — ngày thực hiện, module nào, làm gì
   - Người thực hiện: Claude. File package gửi cho user:
     `module_E_sparkline_overflow.zip` (2 file: `components/ui/MiniBars.tsx`,
     `components/ui/MetricCard.tsx`).
+- **2026-07-28** — **Đính chính E1/E2 gốc + fix nhỏ tiếp theo do chủ dự án
+  phát hiện qua ảnh**.
+  - **Đính chính quan trọng**: sau khi đọc lại code (không chỉ nhìn ảnh tĩnh),
+    xác nhận **E1 (nav che nội dung trang Chu kỳ)** và **E2 (header bị cắt ở
+    đầu trang)** trong bản roadmap gốc ở mục 1 phía trên là **CHẨN ĐOÁN SAI**
+    — không phải bug. Nav dưới dùng `.glass-card-strong`
+    (`backdrop-filter: blur(24px)` + nền bán trong suốt) — kính mờ có chủ đích
+    kiểu iOS, nội dung trượt qua dưới nav khi cuộn là ĐÚNG thiết kế. `pb-32`
+    (128px) đủ dư so với chiều cao thật của nav (~72px kể cả safe-area) nên
+    không có tình trạng bị kẹt vĩnh viễn. Ảnh gốc chỉ là 1 khung hình giữa lúc
+    đang cuộn (xác nhận qua ảnh 5-7 cuộn xa hơn, mọi nội dung hiển thị đủ,
+    không bị che). **Không sửa gì cho E1/E2 — giữ nguyên code hiện tại.** Agent
+    sau đọc thấy E1/E2 còn `[ ]` trong mục 1 thì hiểu là đã xác minh KHÔNG cần
+    làm, không phải bỏ sót.
+  - **Fix nhỏ theo ảnh mới của chủ dự án** (không thuộc E-I gốc, phát sinh khi
+    QA lại fix sparkline overflow trước đó): header mỗi `MetricCard` ở Tổng
+    quan có nhãn "Hôm nay" bị LẶP LẠI 2 lần — 1 lần ở góc phải header (dính
+    sát tên hoạt động vì hàng header quá hẹp, đặc biệt tên dài như "Nhịp tim"
+    bị xuống dòng ngay chỗ đó), 1 lần ở dưới cạnh giá trị (biến `status`,
+    "Hôm nay" hoặc "Chưa ghi nhận"). Đã xoá nhãn thừa ở header, giữ lại đúng
+    1 chỗ hiển thị (dưới value) — vừa hết dính chữ vừa hết trùng lặp thông tin.
+  - Đã chạy `tsc --noEmit` + `eslint src/` toàn repo — sạch.
+  - Người thực hiện: Claude. File package gửi cho user:
+    `module_E_metriccard_header.zip` (2 file: `components/ui/MetricCard.tsx`,
+    `VISUAL_POLISH_ROADMAP.md`).
