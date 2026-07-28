@@ -6,7 +6,6 @@ import { ArrowLeft, Printer, FileDown } from "lucide-react";
 import { useProfile, useCycleLogs, useHealthMetrics, MetricType } from "@/lib/queries";
 import { predictCycle, buildCycleHistory } from "@/lib/cycle-utils";
 import { isVipProfile } from "@/lib/vip";
-import { buildAndDownloadReportPdf } from "@/lib/export-report";
 import LockedFeature from "@/components/profile/LockedFeature";
 
 const METRIC_LABELS: Record<MetricType, string> = {
@@ -44,7 +43,13 @@ export default function HealthReportPage() {
   });
   const metricDates = Array.from(metricsByDate.keys()).sort((a, b) => (a < b ? 1 : -1));
 
-  function handleExportPdf() {
+  // Module C2: `jspdf` + `jspdf-autotable` khá nặng và CHỈ dùng khi user bấm
+  // nút này — trước đây `export-report.ts` được import tĩnh ở đầu file nên
+  // jsPDF luôn nằm trong chunk của trang report, tải ngay cả khi user chỉ
+  // ghé xem báo cáo rồi bấm "In" (window.print, không cần jsPDF) chứ không
+  // xuất PDF. Chuyển sang dynamic import ngay tại thời điểm bấm nút.
+  async function handleExportPdf() {
+    const { buildAndDownloadReportPdf } = await import("@/lib/export-report");
     buildAndDownloadReportPdf({
       displayName: profile?.display_name || "Người dùng",
       avgCycleLength: prediction.avgCycleLength,

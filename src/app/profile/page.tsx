@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   Settings,
@@ -19,15 +20,38 @@ import { useProfile, useUpdateProfile, useCycleLogs } from "@/lib/queries";
 import { predictCycle } from "@/lib/cycle-utils";
 import { isVipProfile } from "@/lib/vip";
 import { useToast } from "@/components/ui/Toast";
-import CycleInsights from "@/components/profile/CycleInsights";
-import WeightBBTChart from "@/components/profile/WeightBBTChart";
-import CorrelationChart from "@/components/profile/CorrelationChart";
-import SymptomAnalysis from "@/components/profile/SymptomAnalysis";
+import { Skeleton } from "@/components/ui/Skeleton";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import MembershipCard from "@/components/profile/MembershipCard";
 import LockedFeature from "@/components/profile/LockedFeature";
 import EditProfileModal from "@/components/profile/EditProfileModal";
-import { Skeleton } from "@/components/ui/Skeleton";
+
+// Module C2 (QUALITY_UX_ROADMAP.md) — 4 component dưới đây đều import
+// `recharts` (thư viện chart khá nặng), và `LockedFeature` vẫn render
+// `children` (chỉ làm mờ bằng CSS) ngay cả khi user KHÔNG phải VIP — nghĩa
+// là trước đây `recharts` luôn bị tải và mount vào bundle của trang
+// `/profile` cho MỌI user, dù phần lớn không dùng tới. Chuyển sang
+// `next/dynamic` để code-splitting: chỉ tải khi trang `/profile` thực sự
+// render tới đoạn này (vẫn là lần đầu load trang, nhưng tách thành chunk
+// riêng, không chặn phần còn lại của trang render trước). `ssr: false` vì
+// `recharts`/`ResponsiveContainer` cần kích thước DOM thật, không có ý
+// nghĩa khi render phía server.
+const CycleInsights = dynamic(() => import("@/components/profile/CycleInsights"), {
+  ssr: false,
+  loading: () => <Skeleton className="h-48 w-full rounded-[24px]" />,
+});
+const WeightBBTChart = dynamic(() => import("@/components/profile/WeightBBTChart"), {
+  ssr: false,
+  loading: () => <Skeleton className="h-48 w-full rounded-[24px]" />,
+});
+const CorrelationChart = dynamic(() => import("@/components/profile/CorrelationChart"), {
+  ssr: false,
+  loading: () => <Skeleton className="h-48 w-full rounded-[24px]" />,
+});
+const SymptomAnalysis = dynamic(() => import("@/components/profile/SymptomAnalysis"), {
+  ssr: false,
+  loading: () => <Skeleton className="h-48 w-full rounded-[24px]" />,
+});
 
 export default function ProfilePage() {
   const { user } = useAuth();

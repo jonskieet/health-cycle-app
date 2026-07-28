@@ -99,7 +99,7 @@ một kiểu (có form show banner đỏ trong modal, có form im lặng không 
       (`/profile`, `/`) có thể đang fetch/re-render dư thừa; cân nhắc `staleTime`
       hợp lý hơn cho từng loại query (dữ liệu ít đổi như `profile` vs dữ liệu hay
       đổi như `health_metrics` hôm nay).
-- [ ] **C2. Tối ưu bundle** — kiểm tra `jspdf`/`jspdf-autotable` (Module 4) và
+- [x] **C2. Tối ưu bundle** — kiểm tra `jspdf`/`jspdf-autotable` (Module 4) và
       `recharts` có đang bị import ở top-level của trang không cần thiết hay
       không (nên `dynamic import`/code-splitting cho phần nặng chỉ VIP mới dùng
       tới, ví dụ PDF export, biểu đồ tương quan).
@@ -678,3 +678,37 @@ trước tiên vì rất nhiều mục khác (A3, B1...) phụ thuộc vào có 
     `module_C1_C4_perf.zip` (6 file sửa: `providers.tsx`, `queries.ts`,
     `app/page.tsx`, `app/cycle/page.tsx`, `app/profile/page.tsx`,
     `app/profile/report/page.tsx`, `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành Module C2 (Tối ưu bundle: dynamic import cho
+  phần chỉ VIP mới dùng tới)**. Khối lượng nhỏ (2 file sửa), đóng gói ngay.
+  - **Phát hiện quan trọng**: `LockedFeature` (đã có từ trước) vẫn render
+    `children` bình thường khi `locked=true` — chỉ làm mờ bằng CSS
+    (`filter: blur`) chứ KHÔNG bỏ qua việc mount component. Nghĩa là 4 khối
+    biểu đồ dùng `recharts` trong `/profile` (`CycleInsights`,
+    `WeightBBTChart`, `CorrelationChart`, `SymptomAnalysis`) trước đây LUÔN
+    được tải + mount cho MỌI user, kể cả user không phải VIP chỉ thấy bản mờ
+    có khoá — không đúng tinh thần "chỉ VIP mới dùng tới" mà roadmap C2 nhắc
+    tới.
+  - **`profile/page.tsx`**: chuyển 4 import trên từ static sang
+    `next/dynamic` với `ssr: false` (hợp lý vì `recharts`/
+    `ResponsiveContainer` cần kích thước DOM thật) + `loading` là
+    `<Skeleton>` có sẵn trong app (nhất quán với A4). Nhờ vậy `recharts`
+    tách thành chunk riêng, tải song song/độc lập thay vì chặn phần render
+    đầu của trang.
+  - **`profile/report/page.tsx`**: `export-report.ts` (chứa `jspdf` +
+    `jspdf-autotable`) trước đây import tĩnh dù chỉ dùng khi user bấm nút
+    "Xuất PDF" (nút "In" dùng `window.print()`, không cần jsPDF) — chuyển
+    `handleExportPdf` thành `async function`, `dynamic import()` ngay tại
+    thời điểm bấm nút thay vì tải sẵn lúc vào trang report.
+  - Đã cài `node_modules`, chạy `tsc --noEmit` + `eslint src/` — sạch. Thử
+    thêm `next build` thật để xác nhận code-splitting hoạt động đúng, nhưng
+    gặp lại đúng lỗi đã ghi nhận ở B5 (sandbox chặn `fonts.googleapis.com`
+    nên `next/font` không tải được `Inter`/`Plus Jakarta Sans`) — không phải
+    lỗi do thay đổi của C2, chỉ là hạn chế môi trường đã biết trước, không
+    sửa trong module này (thuộc phạm vi B5 — cần agent có mạng đầy đủ).
+  - Việc tiếp theo trong roadmap: **C3** (icon PWA thật — cần bạn cung cấp
+    file thiết kế vì đây không phải việc code thuần, không tự chế được),
+    hoặc **B5** (cần mạng đầy đủ để `next build` thật qua được bước fonts),
+    hoặc bắt đầu **Nhóm D** (giao diện — D1 kiểm toán màu/typography).
+  - Người thực hiện: Claude. File package gửi cho user: `module_C2_bundle.zip`
+    (3 file: `app/profile/page.tsx`, `app/profile/report/page.tsx`,
+    `QUALITY_UX_ROADMAP.md`).
