@@ -57,7 +57,10 @@ một kiểu (có form show banner đỏ trong modal, có form im lặng không 
       `useMutation` trong `queries.ts`, đảm bảo mọi nút "Lưu"/"Xoá"/"Gửi" đều
       disable + hiện spinner/label "Đang lưu..." trong lúc `isPending`, tránh
       double-submit khi user bấm nhiều lần liên tiếp (đặc biệt quan trọng trên
-      mobile — dễ bấm nhầm 2 lần).
+      mobile — dễ bấm nhầm 2 lần). *(Phần "toast thành công" cho các luồng còn
+      thiếu đã làm — xem nhật ký 2026-07-28 lần 2. Còn thiếu: rà disable/spinner
+      cho các switch/toggle trong `settings.tsx`, và `.mutate()` fire-and-forget
+      ở `FatigueQuiz.tsx`/`KegelTimer.tsx` chưa theo dõi `isPending` ở UI.)*
 - [ ] **A4. Empty state & skeleton loading nhất quán** — kiểm tra mọi danh sách
       (lịch sử metric, lịch sử chu kỳ, danh sách lịch hẹn, danh sách bài viết...)
       đều có skeleton lúc `isLoading` và empty-state thân thiện lúc rỗng (tái
@@ -229,3 +232,43 @@ trước tiên vì rất nhiều mục khác (A3, B1...) phụ thuộc vào có 
     (7 file: 1 file mới `src/components/ui/Toast.tsx`, 6 file sửa —
     `providers.tsx`, `globals.css`, `MetricLogForm.tsx`, `CycleLogForm.tsx`,
     `AppointmentForm.tsx`, `QUALITY_UX_ROADMAP.md`).
+- **2026-07-28** — **Tiếp tục Module A3 (một phần): rà & thêm toast thành công
+  còn thiếu ở các luồng lưu còn lại** (phần nợ lại từ entry trước). Khối lượng
+  vừa phải, xuyên suốt nhiều file nhỏ nên tính là 1 mục theo quy tắc khối lượng
+  lớn (không gộp thêm mục B/C/D).
+  - `EditProfileModal.tsx`: thêm toast thành công khi lưu hồ sơ.
+  - `profile/page.tsx`: thêm toast khi lưu độ dài chu kỳ trung bình (đã có sẵn
+    hiệu ứng nút đổi màu "Đã lưu" — toast bổ sung, không thay thế).
+  - `settings.tsx`: **phát hiện thêm 1 bug ẩn** — `handlePinConfirmSubmit()`
+    không có `try/finally`, nếu lưu PIN lỗi thì `setSavingPin(false)` không bao
+    giờ chạy → nút "Xác nhận" bị kẹt spinner vĩnh viễn dù toast lỗi global đã
+    hiện. Đã bọc `try/finally` + thêm toast thành công khi bật PIN. Đồng thời
+    đổi phần "Xuất dữ liệu" từ text lỗi cục bộ (`exportError` state) sang dùng
+    toast, thêm toast thành công (trước đây tải file xong không có xác nhận gì).
+  - `upgrade/page.tsx`: thêm toast thành công khi gửi yêu cầu nâng cấp VIP
+    (trước đây bấm xong không có phản hồi nào ngoài UI tự chuyển trạng thái chờ,
+    dễ khiến người dùng tưởng chưa bấm được, bấm lại nhiều lần).
+  - `onboarding/page.tsx`: thêm toast chào mừng khi hoàn tất onboarding + bọc
+    `try/catch` tường minh (trước đây không có, hành vi vốn đã an toàn vì lỗi
+    sẽ chặn `router.replace` nhưng không tường minh/nhất quán với form khác).
+  - **Quyết định phạm vi quan trọng**: KHÔNG thêm toast cho các switch/toggle
+    tức thời trong `settings.tsx` (chủ đề sáng/tối, đơn vị đo, thông báo,
+    reminder bật/tắt, chọn mục tiêu sử dụng...) — vì bản thân việc switch đổi
+    trạng thái/UI đổi theo ngay lập tức (VD đổi theme cả app đổi màu tức thì)
+    đã là phản hồi trực quan đủ rõ, thêm toast cho mỗi lần gạt công tắc sẽ gây
+    "toast fatigue" (thông báo dồn dập gây khó chịu, đi ngược tinh thần "dễ
+    dùng, thân thiện" của Nhóm D) — lỗi (nếu có) vẫn được global `MutationCache`
+    tự lo. Agent sau không cần bổ sung toast cho các switch này trừ khi chủ dự
+    án phản hồi cụ thể là cần.
+  - Đã chạy `tsc --noEmit` + `eslint` trên toàn bộ file đã sửa — không lỗi.
+  - **Còn thiếu để hoàn thiện đầy đủ A3**: phần "disable + label Đang lưu..."
+    cho toggle/switch trong lúc `isPending` (hiện switch có thể bấm liên tục dù
+    mutation trước chưa xong — rủi ro race condition nhỏ, chưa gây bug thực tế
+    nhưng nên rà); `FatigueQuiz.tsx`/`KegelTimer.tsx` dùng `.mutate()` không
+    theo dõi `isPending` trong UI (không chặn bấm lại khi đang lưu — 2 màn hình
+    này ít khi bấm lại nhanh do có bước xác nhận/kết quả riêng nên rủi ro thấp,
+    nhưng nên rà cho đủ). Sau khi xong 2 việc này, A3 mới thực sự hoàn thành —
+    agent kế tiếp có thể đóng `[x]` A3 sau đó.
+  - Người thực hiện: Claude. File package gửi cho user: `module_A3_success_toasts.zip`
+    (6 file sửa: `EditProfileModal.tsx`, `profile/page.tsx`, `settings/page.tsx`,
+    `upgrade/page.tsx`, `onboarding/page.tsx`, `QUALITY_UX_ROADMAP.md`).

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2, X } from "lucide-react";
 import { Profile, useUpdateProfile } from "@/lib/queries";
 import { AVATAR_PRESETS } from "@/lib/avatar-presets";
+import { useToast } from "@/components/ui/Toast";
 
 interface EditProfileModalProps {
   profile: Profile | null | undefined;
@@ -17,6 +18,7 @@ export default function EditProfileModal({
   onClose,
 }: EditProfileModalProps) {
   const updateProfile = useUpdateProfile();
+  const toast = useToast();
 
   // Khởi tạo state cục bộ từ profile ngay khi modal được mount (parent chỉ
   // render component này khi mở, nên không cần đồng bộ lại bằng effect).
@@ -34,12 +36,17 @@ export default function EditProfileModal({
     const trimmedName = nameDraft.trim();
     const parsedYear = birthYearDraft.trim() ? Number(birthYearDraft.trim()) : null;
 
-    await updateProfile.mutateAsync({
-      display_name: trimmedName || null,
-      birth_year: parsedYear,
-      avatar_key: avatarDraft,
-    });
-    onClose();
+    try {
+      await updateProfile.mutateAsync({
+        display_name: trimmedName || null,
+        birth_year: parsedYear,
+        avatar_key: avatarDraft,
+      });
+      toast.success("Đã cập nhật hồ sơ");
+      onClose();
+    } catch {
+      // toast lỗi do MutationCache global xử lý (providers.tsx, Module A1).
+    }
   }
 
   return (

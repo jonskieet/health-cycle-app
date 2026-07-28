@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { useProfile, useLatestVipRequest, useCreateVipRequest } from "@/lib/queries";
 import { isVipProfile } from "@/lib/vip";
+import { useToast } from "@/components/ui/Toast";
 
 const BENEFITS = [
   { icon: FileText, label: "Báo cáo sức khoẻ cho bác sĩ", desc: "Xuất PDF gửi bác sĩ khi cần" },
@@ -47,6 +48,7 @@ export default function UpgradePage() {
   const { data: latestRequest, isLoading: loadingRequest } = useLatestVipRequest();
   const createRequest = useCreateVipRequest();
   const [copied, setCopied] = useState(false);
+  const toast = useToast();
 
   const vip = isVipProfile(profile);
 
@@ -58,7 +60,12 @@ export default function UpgradePage() {
   const qrUrl = useMemo(() => buildVietQrUrl(transferCode), [transferCode]);
 
   async function handleConfirmTransfer() {
-    await createRequest.mutateAsync({ transfer_code: transferCode });
+    try {
+      await createRequest.mutateAsync({ transfer_code: transferCode });
+      toast.success("Đã gửi yêu cầu, chờ xác nhận nâng cấp VIP");
+    } catch {
+      // toast lỗi do MutationCache global xử lý (providers.tsx, Module A1).
+    }
   }
 
   function handleCopy() {

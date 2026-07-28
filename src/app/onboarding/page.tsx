@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Heart, Baby, ShieldOff } from "lucide-react";
 import { useUpdateProfile, UsageGoal } from "@/lib/queries";
+import { useToast } from "@/components/ui/Toast";
 
 const GOAL_OPTIONS: { value: UsageGoal; label: string; desc: string; icon: typeof Heart }[] = [
   { value: "track", label: "Theo dõi chu kỳ", desc: "Nắm rõ cơ thể mình mỗi tháng", icon: Heart },
@@ -14,6 +15,7 @@ const GOAL_OPTIONS: { value: UsageGoal; label: string; desc: string; icon: typeo
 export default function OnboardingPage() {
   const router = useRouter();
   const updateProfile = useUpdateProfile();
+  const toast = useToast();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [usageGoal, setUsageGoal] = useState<UsageGoal | null>(null);
@@ -28,14 +30,22 @@ export default function OnboardingPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await updateProfile.mutateAsync({
-      usage_goal: usageGoal,
-      birth_date: birthDate || null,
-      avg_cycle_length: avgCycleLength,
-      avg_period_length: avgPeriodLength,
-      onboarded: true,
-    });
-    router.replace("/");
+    try {
+      await updateProfile.mutateAsync({
+        usage_goal: usageGoal,
+        birth_date: birthDate || null,
+        avg_cycle_length: avgCycleLength,
+        avg_period_length: avgPeriodLength,
+        onboarded: true,
+      });
+      toast.success("Chào mừng bạn đến với KVCycle 🌸");
+      router.replace("/");
+    } catch {
+      // toast lỗi do MutationCache global xử lý; ở lại bước 2 để không mất
+      // dữ liệu người dùng vừa nhập (trước đây không có try/catch — nếu lỗi,
+      // `router.replace` không chạy nên hành vi thực ra vẫn an toàn, nhưng
+      // giờ tường minh hơn và nhất quán với các form khác trong app).
+    }
   }
 
   if (step === 1) {

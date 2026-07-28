@@ -18,6 +18,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useProfile, useUpdateProfile, useCycleLogs } from "@/lib/queries";
 import { predictCycle } from "@/lib/cycle-utils";
 import { isVipProfile } from "@/lib/vip";
+import { useToast } from "@/components/ui/Toast";
 import CycleInsights from "@/components/profile/CycleInsights";
 import WeightBBTChart from "@/components/profile/WeightBBTChart";
 import CorrelationChart from "@/components/profile/CorrelationChart";
@@ -32,6 +33,7 @@ export default function ProfilePage() {
   const { data: profile, isLoading } = useProfile();
   const { data: cycleLogs = [] } = useCycleLogs();
   const updateProfile = useUpdateProfile();
+  const toast = useToast();
   const vip = isVipProfile(profile);
 
   const lifetimeStats = predictCycle(cycleLogs, {
@@ -52,9 +54,19 @@ export default function ProfilePage() {
 
   async function handleSave() {
     setSaved(false);
-    await updateProfile.mutateAsync({ avg_cycle_length: avgCycleLength, avg_period_length: avgPeriodLength });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    try {
+      // Module A3: trước đây `setSaved(true)` chạy vô điều kiện SAU
+      // `mutateAsync` — nhưng vì không có try/catch, nếu mutation lỗi thì
+      // dòng code ném lỗi và dừng lại TRƯỚC khi tới `setSaved(true)` nên thực
+      // ra không có "success giả" — vẫn bọc try/catch tường minh để rõ ràng ý
+      // đồ + thêm toast nhất quán với phần còn lại của app.
+      await updateProfile.mutateAsync({ avg_cycle_length: avgCycleLength, avg_period_length: avgPeriodLength });
+      setSaved(true);
+      toast.success("Đã lưu độ dài chu kỳ");
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      // toast lỗi do MutationCache global xử lý.
+    }
   }
 
   // ---- Modal chỉnh sửa hồ sơ ----

@@ -39,6 +39,7 @@ import {
 } from "@/lib/queries";
 import { hashPin, isValidPinFormat, clearSessionUnlock, markSessionUnlocked } from "@/lib/app-lock";
 import { buildFullDataExport, downloadFullDataExport } from "@/lib/export-data";
+import { useToast } from "@/components/ui/Toast";
 import Switch from "@/components/ui/Switch";
 import SettingsRow from "@/components/ui/SettingsRow";
 
@@ -74,6 +75,7 @@ export default function SettingsPage() {
   const updateProfile = useUpdateProfile();
   const { data: reminders = [] } = useReminders();
   const upsertReminder = useUpsertReminder();
+  const toast = useToast();
 
   const [goalPickerOpen, setGoalPickerOpen] = useState(false);
 
@@ -123,11 +125,18 @@ export default function SettingsPage() {
       return;
     }
     setSavingPin(true);
-    const hash = await hashPin(pinDraft);
-    await updateProfile.mutateAsync({ app_lock_enabled: true, app_lock_pin_hash: hash });
-    markSessionUnlocked(); // không bắt nhập lại ngay sau khi vừa tự đặt PIN
-    setSavingPin(false);
-    setPinModalOpen(false);
+    try {
+      // Module A3: bọc try/finally — trước đây nếu `updateProfile` lỗi (VD mất
+      // mạng), `setSavingPin(false)` không bao giờ chạy, nút "Xác nhận" bị kẹt
+      // spinner mãi mãi dù global toast đã báo lỗi. Nay luôn reset ở `finally`.
+      const hash = await hashPin(pinDraft);
+      await updateProfile.mutateAsync({ app_lock_enabled: true, app_lock_pin_hash: hash });
+      markSessionUnlocked(); // không bắt nhập lại ngay sau khi vừa tự đặt PIN
+      setPinModalOpen(false);
+      toast.success("Đã bật khoá PIN");
+    } finally {
+      setSavingPin(false);
+    }
   }
 
   // Module 2: reminders — hiện tại chỉ hỗ trợ dạng in-app banner (xem note
@@ -175,18 +184,17 @@ export default function SettingsPage() {
   // file JSON, thay thế "sao lưu Dropbox" của Clover (dữ liệu đã ở Supabase cloud
   // sẵn nên không cần dịch vụ backup ngoài, chỉ cần bản export cá nhân).
   const [exportingData, setExportingData] = useState(false);
-  const [exportError, setExportError] = useState<string | null>(null);
 
   async function handleExportData() {
     if (!user) return;
     setExportingData(true);
-    setExportError(null);
     try {
       const raw = await fetchAllUserDataForExport(user.id);
       const exportData = buildFullDataExport(raw);
       downloadFullDataExport(exportData);
+      toast.success("Đã tải file dữ liệu về máy");
     } catch {
-      setExportError("Không thể xuất dữ liệu, vui lòng thử lại.");
+      toast.error("Không thể xuất dữ liệu, vui lòng thử lại.");
     } finally {
       setExportingData(false);
     }
@@ -343,9 +351,6 @@ export default function SettingsPage() {
           color="var(--c-hydration)"
           onClick={exportingData ? undefined : handleExportData}
         />
-        {exportError && (
-          <p className="px-1 pb-3 text-[11px] font-medium text-[var(--c-period)]">{exportError}</p>
-        )}
         <p className="px-1 pb-3 text-[11px] leading-relaxed text-[var(--ink-faint)]">
           File chứa toàn bộ dữ liệu chu kỳ, chỉ số sức khoẻ, lịch hẹn và cài đặt của bạn —
           dùng làm bản sao lưu cá nhân. Dữ liệu vẫn luôn được lưu an toàn trên máy chủ.
