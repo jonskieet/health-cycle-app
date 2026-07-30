@@ -1,18 +1,22 @@
 "use client";
 
-// J4 (thay ban J3 theo yeu cau lam GIONG Y CHANG anh mau moi - khong con
-// dang "mat dong ho" nua ma la 1 VONG TRON LON voi 2 DAI MAU DAY (khong
-// phai net mong) chay doc theo vien, chu "Period"/"Fertile window" NAM
-// TREN chinh 2 dai mau do (cong theo cung), 2 huy hieu tron den nho o 2
-// diem noi giua 2 dai, giua vong la khoi noi dung lon (nhan giai doan +
-// so ngay to + dong phu + nut pill "Nhat ky ky kinh").
-//
-// Diem mau chot de chu cong KHONG BAO GIO vo/tran nhu ban cu: dung thuoc
-// tinh SVG `textLength` + `lengthAdjust="spacingAndGlyphs"` tren <textPath>
-// - trinh duyet se CO GIAN chu (nen/giai chu) de vua khop dung do dai chi
-// dinh, bat ke cung dai/ngan bao nhieu hay chu dai/ngan bao nhieu. Day la
-// co che ep-vua-khop cua chinh SVG spec, khong phu thuoc uoc luong do dai
-// cung thu cong (nguon goc loi cua 2 ban truoc).
+// J5 (sua 3 loi sau khi xem anh chup may that cua ban J4):
+// 1. Chu tren dai mau bi KEO GIAN qua muc ("Kỳ kinh" thanh "K ỳ  k i n h"
+//    deu deu). Nguyen nhan: J4 ep `textLength` = het chieu dai CUNG (vd
+//    ~100px) trong khi chu that su chi dai ~40px o co chu do -> trinh
+//    duyet phai keo gian tung ky tu ra ~2.5 lan de lap day 100px. Sua: chi
+//    dung `textLength` de THU NHO khi chu dai hon cung (chong tran), khong
+//    bao gio dung no de PHONG TO chu khi cung con du cho - lay
+//    `Math.min(do_dai_chu_tu_nhien_uoc_luong, do_dai_cung_kha_dung)`.
+// 2. Huy hieu tron o 2 diem noi qua to (dang ban bandWidth*1.9). Sua: giam
+//    con ~1.2x be day dai mau, gan voi ty le trong anh mau.
+// 3. Mui ten trong huy hieu khong theo huong cua vong chu ky (dai mau di
+//    theo chieu kim dong ho nhung ban cu gan cung 1 huong "xuong"/"len" cho
+//    ca 2 huy hieu, sai huong tai vi tri gan ngang o mot huy hieu). Sua:
+//    KHONG dung 2 huong co dinh (down/up) nua - thay bang 1 mui ten hinh
+//    chevron xoay theo dung goc tiep tuyen chieu kim dong ho tai vi tri do
+//    (transform rotate = angleDeg), nen luon "chi" dung huong dong chay
+//    cua vong chu ky bat ke huy hieu nam o dau tren vong tron.
 
 function polar(cx: number, cy: number, r: number, angleDeg: number) {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
@@ -30,6 +34,13 @@ function arcLengthPx(r: number, fromDeg: number, toDeg: number) {
   return (Math.abs(toDeg - fromDeg) * Math.PI * r) / 180;
 }
 
+// Uoc luong tho do rong tu nhien cua chu in dam theo fontSize (khong the
+// do chinh xac vi day la SSR-friendly, khong dung canvas) - he so ~0.58
+// la trung binh hop ly cho font sans-serif dam, chu hoa dau tieng Viet.
+function estimateTextWidth(label: string, fontSize: number) {
+  return label.length * fontSize * 0.58;
+}
+
 interface BandProps {
   id: string;
   cx: number;
@@ -43,19 +54,19 @@ interface BandProps {
   fontSize: number;
 }
 
-/** 1 dai mau day (band) + chu cong nam giua dai, luon fit du cung dai/ngan. */
+/** 1 dai mau day (band) + chu cong nam giua dai, fit KHI CAN THU NHO, khong bao gio bi phong to/keo gian. */
 function ArcBand({ id, cx, cy, r, bandWidth, fromDeg, toDeg, color, label, fontSize }: BandProps) {
   const mid = (fromDeg + toDeg) / 2;
   const bottomHalf = mid > 95 && mid < 265;
-  // Chieu ve cua path CHU luon giu trai->phai theo huong doc thuong (khong
-  // lat nguoc), doi voi cung o nua duoi thi dao dau/cuoi de chu khong bi
-  // lon nguoc dau.
   const textPathD = bottomHalf
     ? describeArc(cx, cy, r, toDeg, fromDeg, 0)
     : describeArc(cx, cy, r, fromDeg, toDeg, 1);
   const bandPathD = describeArc(cx, cy, r, fromDeg, toDeg, 1);
+
   const fullLen = arcLengthPx(r, fromDeg, toDeg);
-  const fitLen = Math.max(10, fullLen - bandWidth * 1.1);
+  const available = Math.max(8, fullLen - bandWidth * 1.2);
+  const naturalWidth = estimateTextWidth(label, fontSize);
+  const fitLen = Math.min(naturalWidth, available);
 
   return (
     <>
@@ -69,7 +80,7 @@ function ArcBand({ id, cx, cy, r, bandWidth, fromDeg, toDeg, color, label, fontS
         strokeWidth={bandWidth}
         strokeLinecap="round"
       />
-      <text fontSize={fontSize} fontWeight={700} fill="#ffffff" letterSpacing="0.4">
+      <text fontSize={fontSize} fontWeight={700} fill="#ffffff" letterSpacing="0.2">
         <textPath
           href={`#${id}`}
           xlinkHref={`#${id}`}
@@ -91,35 +102,30 @@ interface JunctionBadgeProps {
   r: number;
   angleDeg: number;
   size: number;
-  direction: "down" | "up";
 }
 
-/** Huy hieu tron den nho o diem giao giua 2 dai mau, co mui ten trang ben trong. */
-function JunctionBadge({ cx, cy, r, angleDeg, size, direction }: JunctionBadgeProps) {
+/**
+ * Huy hieu tron den nho o diem noi giua 2 dai mau. Mui ten ben trong luon
+ * xoay theo dung huong tiep tuyen CHIEU KIM DONG HO cua vong chu ky tai vi
+ * tri `angleDeg` (0deg = 12h, tang dan theo chieu kim dong ho) - vi vay
+ * huong mui ten luon khop voi huong "chay" cua chu ky bat ke huy hieu nam
+ * o vi tri nao quanh vong tron.
+ */
+function JunctionBadge({ cx, cy, r, angleDeg, size }: JunctionBadgeProps) {
   const pos = polar(cx, cy, r, angleDeg);
   const half = size / 2;
+  const arrow = size * 0.16;
   return (
-    <g transform={`translate(${pos.x - half}, ${pos.y - half})`}>
-      <circle cx={half} cy={half} r={half} fill="var(--ink)" stroke="var(--surface)" strokeWidth={2.5} />
-      {direction === "down" ? (
-        <path
-          d={`M ${half - size * 0.16} ${half - size * 0.07} L ${half} ${half + size * 0.13} L ${half + size * 0.16} ${half - size * 0.07}`}
-          fill="none"
-          stroke="#ffffff"
-          strokeWidth={1.8}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ) : (
-        <path
-          d={`M ${half - size * 0.16} ${half + size * 0.07} L ${half} ${half - size * 0.13} L ${half + size * 0.16} ${half + size * 0.07}`}
-          fill="none"
-          stroke="#ffffff"
-          strokeWidth={1.8}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
+    <g transform={`translate(${pos.x}, ${pos.y}) rotate(${angleDeg})`}>
+      <circle cx={0} cy={0} r={half} fill="var(--ink)" stroke="var(--surface)" strokeWidth={2.5} />
+      <path
+        d={`M ${-arrow * 0.5} ${-arrow} L ${arrow * 0.5} 0 L ${-arrow * 0.5} ${arrow}`}
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </g>
   );
 }
@@ -149,7 +155,7 @@ export default function CycleRadialDial({
   const cy = size / 2;
   const r = (size / 2) * TRACK_R_RATIO;
   const bandWidth = size * BAND_WIDTH_RATIO;
-  const fontSize = Math.max(9, size * 0.042);
+  const fontSize = Math.max(9, size * 0.038);
 
   const dayToDeg = (day: number) => (day / avgCycleLength) * 360;
 
@@ -191,8 +197,8 @@ export default function CycleRadialDial({
           fontSize={fontSize}
         />
 
-        <JunctionBadge cx={cx} cy={cy} r={r} angleDeg={periodEndDeg} size={bandWidth * 1.9} direction="down" />
-        <JunctionBadge cx={cx} cy={cy} r={r} angleDeg={fertileStartDeg} size={bandWidth * 1.9} direction="up" />
+        <JunctionBadge cx={cx} cy={cy} r={r} angleDeg={periodEndDeg} size={bandWidth * 1.2} />
+        <JunctionBadge cx={cx} cy={cy} r={r} angleDeg={fertileStartDeg} size={bandWidth * 1.2} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-8 text-center">
         {children}
@@ -200,4 +206,3 @@ export default function CycleRadialDial({
     </div>
   );
 }
-
