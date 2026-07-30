@@ -61,7 +61,7 @@ toàn app dựa trên ảnh thật, và có thêm 1 vài phát hiện là **bug 
     (đổi `<span className="rounded-full">...</span>` → `<BlobIcon />`) — có
     thể làm tuần tự theo từng trang, đóng gói patch riêng từng trang để dễ
     review, không cần gộp 1 patch khổng lồ.
-- [ ] **F2. Thẻ "Vận động"/"Năng suất" (insight cards) đang dùng ngôn ngữ hoàn
+- [x] **F2. Thẻ "Vận động"/"Năng suất" (insight cards) đang dùng ngôn ngữ hoàn
   toàn khác phần còn lại của app** — nền gradient đặc (xanh ngọc→lam, và đen
   than), chữ trắng, nhãn viết hoa toàn bộ trong khung bo tròn nhỏ — trong khi
   99% phần còn lại của app là card nền trắng/kính mờ, chữ tối màu `--ink`. Về
@@ -240,3 +240,34 @@ dùng ở `QUALITY_UX_ROADMAP.md` — ngày thực hiện, module nào, làm gì
   - Người thực hiện: Claude. File package gửi cho user: `module_F1_blob_icons.zip`
     (4 file: `app/log/page.tsx`, `components/ui/MetricCard.tsx`,
     `app/profile/page.tsx`, `VISUAL_POLISH_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành F2 (họ gradient dùng chung cho mọi insight
+  card/mini-quiz)**.
+  - **Kiểm kê**: 12 thẻ (10 "Câu chuyện hàng ngày" theo pha chu kỳ + 2
+    mini-quiz "Đã đến lúc kiểm tra!") mỗi thẻ tự khai 1 cặp mã hex riêng, không
+    có nguồn chung. Rà từng cặp thì phát hiện phần lớn ĐÃ trùng khớp gần như
+    chính xác với 1 cặp biến `--c-*` có sẵn của app (trùng hợp vì cùng người
+    thiết kế ban đầu) — CHỈ 1 cặp thật sự lệch: thẻ "Năng suất" (giai đoạn nang
+    trứng) dùng `#1a1a2e/#16213e` — 1 tông đen than KHÁC (không phải cùng công
+    thức) với thẻ "Dinh dưỡng"/"Nổi mụn" cũng đang dùng đen than
+    `#2c2440/#4a3868` — 2 họ tối gần giống nhau nhưng không cùng 1 nguồn, đúng
+    như phát hiện gốc trong roadmap (thẻ "Vận động" xanh ngọc cạnh "Năng suất"
+    đen than trông như 2 hệ màu không liên quan).
+  - **Đã làm**: tạo `lib/insight-gradients.ts` — 9 gradient đặt tên
+    (`dusk`, `meadow`, `blossom`, `violet`, `warm`, `calmBlue`, `rose`, `gold`,
+    `twilight`, `forest`), dựng lại từ chính biến `--c-*` đã có (không phải
+    màu mới — chỉ gom về 1 nguồn duy nhất `var(--c-...)` thay vì hex lặp lại
+    rải rác). Thay TOÀN BỘ 12 giá trị `gradient:` trong
+    `lib/cycle-insights.ts` bằng tham chiếu tới bộ này — bao gồm sửa đúng chỗ
+    lệch ("Năng suất" giờ dùng `dusk` chung với "Dinh dưỡng"/"Nổi mụn" thay vì
+    1 tông đen than riêng).
+  - **Về câu hỏi (a) "đây có phải signature muốn giữ không"** (roadmap gốc nêu
+    cần quyết định trước khi làm): các gradient màu vẫn xuất hiện y hệt vị trí
+    cũ (chỉ đổi NGUỒN khai báo màu, không đổi việc CÓ dùng gradient màu ở
+    những thẻ này hay không) — nên không cần chờ xác nhận mới làm được phần
+    "gom về 1 nguồn". Việc "có nên tiếp tục dùng gradient màu làm điểm nhấn ở
+    đây hay đổi hẳn sang phong cách khác" vẫn là câu hỏi mở, nhưng đó là câu
+    hỏi của **H1** (tìm signature), không chặn việc dọn dẹp kỹ thuật ở F2.
+  - Đã chạy `tsc --noEmit` + `eslint src/` toàn repo — sạch.
+  - Người thực hiện: Claude. File package gửi cho user: `module_F2_gradients.zip`
+    (3 file: `lib/insight-gradients.ts` (mới), `lib/cycle-insights.ts`,
+    `VISUAL_POLISH_ROADMAP.md`).

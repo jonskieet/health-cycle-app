@@ -3,6 +3,7 @@
 // nhưng dữ liệu ở đây hoàn toàn tĩnh/suy luận từ `phase`, không cần gọi thêm API.
 
 import type { CyclePrediction } from "./cycle-utils";
+import { INSIGHT_GRADIENTS } from "./insight-gradients";
 
 type Phase = CyclePrediction["phase"];
 
@@ -70,7 +71,7 @@ const INSIGHTS_BY_PHASE: Record<Phase, DailyInsightCard[]> = {
       tag: "DINH DƯỠNG",
       title: "Ăn gì để giảm đau bụng kinh",
       body: "Ưu tiên thực phẩm giàu sắt và omega-3 như rau bina, cá hồi, hạt óc chó. Hạn chế muối và caffein trong những ngày này để giảm đầy hơi.",
-      gradient: "linear-gradient(135deg, #2c2440, #4a3868)",
+      gradient: INSIGHT_GRADIENTS.dusk,
       textColor: "#fff",
     },
     {
@@ -78,7 +79,7 @@ const INSIGHTS_BY_PHASE: Record<Phase, DailyInsightCard[]> = {
       tag: "TRIỆU CHỨNG",
       title: "Đau lưng có thể liên quan đến chu kỳ",
       body: "Đau lưng dưới trong kỳ kinh là phổ biến do prostaglandin gây co bóp tử cung. Chườm ấm và giãn cơ nhẹ nhàng có thể giúp giảm khó chịu.",
-      gradient: "linear-gradient(135deg, #c9a8f5, #e85c8a)",
+      gradient: INSIGHT_GRADIENTS.blossom,
       textColor: "#fff",
     },
     {
@@ -86,7 +87,7 @@ const INSIGHTS_BY_PHASE: Record<Phase, DailyInsightCard[]> = {
       tag: "CHĂM SÓC BẢN THÂN",
       title: "Hôm nay hãy đi chậm lại",
       body: "Năng lượng thấp là điều bình thường trong ngày hành kinh. Ưu tiên nghỉ ngơi, ngủ đủ giấc và các bài tập nhẹ như yoga hoặc đi bộ.",
-      gradient: "linear-gradient(135deg, #f4a261, #e85c8a)",
+      gradient: INSIGHT_GRADIENTS.warm,
       textColor: "#fff",
     },
   ],
@@ -96,7 +97,7 @@ const INSIGHTS_BY_PHASE: Record<Phase, DailyInsightCard[]> = {
       tag: "VẬN ĐỘNG",
       title: "Thời điểm vàng để tập luyện cường độ cao",
       body: "Estrogen tăng giúp bạn có nhiều năng lượng hơn. Đây là lúc lý tưởng để thử các bài tập HIIT hoặc cardio.",
-      gradient: "linear-gradient(135deg, #4cae8e, #4fa8e8)",
+      gradient: INSIGHT_GRADIENTS.meadow,
       textColor: "#fff",
     },
     {
@@ -104,7 +105,7 @@ const INSIGHTS_BY_PHASE: Record<Phase, DailyInsightCard[]> = {
       tag: "NĂNG SUẤT",
       title: "Ngày này được sinh ra để lập kế hoạch",
       body: "Khả năng tập trung và tư duy sáng tạo thường ở mức cao. Tận dụng để bắt đầu dự án mới hoặc học kỹ năng mới.",
-      gradient: "linear-gradient(135deg, #1a1a2e, #16213e)",
+      gradient: INSIGHT_GRADIENTS.dusk,
       textColor: "#fff",
     },
   ],
@@ -114,7 +115,7 @@ const INSIGHTS_BY_PHASE: Record<Phase, DailyInsightCard[]> = {
       tag: "KHẢ NĂNG THỤ THAI",
       title: "Bạn đang ở cửa sổ thụ thai",
       body: "Đây là những ngày dễ thụ thai nhất trong chu kỳ. Nếu đang có kế hoạch mang thai, đây là thời điểm nên quan hệ đều đặn.",
-      gradient: "linear-gradient(135deg, #c9a8f5, #7c6ff0)",
+      gradient: INSIGHT_GRADIENTS.violet,
       textColor: "#fff",
     },
     {
@@ -122,7 +123,7 @@ const INSIGHTS_BY_PHASE: Record<Phase, DailyInsightCard[]> = {
       tag: "TÂM TRẠNG",
       title: "Ham muốn tình dục thường tăng cao",
       body: "Sự thay đổi nội tiết tố trong giai đoạn này có thể khiến bạn cảm thấy tự tin và hấp dẫn hơn — đó là điều hoàn toàn tự nhiên.",
-      gradient: "linear-gradient(135deg, #f1667a, #e85c8a)",
+      gradient: INSIGHT_GRADIENTS.rose,
       textColor: "#fff",
     },
   ],
@@ -132,7 +133,7 @@ const INSIGHTS_BY_PHASE: Record<Phase, DailyInsightCard[]> = {
       tag: "RỤNG TRỨNG",
       title: "Đau nhẹ một bên bụng là bình thường",
       body: "Một số người cảm nhận được cơn đau nhẹ ở một bên bụng dưới khi rụng trứng (mittelschmerz). Nếu đau dữ dội, hãy tham khảo bác sĩ.",
-      gradient: "linear-gradient(135deg, #f0b93e, #f4a261)",
+      gradient: INSIGHT_GRADIENTS.gold,
       textColor: "#2c2440",
     },
   ],
@@ -142,7 +143,7 @@ const INSIGHTS_BY_PHASE: Record<Phase, DailyInsightCard[]> = {
       tag: "TIỀN KINH NGUYỆT",
       title: "Vì sao bạn thèm đồ ngọt hơn?",
       body: "Progesterone tăng có thể khiến bạn thèm ăn nhiều hơn, đặc biệt là đồ ngọt và tinh bột. Ăn nhẹ đều đặn giúp ổn định đường huyết.",
-      gradient: "linear-gradient(135deg, #4fa8e8, #7c6ff0)",
+      gradient: INSIGHT_GRADIENTS.calmBlue,
       textColor: "#fff",
     },
     {
@@ -150,7 +151,7 @@ const INSIGHTS_BY_PHASE: Record<Phase, DailyInsightCard[]> = {
       tag: "LÀN DA",
       title: "Nổi mụn có thể liên quan đến chu kỳ",
       body: "Sự sụt giảm estrogen trước kỳ kinh khiến da tiết dầu nhiều hơn. Làm sạch da nhẹ nhàng và tránh nặn mụn để hạn chế sẹo.",
-      gradient: "linear-gradient(135deg, #2c2440, #4a3868)",
+      gradient: INSIGHT_GRADIENTS.dusk,
       textColor: "#fff",
     },
   ],
@@ -183,7 +184,7 @@ export const CHECK_IN_QUIZZES: CheckInQuiz[] = [
     id: "fatigue",
     title: "Mức độ mệt mỏi",
     subtitle: "Tình trạng của bạn có thể liên quan đến căng thẳng mãn tính",
-    gradient: "linear-gradient(135deg, #4a3868, #7c6ff0)",
+    gradient: INSIGHT_GRADIENTS.twilight,
     questions: [
       {
         id: "q1",
@@ -222,7 +223,7 @@ export const CHECK_IN_QUIZZES: CheckInQuiz[] = [
     id: "pcos",
     title: "Chu kỳ không đều?",
     subtitle: "Tới 70% phụ nữ mắc hội chứng buồng trứng đa nang (PCOS) có thể không nhận ra họ mắc bệnh này",
-    gradient: "linear-gradient(135deg, #1f8a70, #4cae8e)",
+    gradient: INSIGHT_GRADIENTS.forest,
     questions: [
       {
         id: "q1",
