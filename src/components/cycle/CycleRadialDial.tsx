@@ -9,8 +9,26 @@
 // chủ vì 2 nơi đó là progress đơn giản (thời gian tập, điểm sức khoẻ), không
 // có khái niệm "giai đoạn theo cung" để gắn nhãn.
 //
-// Hệ quy chiếu góc: 0° = đỉnh vòng (12h), đi THEO CHIỀU KIM ĐỒNG HỒ — khớp
-// với cách "currentDay" tăng dần từ ngày 1 chu kỳ.
+// FIX (sau khi chủ dự án chụp ảnh báo lỗi thực tế trên máy): 2 lỗi hiển thị
+// so với bản đầu:
+// 1. Vạch chia chỉ thấy 2 cụm nhỏ ngay sát 2 cung màu, phần còn lại của
+//    vòng trống trơn — nguyên nhân: `strokeOpacity` đặt quá thấp (0.07/0.14)
+//    để làm "mờ" có chủ đích, nhưng trên nền card gần như trắng, mức đó gần
+//    như vô hình — chỉ "ăn theo" được độ tương phản từ 2 cung màu đậm ở gần
+//    đó nên tạo ảo giác "chỉ có 2 cụm". Sửa: tăng hẳn độ đậm lên mức luôn
+//    nhìn thấy rõ trên nền trắng (không phụ thuộc vị trí cạnh cung màu hay
+//    không).
+// 2. Nhãn chữ cong ("HÀNH KINH"/"CỬA SỔ THỤ THAI") không hiện ra chút nào —
+//    `<textPath href="#id">` dùng thuộc tính `href` thuần, nhiều WebView di
+//    động (đặc biệt bản cũ) chỉ nhận `xlink:href`. Sửa: thêm cả `xlinkHref`
+//    song song `href` để tương thích rộng hơn.
+// Nhân tiện sửa luôn hướng đọc chữ: cung nằm ở nửa DƯỚI vòng tròn (như "Cửa
+// sổ thụ thai" khi rụng trứng rơi vào nửa sau chu kỳ dài) trước đây sẽ bị
+// chữ lộn ngược nếu vẽ path cùng chiều kim đồng hồ — nay tự đảo hướng path
+// dùng RIÊNG cho text (path cho màu vẫn giữ nguyên hướng cũ) khi trung điểm
+// cung rơi vào nửa dưới, để chữ luôn đọc xuôi.
+
+import { useId } from "react";
 
 interface CycleRadialDialProps {
   size?: number;
@@ -23,20 +41,18 @@ interface CycleRadialDialProps {
 }
 
 const TICK_COUNT = 60;
-const ARC_TRACK_R_RATIO = 0.92; // bán kính vòng vạch chia/cung màu so với size/2
-const PROGRESS_R_RATIO = 0.78; // bán kính vòng progress trơn (ngày hiện tại) phía trong
+const ARC_TRACK_R_RATIO = 0.92;
+const PROGRESS_R_RATIO = 0.78;
 
 function polar(cx: number, cy: number, r: number, angleDeg: number) {
-  // -90 để 0° bắt đầu từ đỉnh (12h) thay vì bên phải (mặc định lượng giác).
   const rad = ((angleDeg - 90) * Math.PI) / 180;
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
-function arcPath(cx: number, cy: number, r: number, startDeg: number, endDeg: number) {
-  const start = polar(cx, cy, r, startDeg);
-  const end = polar(cx, cy, r, endDeg);
-  const largeArc = endDeg - startDeg > 180 ? 1 : 0;
-  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`;
+function describeArc(cx: number, cy: number, r: number, fromDeg: number, toDeg: number, sweep: 0 | 1) {
+  const from = polar(cx, cy, r, fromDeg);
+  const to = polar(cx, cy, r, toDeg);
+  return `M ${from.x} ${from.y} A ${r} ${r} 0 0 ${sweep} ${to.x} ${to.y}`;
 }
 
 export default function CycleRadialDial({
@@ -48,42 +64,51 @@ export default function CycleRadialDial({
   fertileColor,
   children,
 }: CycleRadialDialProps) {
+  const uid = useId();
   const cx = size / 2;
   const cy = size / 2;
   const arcR = (size / 2) * ARC_TRACK_R_RATIO;
   const progressR = (size / 2) * PROGRESS_R_RATIO;
 
-  // Quy đổi "ngày thứ N trong chu kỳ" sang góc (độ), toàn vòng = avgCycleLength ngày.
   const dayToDeg = (day: number) => (day / avgCycleLength) * 360;
 
-  // Cung "Hành kinh": ngày 1 → avgPeriodLength.
   const periodStartDeg = dayToDeg(0);
   const periodEndDeg = dayToDeg(avgPeriodLength);
 
-  // Cung "Cửa sổ thụ thai": rụng trứng = ngày (avgCycleLength - 14), cửa sổ
-  // = 5 ngày trước tới 1 ngày sau (khớp `fertileWindow` trong `predictCycle`).
   const ovulationDay = avgCycleLength - 14;
   const fertileStartDeg = dayToDeg(Math.max(0, ovulationDay - 5));
   const fertileEndDeg = dayToDeg(ovulationDay + 1);
 
   const progressDeg = Math.min(360, dayToDeg(currentDay));
 
-  const periodArcId = "cycle-dial-period-arc";
-  const fertileArcId = "cycle-dial-fertile-arc";
+  const periodColorPath = describeArc(cx, cy, arcR, periodStartDeg, periodEndDeg, 1);
+  const fertileColorPath = describeArc(cx, cy, arcR, fertileStartDeg, fertileEndDeg, 1);
+
+  function textPathFor(startDeg: number, endDeg: number) {
+    const mid = (startDeg + endDeg) / 2;
+    const bottomHalf = mid > 90 && mid < 270;
+    return bottomHalf
+      ? describeArc(cx, cy, arcR, endDeg, startDeg, 0)
+      : describeArc(cx, cy, arcR, startDeg, endDeg, 1);
+  }
+  const periodTextPath = textPathFor(periodStartDeg, periodEndDeg);
+  const fertileTextPath = textPathFor(fertileStartDeg, fertileEndDeg);
+
+  const periodArcId = `cycle-dial-period-${uid}`;
+  const fertileArcId = `cycle-dial-fertile-${uid}`;
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <defs>
-          <path id={periodArcId} d={arcPath(cx, cy, arcR, periodStartDeg, periodEndDeg)} fill="none" />
-          <path id={fertileArcId} d={arcPath(cx, cy, arcR, fertileStartDeg, fertileEndDeg)} fill="none" />
+          <path id={periodArcId} d={periodTextPath} fill="none" />
+          <path id={fertileArcId} d={fertileTextPath} fill="none" />
         </defs>
 
-        {/* Vạch chia nhỏ quanh viền ngoài, kiểu mặt đồng hồ. */}
         {Array.from({ length: TICK_COUNT }).map((_, i) => {
           const deg = (i / TICK_COUNT) * 360;
           const isMajor = i % 5 === 0;
-          const inner = polar(cx, cy, arcR - (isMajor ? 6 : 3), deg);
+          const inner = polar(cx, cy, arcR - (isMajor ? 7 : 4), deg);
           const outer = polar(cx, cy, arcR + (isMajor ? 2 : 1), deg);
           return (
             <line
@@ -93,45 +118,27 @@ export default function CycleRadialDial({
               x2={outer.x}
               y2={outer.y}
               stroke="var(--ink)"
-              strokeOpacity={isMajor ? 0.14 : 0.07}
-              strokeWidth={isMajor ? 1.4 : 1}
+              strokeOpacity={isMajor ? 0.4 : 0.2}
+              strokeWidth={isMajor ? 1.6 : 1.1}
               strokeLinecap="round"
             />
           );
         })}
 
-        {/* Cung "Hành kinh" */}
-        <path
-          d={arcPath(cx, cy, arcR, periodStartDeg, periodEndDeg)}
-          fill="none"
-          stroke={periodColor}
-          strokeWidth={5}
-          strokeLinecap="round"
-        />
-        {/* Cung "Cửa sổ thụ thai" */}
-        <path
-          d={arcPath(cx, cy, arcR, fertileStartDeg, fertileEndDeg)}
-          fill="none"
-          stroke={fertileColor}
-          strokeWidth={5}
-          strokeLinecap="round"
-        />
+        <path d={periodColorPath} fill="none" stroke={periodColor} strokeWidth={5} strokeLinecap="round" />
+        <path d={fertileColorPath} fill="none" stroke={fertileColor} strokeWidth={5} strokeLinecap="round" />
 
-        {/* Nhãn chữ cong theo từng cung — bám theo <textPath>. */}
         <text fontSize="7.5" fontWeight={700} fill={periodColor} letterSpacing="0.3">
-          <textPath href={`#${periodArcId}`} startOffset="4">
+          <textPath href={`#${periodArcId}`} xlinkHref={`#${periodArcId}`} startOffset="4">
             HÀNH KINH
           </textPath>
         </text>
         <text fontSize="7.5" fontWeight={700} fill={fertileColor} letterSpacing="0.3">
-          <textPath href={`#${fertileArcId}`} startOffset="4">
+          <textPath href={`#${fertileArcId}`} xlinkHref={`#${fertileArcId}`} startOffset="4">
             CỬA SỔ THỤ THAI
           </textPath>
         </text>
 
-        {/* Vòng progress trơn phía trong — cho biết đang ở ngày thứ mấy, giữ
-            lại cảm giác quen thuộc của `AuroraRing` cũ nhưng thu nhỏ vào
-            trong để nhường chỗ cho vòng vạch chia + cung màu bên ngoài. */}
         <circle cx={cx} cy={cy} r={progressR} fill="none" stroke="rgba(36,27,47,0.06)" strokeWidth={10} />
         <circle
           cx={cx}

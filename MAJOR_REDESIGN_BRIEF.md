@@ -64,3 +64,23 @@
     (`VISUAL_POLISH_ROADMAP.md`, đặt `-right-8 -top-10` phía sau nội dung),
     2 việc bổ trợ nhau nên GIỮ NGUYÊN, không cần sửa thêm.
   - Patch: `patch_J2_radial_dial.zip`.
+
+- **2026-07-30 — Fix J2 (vòng tròn đồng hồ hiển thị sai trên máy thật)**:
+  Chủ dự án gửi ảnh chụp thực tế cho thấy 2 lỗi rõ so với ảnh tham khảo:
+  (1) vạch chia chỉ hiện 2 cụm nhỏ sát 2 cung màu, phần còn lại của vòng
+  trống trơn thay vì đủ 360°; (2) nhãn chữ cong "HÀNH KINH"/"CỬA SỔ THỤ
+  THAI" không hiện ra chút nào. Đã so ảnh chụp thực tế (phóng to) với ảnh
+  tham khảo gốc để xác định đúng 2 lỗi trước khi sửa, không đoán.
+  - Nguyên nhân (1): `strokeOpacity` vạch chia đặt quá thấp (0.07/0.14) —
+    trên nền card gần trắng gần như vô hình, chỉ "ăn theo" độ tương phản từ
+    2 cung màu đậm gần đó tạo ảo giác chỉ có 2 cụm. Tăng lên 0.2/0.4 (major
+    dày + đậm hơn) để luôn thấy rõ toàn vòng, không phụ thuộc vị trí.
+  - Nguyên nhân (2): `<textPath href="#id">` — nhiều WebView di động chỉ
+    nhận `xlink:href`. Thêm `xlinkHref` song song `href`.
+  - Nhân tiện: tách riêng path dùng để TÔ MÀU cung (giữ nguyên hướng cũ) và
+    path dùng cho TEXTPATH (tự đảo hướng nếu trung điểm cung rơi vào nửa
+    dưới vòng tròn, tránh chữ đọc lộn ngược khi cửa sổ thụ thai rơi vào nửa
+    sau của chu kỳ dài). Đổi id cung từ hằng số cố định sang `useId()` để an
+    toàn nếu sau này có nơi khác render nhiều dial cùng lúc.
+  - `tsc --noEmit` + `eslint` sạch.
+  - Patch: `patch_J2_fix_dial_rendering.zip`.
