@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Plus, ChevronRight, Sparkles } from "lucide-react";
-import AuroraRing from "@/components/ui/AuroraRing";
+import CycleRadialDial from "@/components/cycle/CycleRadialDial";
 import CycleCalendar from "@/components/cycle/CycleCalendar";
 import PhaseOutlook from "@/components/cycle/PhaseOutlook";
 import DailyInsights from "@/components/cycle/DailyInsights";
@@ -40,7 +40,6 @@ export default function CyclePage() {
   const cycleHistory = useMemo(() => buildCycleHistory(cycleLogs), [cycleLogs]);
   const daysToNext = daysUntil(prediction.nextPeriodDate);
   const daysToOvulation = daysUntil(prediction.ovulationDate);
-  const ringPercent = Math.min(100, (prediction.currentDay / prediction.avgCycleLength) * 100);
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-5 pt-8">
@@ -83,13 +82,20 @@ export default function CyclePage() {
               className="-right-8 -top-10 h-48 w-48 opacity-[0.14]"
             />
             <div className="relative flex flex-col items-center gap-3">
-              <AuroraRing percent={ringPercent} colorFrom={phaseColor[prediction.phase]} colorTo="var(--c-fertile)" size={160}>
+              <CycleRadialDial
+                size={168}
+                avgCycleLength={prediction.avgCycleLength}
+                avgPeriodLength={prediction.avgPeriodLength}
+                currentDay={prediction.currentDay}
+                periodColor="var(--c-period)"
+                fertileColor="var(--c-fertile)"
+              >
                 <span className="text-xs text-[var(--ink-faint)]">Ngày</span>
                 <span className="font-display text-3xl font-extrabold text-[var(--ink)]">
                   {prediction.currentDay}
                 </span>
                 <span className="text-xs text-[var(--ink-faint)]">/ {prediction.avgCycleLength}</span>
-              </AuroraRing>
+              </CycleRadialDial>
               <p className="font-display text-base font-bold" style={{ color: phaseColor[prediction.phase] }}>
                 {phaseLabel[prediction.phase]}
               </p>
