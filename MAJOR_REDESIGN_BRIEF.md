@@ -24,3 +24,15 @@
     `components/ui/BlobIcon.tsx` thiếu file — có sẵn từ trước, không liên
     quan patch này). `eslint` sạch trên 3 file đã sửa.
   - Patch: `patch_J1_bar_history.zip`.
+
+- **2026-07-30 — Fix build: khôi phục `components/ui/BlobIcon.tsx`**: Build
+  trên Render fail vì "Module not found: Can't resolve './BlobIcon'" /
+  '@/components/ui/BlobIcon' — file này được `MetricCard.tsx`,
+  `app/log/page.tsx`, `app/profile/page.tsx` import (module F1,
+  `VISUAL_POLISH_ROADMAP.md`) nhưng chưa từng nằm trong patch nào đã gửi
+  trước đó, không liên quan tới patch J1. Đã dựng lại đúng API các nơi đang
+  gọi (`icon`, `bg`, `fg`, `size`, `active` — badge dạng blob hữu cơ SVG
+  thay khối tròn phẳng). `tsc --noEmit` + `eslint` sạch; `next build` chạy
+  qua bước resolve module (lỗi còn lại trong sandbox chỉ do không tải được
+  Google Fonts — không phải lỗi code, sẽ ổn trên Render có mạng thật).
+  Patch: `patch_fix_blobicon.zip`.
