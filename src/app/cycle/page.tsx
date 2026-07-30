@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Plus, ChevronRight, Sparkles } from "lucide-react";
-import CycleRadialDial from "@/components/cycle/CycleRadialDial";
+import CycleRadialDial, { CycleDialLegend } from "@/components/cycle/CycleRadialDial";
 import CycleCalendar from "@/components/cycle/CycleCalendar";
 import PhaseOutlook from "@/components/cycle/PhaseOutlook";
 import DailyInsights from "@/components/cycle/DailyInsights";
@@ -99,6 +99,7 @@ export default function CyclePage() {
               <p className="font-display text-base font-bold" style={{ color: phaseColor[prediction.phase] }}>
                 {phaseLabel[prediction.phase]}
               </p>
+              <CycleDialLegend periodColor="var(--c-period)" fertileColor="var(--c-fertile)" />
             </div>
             <div className="relative grid w-full grid-cols-2 gap-3 pt-2 text-left">
               <div className="rounded-2xl bg-black/[0.03] p-3">
