@@ -83,7 +83,7 @@ toàn app dựa trên ảnh thật, và có thêm 1 vài phát hiện là **bug 
   sâu có chủ đích: card thường (elevation thấp), card nhấn mạnh/nổi bật như
   Health Score (elevation cao hơn, đã có `glass-card-strong` — kiểm tra xem có
   đang dùng đúng chỗ và có tạo được khác biệt rõ so với card thường không).
-- [ ] **G2. Biểu đồ mini (sparkline) trong metric card gần như không đọc được**
+- [x] **G2. Biểu đồ mini (sparkline) trong metric card gần như không đọc được**
   — ảnh cho thấy các cột/đường mini-chart bên phải mỗi card (Stress, Nhịp
   tim...) rất nhỏ và mờ nhạt, khó nhận ra là biểu đồ nếu không nhìn kỹ — hiện
   chủ yếu mang tính trang trí hơn là truyền tải thông tin thật (xu hướng 7
@@ -93,36 +93,19 @@ toàn app dựa trên ảnh thật, và có thêm 1 vài phát hiện là **bug 
 
 ## 4. Nhóm H — Tìm 1 "signature" thật cho app (đang thiếu)
 
-- [ ] **H1. Hiện tại app dùng đúng công thức phổ biến của app sức khoẻ AI-gen**
-  — nền gradient pastel nhạt, card trắng bo góc lớn, icon tròn pastel, số to
-  đậm + nhãn nhỏ xám — đây là "câu trả lời mặc định" (đúng như cảnh báo trong
-  bộ kỹ năng `frontend-design`), không sai nhưng cũng không có gì khiến người
-  dùng nhớ/nhận ra ngay đây là KVCycle chứ không phải 1 trong hàng chục app
-  theo dõi chu kỳ khác trên store. Đề xuất chọn ĐÚNG 1 điểm để đầu tư đậm (giữ
-  mọi thứ khác im lặng, kỷ luật xung quanh nó — nguyên tắc "spend your
-  boldness in one place"), ví dụ 1 trong các hướng:
-  - **AuroraRing** (Health Score ring) làm điểm nhấn — hiện đã có gradient
-    tím-hồng riêng biệt, khá gần với "signature" rồi — có thể đầu tư thêm
-    animation khi số thay đổi, hoặc hoạ tiết/glow đặc trưng quanh ring để nó
-    thực sự là "the one memorable thing" thay vì 1 progress ring thông thường.
-  - Hoặc 1 hoạ tiết/minh hoạ (không phải icon lucide-react đơn thuần) xuất
-    hiện xuyên suốt gắn với từng giai đoạn chu kỳ (nang trứng/rụng trứng/hoàng
-    thể/hành kinh) — hiện các giai đoạn chỉ phân biệt bằng 1 chữ màu khác nhau
-    ("Giai đoạn nang trứng" màu xanh lá) — có thể mỗi giai đoạn có 1 dải màu +
-    hoạ tiết nền riêng dễ nhận diện hơn.
-  - Việc này cần bàn với chủ dự án trước khi code (chọn hướng, xem ảnh mẫu) —
-    không nên tự quyết rồi build ngay vì đây là quyết định thẩm hoàn toàn chủ
-    quan, khác các module kỹ thuật khác trong roadmap cũ.
+- [x] **H1. Hiện tại app dùng đúng công thức phổ biến của app sức khoẻ AI-gen**
+  — **Đã chọn hướng cùng chủ dự án**: hoạ tiết riêng theo từng giai đoạn chu
+  kỳ (không đầu tư thêm AuroraRing). Xem chi tiết triển khai trong Nhật ký.
 
 ## 5. Nhóm I — Chi tiết còn lại (làm sau cùng, sau khi E-H ổn)
 
-- [ ] **I1. Đồng bộ khoảng cách (spacing) giữa card cùng cấp** — rà lại
+- [x] **I1. Đồng bộ khoảng cách (spacing) giữa card cùng cấp** — rà lại
   khoảng cách dọc giữa các card trên từng trang có nhất quán 1 giá trị (hiện
   có vẻ ổn nhưng cần đo bằng công cụ, không đoán bằng mắt).
   Nối tiếp phần scale chữ còn dang dở của **D1** (roadmap cũ) — cả 2 việc đều
   cần 1 bộ token spacing/type scale rõ ràng, nên gộp làm cùng lúc để đỡ phải
   quay lại 2 lần.
-- [ ] **I2. Trạng thái "hover/pressed" nút gợi ý câu hỏi AI** — chip "Đây có
+- [x] **I2. Trạng thái "hover/pressed" nút gợi ý câu hỏi AI** — chip "Đây có
   phải thời điểm tốt để tập luyện cường độ cao?" bị cắt cụt ở rìa phải màn
   hình không rõ có phải khối cuộn ngang hay không — nếu là scroll ngang, cần
   1 dấu hiệu thị giác nhỏ (fade cạnh, hoặc hé lộ 1 phần chip tiếp theo) để
@@ -297,3 +280,99 @@ dùng ở `QUALITY_UX_ROADMAP.md` — ngày thực hiện, module nào, làm gì
     qua.
   - Người thực hiện: Claude. File package gửi cho user: `module_G1_elevation.zip`
     (2 file: `src/app/globals.css`, `VISUAL_POLISH_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành G2 (độ rõ mini-chart), Nhóm G coi như hoàn
+  tất**.
+  - **Nguyên nhân**: 6/7 cột "quá khứ" trong `MiniBars` chỉ có `opacity: 0.35`
+    — quá nhạt để nhận ra là biểu đồ khi nhìn thoáng qua; đồng thời không có
+    "trần tham chiếu" nào — 1 giá trị gần 0 chỉ còn lại 1 chấm 4px, dễ hiểu
+    nhầm là ô trống/thiếu dữ liệu thay vì "giá trị thấp thật sự".
+  - **Đã sửa** (`components/ui/MiniBars.tsx`): tăng opacity cột quá khứ từ
+    0.35 → 0.55 (vẫn thấp hơn cột "hôm nay" ở 1.0 để giữ đúng phân cấp — hôm
+    nay vẫn nổi bật nhất, không đảo lộn thứ tự ưu tiên thị giác cũ); thêm 1
+    "track" nền mờ (opacity 0.12) cao HẾT khung cho mỗi cột, đóng vai trò trần
+    tham chiếu cố định để mắt so sánh được độ cao tương đối giữa các cột, kể
+    cả cột có giá trị rất thấp; tăng nhẹ chiều cao khung từ 36px → 40px cho có
+    trọng lượng thị giác hơn. Giữ nguyên toàn bộ phần co giãn bề rộng đã sửa ở
+    module E (bug tràn) — không lùi lại thay đổi đó.
+  - Đã chạy `tsc --noEmit` + `eslint src/` toàn repo — sạch.
+  - **Nhóm G (G1 + G2) coi như đã hoàn thành**. Việc còn lại của
+    `VISUAL_POLISH_ROADMAP.md`: **H1** (tìm signature — BẮT BUỘC bàn với chủ
+    dự án trước khi code, xem mục 4 phía trên) và **I1-I2** (chi tiết nhỏ,
+    làm sau cùng).
+  - Người thực hiện: Claude. File package gửi cho user: `module_G2_minibars.zip`
+    (2 file: `components/ui/MiniBars.tsx`, `VISUAL_POLISH_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành I1 + I2 — toàn bộ phần khả thi của
+  `VISUAL_POLISH_ROADMAP.md` coi như xong (chỉ còn H1 chờ bàn hướng)**.
+  - **I1 (đồng bộ spacing)**: đo lại `gap`/`px` của MỌI `<main>` trong app —
+    **đã nhất quán từ trước** (`gap-6 px-5`, hầu hết `pt-8`; trang chủ dùng
+    `pt-6` vì không có `<h1>` tiêu đề chiếm chỗ, onboarding dùng `px-6` vì là
+    luồng riêng ngoài tab nav — cả 2 đều có lý do, không phải lỗi). Không cần
+    sửa phần này.
+  - Đo tiếp bo góc card (`rounded-[Npx]`) — phát hiện **7 giá trị khác nhau**:
+    24px (29 chỗ, áp đảo — tier "card chuẩn"), 22px (20 chỗ), 28px (8 chỗ,
+    tier "hero" như Health Score/bottom sheet), 20px (7 chỗ), 32px (2 chỗ, tier
+    "auth hero" ở màn đăng nhập/quên mật khẩu — card LỚN NHẤT trên màn hình
+    riêng, có lý do), 26px (2 chỗ) và 18px (2 chỗ, dùng cho bong bóng chat —
+    nhỏ hơn hẳn, có lý do). **26px là lệch thật** — chỉ 2 chỗ dùng
+    (`MetricCard.tsx`, `CycleCalendar.tsx`) lẽ ra thuộc đúng tier "card chuẩn"
+    24px như 29 chỗ khác, không có lý do gì để khác biệt 2px — khả năng cao là
+    trôi dạt ngẫu nhiên khi copy code. Đã sửa cả 2 về `24px`.
+    KHÔNG động vào 20px/22px/28px/32px/18px vì đều có vai trò/ngữ cảnh riêng
+    hợp lý (xem trên) — gộp ẩu các tier này lại mới là làm sai, không phải
+    "chưa làm xong".
+  - **I2 (dấu hiệu cuộn ngang)**: thêm `mask-image` làm mờ dần 28px cạnh phải
+    cho 2 hàng cuộn ngang (`components/cycle/DailyInsights.tsx` — thẻ "Câu
+    chuyện hàng ngày"; `app/cycle/page.tsx` — chip câu hỏi gợi ý AI). Với thẻ
+    "Câu chuyện hàng ngày", CHỈ áp dụng khi có ≥3 thẻ (2 thẻ luôn vừa khít mọi
+    bề ngang điện thoại — thêm mask ở đó sẽ gợi ý sai "còn nữa" khi thực ra đã
+    hết); chip câu hỏi luôn đúng 4 câu dài nên áp dụng cố định không cần điều
+    kiện.
+  - Đã chạy `tsc --noEmit` + `eslint src/` toàn repo — sạch.
+  - **Trạng thái `VISUAL_POLISH_ROADMAP.md`**: Nhóm E, F, G, I đã hoàn thành
+    toàn bộ. Chỉ còn **H1** (tìm 1 signature riêng cho KVCycle) — mục này vẫn
+    đang chờ chủ dự án chọn hướng trước khi agent nào đó code tiếp, đúng như
+    ghi chú "thứ tự triển khai đề xuất" ở cuối file.
+  - Người thực hiện: Claude. File package gửi cho user: `module_I1_I2_polish.zip`
+    (4 file: `components/ui/MetricCard.tsx`, `components/cycle/CycleCalendar.tsx`,
+    `components/cycle/DailyInsights.tsx`, `app/cycle/page.tsx`,
+    `VISUAL_POLISH_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành H1 — `VISUAL_POLISH_ROADMAP.md` XONG TOÀN
+  BỘ**. Chủ dự án chọn hướng "hoạ tiết riêng theo từng giai đoạn chu kỳ" (qua
+  `ask_user_input_v0`), không đầu tư thêm AuroraRing.
+  - **Tạo `components/ui/PhaseMotif.tsx`** — 5 hoạ tiết SVG line-art trừu
+    tượng, MỘT cho mỗi giai đoạn, cố ý gắn với Ý NGHĨA của giai đoạn (không
+    chỉ đổi màu ngẫu nhiên):
+    - `period` (hành kinh): các giọt nước rơi — echo icon droplet đã dùng cho
+      "chu kỳ" toàn app.
+    - `follicular` (nang trứng): cụm vòng tròn tăng dần kích thước — nang
+      trứng đang phát triển.
+    - `fertile` (cửa sổ thụ thai): 3 vòng tròn giao nhau — hình ảnh "cửa sổ"/
+      giao thoa.
+    - `ovulation` (rụng trứng): tia toả ra từ 1 điểm — khoảnh khắc đỉnh điểm.
+    - `luteal` (hoàng thể): các vầng trăng khuyết chồng nhau — năng lượng dịu
+      dần.
+    Vẽ bằng `stroke="currentColor"`, màu set qua CSS `color` ở nơi gọi — LUÔN
+    dùng đúng `phaseColor[phase]` đã có sẵn trong `lib/cycle-utils.ts`, không
+    bịa màu mới (giữ nhất quán với toàn bộ hệ thống màu accent hiện có).
+  - **Áp dụng ở đúng 2 nơi hiển thị giai đoạn nổi bật nhất** (không rải khắp
+    app tránh loãng — đúng nguyên tắc "spend your boldness in one place" đã
+    ghi trong roadmap):
+    - `app/page.tsx` (Trang chủ): góc trên-phải thẻ "Chu kỳ hôm nay", kích
+      thước nhỏ (112px), `opacity-[0.16]`.
+    - `app/cycle/page.tsx`: góc trên-phải khối chứa AuroraRing, phóng to hơn
+      (192px) tương xứng với vai trò khối chính của trang, `opacity-[0.14]`.
+    Cả 2 nơi đều: chỉ vẽ khi ĐÃ xác định được giai đoạn (`cycleLogs.length >
+    0`), `overflow-hidden` trên card cha để hoạ tiết không tràn ra ngoài bo
+    góc, và nội dung chữ/số phía trên được bọc riêng trong `<div
+    className="relative">` để LUÔN nổi lên trên hoạ tiết (không bị hoạ tiết đè
+    lên làm giảm độ rõ chữ) — độ mờ 14-16% cũng đủ thấp để không ảnh hưởng
+    tương phản chữ (chữ vẫn nằm trên nền glass-card trắng đục là chính).
+  - Đã chạy `tsc --noEmit` + `eslint src/` toàn repo — sạch.
+  - **`VISUAL_POLISH_ROADMAP.md` coi như đã hoàn thành 100% phần đề ra** (Nhóm
+    E, F, G, H, I). Việc còn lại nếu muốn mở rộng thêm (không bắt buộc, không
+    nằm trong roadmap gốc): áp dụng `PhaseMotif` cho các vị trí khác hiển thị
+    giai đoạn nếu phát sinh sau này (vd trong modal chi tiết); mở rộng animation
+    cho AuroraRing như phương án đã KHÔNG chọn, nếu chủ dự án đổi ý sau này.
+  - Người thực hiện: Claude. File package gửi cho user: `module_H1_phase_motif.zip`
+    (3 file: `components/ui/PhaseMotif.tsx` (mới), `app/page.tsx`,
+    `app/cycle/page.tsx`, `VISUAL_POLISH_ROADMAP.md`).

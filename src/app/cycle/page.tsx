@@ -10,6 +10,7 @@ import HealthCheckIns from "@/components/cycle/HealthCheckIns";
 import AiChatSheet from "@/components/cycle/AiChatSheet";
 import AbnormalCycleBanner from "@/components/cycle/AbnormalCycleBanner";
 import EmptyState from "@/components/ui/EmptyState";
+import PhaseMotif from "@/components/ui/PhaseMotif";
 import { SkeletonCard, SkeletonRows } from "@/components/ui/Skeleton";
 import CycleLogForm from "@/components/log/CycleLogForm";
 import { useCycleLogs, useProfile, CycleLogFull } from "@/lib/queries";
@@ -66,18 +67,29 @@ export default function CyclePage() {
         <>
           <AbnormalCycleBanner cycleLogs={cycleLogs} />
 
-          <section className="glass-card-strong flex flex-col items-center gap-3 rounded-[28px] p-6 text-center">
-            <AuroraRing percent={ringPercent} colorFrom={phaseColor[prediction.phase]} colorTo="var(--c-fertile)" size={160}>
-              <span className="text-xs text-[var(--ink-faint)]">Ngày</span>
-              <span className="font-display text-3xl font-extrabold text-[var(--ink)]">
-                {prediction.currentDay}
-              </span>
-              <span className="text-xs text-[var(--ink-faint)]">/ {prediction.avgCycleLength}</span>
-            </AuroraRing>
-            <p className="font-display text-base font-bold" style={{ color: phaseColor[prediction.phase] }}>
-              {phaseLabel[prediction.phase]}
-            </p>
-            <div className="grid w-full grid-cols-2 gap-3 pt-2 text-left">
+          <section className="glass-card-strong relative flex flex-col items-center gap-3 overflow-hidden rounded-[28px] p-6 text-center">
+            {/* H1: cùng hoạ tiết dùng ở Trang chủ, phóng to hơn cho khối
+                chính của trang Chu kỳ — đặt sau lưng nội dung (z-index mặc
+                định thấp hơn vì đứng trước trong DOM + nội dung có `relative`
+                z-auto phía sau che lên nhờ thứ tự render). */}
+            <PhaseMotif
+              phase={prediction.phase}
+              color={phaseColor[prediction.phase]}
+              className="-right-8 -top-10 h-48 w-48 opacity-[0.14]"
+            />
+            <div className="relative flex flex-col items-center gap-3">
+              <AuroraRing percent={ringPercent} colorFrom={phaseColor[prediction.phase]} colorTo="var(--c-fertile)" size={160}>
+                <span className="text-xs text-[var(--ink-faint)]">Ngày</span>
+                <span className="font-display text-3xl font-extrabold text-[var(--ink)]">
+                  {prediction.currentDay}
+                </span>
+                <span className="text-xs text-[var(--ink-faint)]">/ {prediction.avgCycleLength}</span>
+              </AuroraRing>
+              <p className="font-display text-base font-bold" style={{ color: phaseColor[prediction.phase] }}>
+                {phaseLabel[prediction.phase]}
+              </p>
+            </div>
+            <div className="relative grid w-full grid-cols-2 gap-3 pt-2 text-left">
               <div className="rounded-2xl bg-black/[0.03] p-3">
                 <p className="text-[11px] text-[var(--ink-faint)]">Kỳ kinh tiếp theo</p>
                 <p className="font-display text-sm font-bold text-[var(--ink)]">
@@ -116,7 +128,19 @@ export default function CyclePage() {
                 Có thắc mắc? Hỏi trợ lý nhé ✨
               </p>
             </div>
-            <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1" style={{ scrollbarWidth: "none" }}>
+            {/* I2 (VISUAL_POLISH_ROADMAP.md): cùng vấn đề với hàng thẻ
+                "Câu chuyện hàng ngày" ở trên — luôn có 4 câu gợi ý dài
+                (`getSuggestedPrompts`), gần như chắc chắn tràn khỏi màn hình
+                điện thoại nên không cần điều kiện độ dài như bên đó, áp dụng
+                mờ dần cố định. */}
+            <div
+              className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1"
+              style={{
+                scrollbarWidth: "none",
+                WebkitMaskImage: "linear-gradient(to right, black calc(100% - 28px), transparent 100%)",
+                maskImage: "linear-gradient(to right, black calc(100% - 28px), transparent 100%)",
+              }}
+            >
               {getSuggestedPrompts(prediction.phase).map((prompt) => (
                 <button
                   key={prompt}

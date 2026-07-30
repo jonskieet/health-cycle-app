@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import MetricCard from "@/components/ui/MetricCard";
 import AuroraRing from "@/components/ui/AuroraRing";
 import EmptyState from "@/components/ui/EmptyState";
+import PhaseMotif from "@/components/ui/PhaseMotif";
 import { Skeleton } from "@/components/ui/Skeleton";
 import AbnormalCycleBanner from "@/components/cycle/AbnormalCycleBanner";
 import ReminderBanner from "@/components/cycle/ReminderBanner";
@@ -58,8 +59,25 @@ export default function DashboardPage() {
           tự xuất hiện. */}
 
       {/* Chu kỳ hôm nay */}
-      <Link href="/cycle" className="glass-card flex items-center justify-between rounded-[24px] p-5">
-        <div>
+      <Link
+        href="/cycle"
+        className="glass-card relative flex items-center justify-between overflow-hidden rounded-[24px] p-5"
+      >
+        {/* H1: hoạ tiết riêng theo giai đoạn — điểm nhấn thị giác (signature)
+            chủ dự án chọn cho toàn app. Chỉ vẽ khi ĐÃ xác định được giai đoạn
+            (có dữ liệu chu kỳ) — không có giai đoạn thì không có gì để minh
+            hoạ. Đặt góc trên-phải, mờ nhẹ (opacity thấp) + `overflow-hidden`
+            trên card cha để không tràn ra ngoài bo góc, độ mờ đủ thấp để
+            không ảnh hưởng độ tương phản chữ phía trên (chữ vẫn nằm trên nền
+            glass-card trắng đục là chính, hoạ tiết chỉ là điểm trang trí góc). */}
+        {cycleLogs.length > 0 && (
+          <PhaseMotif
+            phase={prediction.phase}
+            color={phaseColor[prediction.phase]}
+            className="-right-4 -top-6 h-28 w-28 opacity-[0.16]"
+          />
+        )}
+        <div className="relative">
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--ink-faint)]">
             Chu kỳ kinh nguyệt
           </p>
@@ -82,7 +100,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <span
-          className="flex h-11 w-11 items-center justify-center rounded-full text-white"
+          className="relative flex h-11 w-11 items-center justify-center rounded-full text-white"
           style={{ background: cycleLogs.length === 0 ? "var(--ink-faint)" : phaseColor[prediction.phase] }}
         >
           <Droplets size={20} />
