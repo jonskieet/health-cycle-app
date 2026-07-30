@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Plus, ChevronRight, Sparkles } from "lucide-react";
-import CycleRadialDial, { CycleDialLegend } from "@/components/cycle/CycleRadialDial";
+import { useMemo, useRef, useState } from "react";
+import { Plus, Sparkles, ChevronRight } from "lucide-react";
+import CycleRadialDial from "@/components/cycle/CycleRadialDial";
+import CycleWeekStrip from "@/components/cycle/CycleWeekStrip";
 import CycleCalendar from "@/components/cycle/CycleCalendar";
 import PhaseOutlook from "@/components/cycle/PhaseOutlook";
 import DailyInsights from "@/components/cycle/DailyInsights";
@@ -15,7 +16,7 @@ import { SkeletonCard, SkeletonRows } from "@/components/ui/Skeleton";
 import CycleLogForm from "@/components/log/CycleLogForm";
 import CycleBarHistory from "@/components/cycle/CycleBarHistory";
 import { useCycleLogs, useProfile, CycleLogFull } from "@/lib/queries";
-import { predictCycle, phaseLabel, phaseColor, daysUntil, buildCycleHistory } from "@/lib/cycle-utils";
+import { predictCycle, phaseLabel, phaseColor, phaseSubtitle, daysUntil, buildCycleHistory } from "@/lib/cycle-utils";
 import { getSuggestedPrompts } from "@/lib/cycle-insights";
 
 export default function CyclePage() {
@@ -40,6 +41,21 @@ export default function CyclePage() {
   const cycleHistory = useMemo(() => buildCycleHistory(cycleLogs), [cycleLogs]);
   const daysToNext = daysUntil(prediction.nextPeriodDate);
   const daysToOvulation = daysUntil(prediction.ovulationDate);
+  const detailsRef = useRef<HTMLDivElement>(null);
+
+  // Tap ngay (yyyy-mm-dd) roi vao ky hanh kinh da ghi nhan, de cham diem
+  // duoi so ngay trong dai tuan (`CycleWeekStrip`).
+  const periodDates = useMemo(() => {
+    const set = new Set<string>();
+    for (const log of cycleLogs) {
+      const start = new Date(log.start_date);
+      const end = log.end_date ? new Date(log.end_date) : start;
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        set.add(d.toISOString().slice(0, 10));
+      }
+    }
+    return set;
+  }, [cycleLogs]);
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-5 pt-8">
@@ -71,7 +87,7 @@ export default function CyclePage() {
         <>
           <AbnormalCycleBanner cycleLogs={cycleLogs} />
 
-          <section className="glass-card-strong relative flex flex-col items-center gap-3 overflow-hidden rounded-[28px] p-6 text-center">
+          <section className="glass-card-strong relative flex flex-col items-center gap-5 overflow-hidden rounded-[28px] p-6 text-center">
             {/* H1: cùng hoạ tiết dùng ở Trang chủ, phóng to hơn cho khối
                 chính của trang Chu kỳ — đặt sau lưng nội dung (z-index mặc
                 định thấp hơn vì đứng trước trong DOM + nội dung có `relative`
@@ -81,27 +97,53 @@ export default function CyclePage() {
               color={phaseColor[prediction.phase]}
               className="-right-8 -top-10 h-48 w-48 opacity-[0.14]"
             />
-            <div className="relative flex flex-col items-center gap-3">
+
+            <div className="relative w-full">
+              <CycleWeekStrip periodDates={periodDates} periodColor="var(--c-period)" />
+            </div>
+
+            <div className="relative flex w-full justify-center py-1">
               <CycleRadialDial
-                size={168}
+                size={252}
                 avgCycleLength={prediction.avgCycleLength}
                 avgPeriodLength={prediction.avgPeriodLength}
                 currentDay={prediction.currentDay}
                 periodColor="var(--c-period)"
                 fertileColor="var(--c-fertile)"
               >
-                <span className="text-xs text-[var(--ink-faint)]">Ngày</span>
-                <span className="font-display text-3xl font-extrabold text-[var(--ink)]">
-                  {prediction.currentDay}
+                <span className="text-xs font-medium text-[var(--ink-faint)]">
+                  {phaseLabel[prediction.phase]}
                 </span>
-                <span className="text-xs text-[var(--ink-faint)]">/ {prediction.avgCycleLength}</span>
+                <span className="font-display text-4xl font-extrabold text-[var(--ink)]">
+                  {prediction.phase === "period"
+                    ? `${prediction.currentDay} ngày`
+                    : `Ngày ${prediction.currentDay}`}
+                </span>
+                <span className="max-w-[10rem] text-xs leading-snug text-[var(--ink-soft)]">
+                  {phaseSubtitle[prediction.phase]}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setAddingNew(true)}
+                  className="mt-1 flex items-center gap-1 rounded-full px-4 py-2 text-xs font-bold text-white"
+                  style={{ background: phaseColor[prediction.phase] }}
+                >
+                  Nhật ký kỳ kinh
+                  <ChevronRight size={14} />
+                </button>
               </CycleRadialDial>
-              <p className="font-display text-base font-bold" style={{ color: phaseColor[prediction.phase] }}>
-                {phaseLabel[prediction.phase]}
-              </p>
-              <CycleDialLegend periodColor="var(--c-period)" fertileColor="var(--c-fertile)" />
+
+              <button
+                type="button"
+                onClick={() => detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                className="absolute left-0 top-1/2 flex -translate-y-1/2 flex-col items-center gap-1 text-[10px] font-medium text-[var(--ink-faint)]"
+                style={{ writingMode: "vertical-rl" }}
+              >
+                <span style={{ transform: "rotate(180deg)" }}>Xem thêm</span>
+              </button>
             </div>
-            <div className="relative grid w-full grid-cols-2 gap-3 pt-2 text-left">
+
+            <div ref={detailsRef} className="relative grid w-full grid-cols-2 gap-3 text-left">
               <div className="rounded-2xl bg-black/[0.03] p-3">
                 <p className="text-[11px] text-[var(--ink-faint)]">Kỳ kinh tiếp theo</p>
                 <p className="font-display text-sm font-bold text-[var(--ink)]">

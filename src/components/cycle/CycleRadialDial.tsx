@@ -1,34 +1,18 @@
 "use client";
 
-// J3 (thay bản J2 sau khi anh chup may that cho thay vo layout): ban cu ve
-// nhan "HANH KINH"/"CUA SO THU THAI" cong theo cung bang SVG `<textPath>`
-// ap truc tiep len vien chinh (arcR ~ 92% ban kinh, chi cach mep ngoai cua
-// khung 168px vai px). Voi cung ngan + chu dai, chu bi bop/chong len chinh
-// no va chong luon len so ngay o giua trung tam vong tron.
+// J4 (thay ban J3 theo yeu cau lam GIONG Y CHANG anh mau moi - khong con
+// dang "mat dong ho" nua ma la 1 VONG TRON LON voi 2 DAI MAU DAY (khong
+// phai net mong) chay doc theo vien, chu "Period"/"Fertile window" NAM
+// TREN chinh 2 dai mau do (cong theo cung), 2 huy hieu tron den nho o 2
+// diem noi giua 2 dai, giua vong la khoi noi dung lon (nhan giai doan +
+// so ngay to + dong phu + nut pill "Nhat ky ky kinh").
 //
-// Bo han textPath. Vong tron gio CHI hien thi: vach chia deu quanh vien +
-// 2 cung mau (hanh kinh / cua so thu thai) de len vach chia + vong progress
-// ngay hien tai o trong. Khong con chu nao ve trong SVG nua - ten 2 giai
-// doan duoc doc qua chu thich (legend) dang cham mau + nhan phang dat NGAY
-// DUOI vong tron (xem component `CycleDialLegend` o cuoi file, dung trong
-// page.tsx), mau rat pho bien o cac app chu ky (Flo, Clue) va khong bao gio
-// vo chu du vong tron nho toi dau.
-
-
-
-interface CycleRadialDialProps {
-  size?: number;
-  avgCycleLength: number;
-  avgPeriodLength: number;
-  currentDay: number;
-  periodColor: string;
-  fertileColor: string;
-  children?: React.ReactNode;
-}
-
-const TICK_COUNT = 60;
-const ARC_TRACK_R_RATIO = 0.86;
-const PROGRESS_R_RATIO = 0.72;
+// Diem mau chot de chu cong KHONG BAO GIO vo/tran nhu ban cu: dung thuoc
+// tinh SVG `textLength` + `lengthAdjust="spacingAndGlyphs"` tren <textPath>
+// - trinh duyet se CO GIAN chu (nen/giai chu) de vua khop dung do dai chi
+// dinh, bat ke cung dai/ngan bao nhieu hay chu dai/ngan bao nhieu. Day la
+// co che ep-vua-khop cua chinh SVG spec, khong phu thuoc uoc luong do dai
+// cung thu cong (nguon goc loi cua 2 ban truoc).
 
 function polar(cx: number, cy: number, r: number, angleDeg: number) {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
@@ -42,19 +26,130 @@ function describeArc(cx: number, cy: number, r: number, fromDeg: number, toDeg: 
   return `M ${from.x} ${from.y} A ${r} ${r} 0 ${large} ${sweep} ${to.x} ${to.y}`;
 }
 
+function arcLengthPx(r: number, fromDeg: number, toDeg: number) {
+  return (Math.abs(toDeg - fromDeg) * Math.PI * r) / 180;
+}
+
+interface BandProps {
+  id: string;
+  cx: number;
+  cy: number;
+  r: number;
+  bandWidth: number;
+  fromDeg: number;
+  toDeg: number;
+  color: string;
+  label: string;
+  fontSize: number;
+}
+
+/** 1 dai mau day (band) + chu cong nam giua dai, luon fit du cung dai/ngan. */
+function ArcBand({ id, cx, cy, r, bandWidth, fromDeg, toDeg, color, label, fontSize }: BandProps) {
+  const mid = (fromDeg + toDeg) / 2;
+  const bottomHalf = mid > 95 && mid < 265;
+  // Chieu ve cua path CHU luon giu trai->phai theo huong doc thuong (khong
+  // lat nguoc), doi voi cung o nua duoi thi dao dau/cuoi de chu khong bi
+  // lon nguoc dau.
+  const textPathD = bottomHalf
+    ? describeArc(cx, cy, r, toDeg, fromDeg, 0)
+    : describeArc(cx, cy, r, fromDeg, toDeg, 1);
+  const bandPathD = describeArc(cx, cy, r, fromDeg, toDeg, 1);
+  const fullLen = arcLengthPx(r, fromDeg, toDeg);
+  const fitLen = Math.max(10, fullLen - bandWidth * 1.1);
+
+  return (
+    <>
+      <defs>
+        <path id={id} d={textPathD} fill="none" />
+      </defs>
+      <path
+        d={bandPathD}
+        fill="none"
+        stroke={color}
+        strokeWidth={bandWidth}
+        strokeLinecap="round"
+      />
+      <text fontSize={fontSize} fontWeight={700} fill="#ffffff" letterSpacing="0.4">
+        <textPath
+          href={`#${id}`}
+          xlinkHref={`#${id}`}
+          startOffset="50%"
+          textAnchor="middle"
+          textLength={fitLen}
+          lengthAdjust="spacingAndGlyphs"
+        >
+          {label}
+        </textPath>
+      </text>
+    </>
+  );
+}
+
+interface JunctionBadgeProps {
+  cx: number;
+  cy: number;
+  r: number;
+  angleDeg: number;
+  size: number;
+  direction: "down" | "up";
+}
+
+/** Huy hieu tron den nho o diem giao giua 2 dai mau, co mui ten trang ben trong. */
+function JunctionBadge({ cx, cy, r, angleDeg, size, direction }: JunctionBadgeProps) {
+  const pos = polar(cx, cy, r, angleDeg);
+  const half = size / 2;
+  return (
+    <g transform={`translate(${pos.x - half}, ${pos.y - half})`}>
+      <circle cx={half} cy={half} r={half} fill="var(--ink)" stroke="var(--surface)" strokeWidth={2.5} />
+      {direction === "down" ? (
+        <path
+          d={`M ${half - size * 0.16} ${half - size * 0.07} L ${half} ${half + size * 0.13} L ${half + size * 0.16} ${half - size * 0.07}`}
+          fill="none"
+          stroke="#ffffff"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ) : (
+        <path
+          d={`M ${half - size * 0.16} ${half + size * 0.07} L ${half} ${half - size * 0.13} L ${half + size * 0.16} ${half + size * 0.07}`}
+          fill="none"
+          stroke="#ffffff"
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+    </g>
+  );
+}
+
+interface CycleRadialDialProps {
+  size?: number;
+  avgCycleLength: number;
+  avgPeriodLength: number;
+  currentDay: number;
+  periodColor: string;
+  fertileColor: string;
+  children?: React.ReactNode;
+}
+
+const TRACK_R_RATIO = 0.9;
+const BAND_WIDTH_RATIO = 0.1;
+
 export default function CycleRadialDial({
-  size = 200,
+  size = 260,
   avgCycleLength,
   avgPeriodLength,
-  currentDay,
   periodColor,
   fertileColor,
   children,
 }: CycleRadialDialProps) {
   const cx = size / 2;
   const cy = size / 2;
-  const arcR = (size / 2) * ARC_TRACK_R_RATIO;
-  const progressR = (size / 2) * PROGRESS_R_RATIO;
+  const r = (size / 2) * TRACK_R_RATIO;
+  const bandWidth = size * BAND_WIDTH_RATIO;
+  const fontSize = Math.max(9, size * 0.042);
 
   const dayToDeg = (day: number) => (day / avgCycleLength) * 360;
 
@@ -62,79 +157,47 @@ export default function CycleRadialDial({
   const periodEndDeg = dayToDeg(avgPeriodLength);
 
   const ovulationDay = avgCycleLength - 14;
-  const fertileStartDeg = dayToDeg(Math.max(0, ovulationDay - 5));
+  const fertileStartDeg = dayToDeg(Math.max(periodEndDeg / 360 * avgCycleLength + 1, ovulationDay - 5));
   const fertileEndDeg = dayToDeg(ovulationDay + 1);
-
-  const progressDeg = Math.min(360, dayToDeg(currentDay));
-
-  const periodColorPath = describeArc(cx, cy, arcR, periodStartDeg, periodEndDeg, 1);
-  const fertileColorPath = describeArc(cx, cy, arcR, fertileStartDeg, fertileEndDeg, 1);
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block">
-        {Array.from({ length: TICK_COUNT }).map((_, i) => {
-          const deg = (i / TICK_COUNT) * 360;
-          const isMajor = i % 5 === 0;
-          const inner = polar(cx, cy, arcR - (isMajor ? 6 : 3.5), deg);
-          const outer = polar(cx, cy, arcR + (isMajor ? 1.5 : 0.5), deg);
-          return (
-            <line
-              key={i}
-              x1={inner.x}
-              y1={inner.y}
-              x2={outer.x}
-              y2={outer.y}
-              stroke="var(--ink)"
-              strokeOpacity={isMajor ? 0.32 : 0.15}
-              strokeWidth={isMajor ? 1.6 : 1.1}
-              strokeLinecap="round"
-            />
-          );
-        })}
+        {/* Ray nen mo cho phan con lai cua vong tron (ngoai 2 dai mau) */}
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--ink)" strokeOpacity={0.06} strokeWidth={bandWidth} />
 
-        <path d={periodColorPath} fill="none" stroke={periodColor} strokeWidth={5.5} strokeLinecap="round" />
-        <path d={fertileColorPath} fill="none" stroke={fertileColor} strokeWidth={5.5} strokeLinecap="round" />
-
-        <circle cx={cx} cy={cy} r={progressR} fill="none" stroke="rgba(36,27,47,0.06)" strokeWidth={9} />
-        <circle
+        <ArcBand
+          id="cycle-dial-period-band"
           cx={cx}
           cy={cy}
-          r={progressR}
-          fill="none"
-          stroke={periodColor}
-          strokeWidth={9}
-          strokeLinecap="round"
-          strokeDasharray={2 * Math.PI * progressR}
-          strokeDashoffset={2 * Math.PI * progressR * (1 - progressDeg / 360)}
-          transform={`rotate(-90 ${cx} ${cy})`}
-          style={{ transition: "stroke-dashoffset 0.6s ease" }}
+          r={r}
+          bandWidth={bandWidth}
+          fromDeg={periodStartDeg}
+          toDeg={periodEndDeg}
+          color={periodColor}
+          label="Kỳ kinh"
+          fontSize={fontSize}
         />
+        <ArcBand
+          id="cycle-dial-fertile-band"
+          cx={cx}
+          cy={cy}
+          r={r}
+          bandWidth={bandWidth}
+          fromDeg={fertileStartDeg}
+          toDeg={fertileEndDeg}
+          color={fertileColor}
+          label="Cửa sổ thụ thai"
+          fontSize={fontSize}
+        />
+
+        <JunctionBadge cx={cx} cy={cy} r={r} angleDeg={periodEndDeg} size={bandWidth * 1.9} direction="down" />
+        <JunctionBadge cx={cx} cy={cy} r={r} angleDeg={fertileStartDeg} size={bandWidth * 1.9} direction="up" />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">{children}</div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-8 text-center">
+        {children}
+      </div>
     </div>
   );
 }
 
-// Chu thich mau cho 2 cung tren vong tron - dat ben ngoai SVG (o page.tsx)
-// ngay duoi CycleRadialDial, thay cho textPath cong da bi loi.
-export function CycleDialLegend({
-  periodColor,
-  fertileColor,
-}: {
-  periodColor: string;
-  fertileColor: string;
-}) {
-  return (
-    <div className="flex items-center justify-center gap-4 text-[11px] font-medium text-[var(--ink-soft)]">
-      <span className="flex items-center gap-1.5">
-        <span className="h-2 w-2 rounded-full" style={{ background: periodColor }} />
-        Hành kinh
-      </span>
-      <span className="flex items-center gap-1.5">
-        <span className="h-2 w-2 rounded-full" style={{ background: fertileColor }} />
-        Cửa sổ thụ thai
-      </span>
-    </div>
-  );
-}

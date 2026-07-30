@@ -247,6 +247,16 @@ export const phaseLabel: Record<CyclePrediction["phase"], string> = {
   follicular: "Giai đoạn nang trứng",
 };
 
+// Dong phu ngan, nhe nhang duoi so ngay lon o giua vong tron chu ky (giong
+// "Be Gentle With Yourself" trong anh mau tham khao).
+export const phaseSubtitle: Record<CyclePrediction["phase"], string> = {
+  period: "Hãy nhẹ nhàng với bản thân",
+  fertile: "Cơ thể đang trong giai đoạn dễ thụ thai",
+  ovulation: "Khả năng thụ thai cao nhất hôm nay",
+  luteal: "Lắng nghe cơ thể và nghỉ ngơi đủ",
+  follicular: "Năng lượng đang dần hồi phục",
+};
+
 export const phaseColor: Record<CyclePrediction["phase"], string> = {
   period: "var(--c-period)",
   fertile: "var(--c-fertile)",
