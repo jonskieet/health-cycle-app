@@ -7,6 +7,7 @@ import { useProfile, useCycleLogs, useHealthMetrics, MetricType } from "@/lib/qu
 import { predictCycle, buildCycleHistory } from "@/lib/cycle-utils";
 import { isVipProfile } from "@/lib/vip";
 import LockedFeature from "@/components/profile/LockedFeature";
+import CycleBarHistory from "@/components/cycle/CycleBarHistory";
 
 const METRIC_LABELS: Record<MetricType, string> = {
   stress: "Stress (pts)",
@@ -137,6 +138,11 @@ export default function HealthReportPage() {
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--ink-faint)]">
             Lịch sử chu kỳ gần đây
           </p>
+          {history.some((h) => h.periodLength != null) && (
+            <div className="mb-5">
+              <CycleBarHistory history={history} accentColor="var(--c-period)" />
+            </div>
+          )}
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="text-xs text-[var(--ink-faint)]">

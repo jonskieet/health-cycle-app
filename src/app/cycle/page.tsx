@@ -13,8 +13,9 @@ import EmptyState from "@/components/ui/EmptyState";
 import PhaseMotif from "@/components/ui/PhaseMotif";
 import { SkeletonCard, SkeletonRows } from "@/components/ui/Skeleton";
 import CycleLogForm from "@/components/log/CycleLogForm";
+import CycleBarHistory from "@/components/cycle/CycleBarHistory";
 import { useCycleLogs, useProfile, CycleLogFull } from "@/lib/queries";
-import { predictCycle, phaseLabel, phaseColor, daysUntil } from "@/lib/cycle-utils";
+import { predictCycle, phaseLabel, phaseColor, daysUntil, buildCycleHistory } from "@/lib/cycle-utils";
 import { getSuggestedPrompts } from "@/lib/cycle-insights";
 
 export default function CyclePage() {
@@ -33,6 +34,10 @@ export default function CyclePage() {
     () => predictCycle(cycleLogs, { avgCycleLength, avgPeriodLength }),
     [cycleLogs, avgCycleLength, avgPeriodLength]
   );
+  // J1 (MAJOR_REDESIGN_BRIEF.md): dữ liệu cho biểu đồ cột lịch sử — tái dùng
+  // `buildCycleHistory()` đã có sẵn (dùng chung với trang Báo cáo), không
+  // cần API/tính toán mới, chỉ đổi cách HIỂN THỊ.
+  const cycleHistory = useMemo(() => buildCycleHistory(cycleLogs), [cycleLogs]);
   const daysToNext = daysUntil(prediction.nextPeriodDate);
   const daysToOvulation = daysUntil(prediction.ovulationDate);
   const ringPercent = Math.min(100, (prediction.currentDay / prediction.avgCycleLength) * 100);
@@ -168,6 +173,15 @@ export default function CyclePage() {
           </section>
 
           <HealthCheckIns />
+
+          {cycleHistory.some((h) => h.periodLength != null) && (
+            <section className="glass-card rounded-[24px] p-5">
+              <p className="mb-4 text-xs font-medium uppercase tracking-wide text-[var(--ink-faint)]">
+                Xu hướng hành kinh theo tháng
+              </p>
+              <CycleBarHistory history={cycleHistory} accentColor="var(--c-period)" />
+            </section>
+          )}
 
           <section className="glass-card rounded-[24px] p-5">
             <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--ink-faint)]">
