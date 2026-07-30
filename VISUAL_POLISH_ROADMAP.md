@@ -76,7 +76,7 @@ toàn app dựa trên ảnh thật, và có thêm 1 vài phát hiện là **bug 
 
 ## 3. Nhóm G — Chiều sâu & phân lớp thị giác (elevation, không phẳng)
 
-- [ ] **G1. Card hiện tại gần như không có độ sâu** — `glass-card` dùng bóng đổ
+- [x] **G1. Card hiện tại gần như không có độ sâu** — `glass-card` dùng bóng đổ
   rất mờ/nhạt (`box-shadow` nhẹ), khiến toàn bộ giao diện phẳng, các card khó
   phân biệt với nền (đặc biệt rõ ở màn Ghi nhận: 8 card trắng trên nền hồng
   nhạt gần như hoà vào nhau, không có cảm giác "nổi lên"). Xây lại thang độ
@@ -271,3 +271,29 @@ dùng ở `QUALITY_UX_ROADMAP.md` — ngày thực hiện, module nào, làm gì
   - Người thực hiện: Claude. File package gửi cho user: `module_F2_gradients.zip`
     (3 file: `lib/insight-gradients.ts` (mới), `lib/cycle-insights.ts`,
     `VISUAL_POLISH_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành G1 (thang độ sâu cho card)**.
+  - **Nguyên nhân tìm được (đọc code, không chỉ đoán)**: `box-shadow` của
+    `.glass-card`/`.glass-card-strong` hard-code màu tím `rgba(124,111,240,…)`
+    — GẦN NHƯ TRÙNG với tông nền `--aurora-b` (tím-lavender) — nên bóng đổ hoà
+    lẫn vào nền pastel thay vì tạo tương phản, khiến card trông phẳng. Thêm
+    vào đó, giá trị box-shadow là **hard-code cùng 1 rgba cho mọi theme** —
+    theme tối (`[data-theme="dark"]`) đổi `--aurora-*`/`--glass-*` nhưng
+    KHÔNG đổi box-shadow — nghĩa là bóng tối màu `rgba(36,27,47,…)` đổ trên
+    nền ĐÃ tối sẵn gần như vô hình ở theme tối (bóng tối trên nền tối không
+    tạo được độ sâu nào cả).
+  - **Đã sửa**: tách 4 cặp biến `--shadow-card-1/2` và
+    `--shadow-card-strong-1/2` trong `:root` (theme sáng) và override lại
+    trong `[data-theme="dark"]`. Theme sáng dùng bóng tối màu `--ink` trung
+    tính (tương phản rõ với nền pastel màu, không hoà lẫn); theme tối đổi hẳn
+    chiến lược — dùng "glow" tím sáng hơn nền + viền sáng nhẹ phía trên
+    (`inset`) thay vì bóng tối, vì bóng tối trên nền tối vốn không có tác
+    dụng. `.glass-card-strong` (Health Score) có độ lan toả/độ đậm RÕ RỆT hơn
+    `.glass-card` thường ở cả 2 theme — tạo đúng 1 thang 2 bậc thay vì 2 tên
+    class cùng 1 độ đậm.
+  - Đã chạy `tsc --noEmit` + `eslint src/` toàn repo — sạch. **Lưu ý QA**: đây
+    là thay đổi thuần CSS variable, ảnh hưởng MỌI card trong app cùng lúc (vì
+    mọi nơi đều dùng chung 2 class này) — nên kiểm tra cả theme sáng và tối
+    trên thiết bị thật trước khi merge, không chỉ tin tưởng vào việc build
+    qua.
+  - Người thực hiện: Claude. File package gửi cho user: `module_G1_elevation.zip`
+    (2 file: `src/app/globals.css`, `VISUAL_POLISH_ROADMAP.md`).
