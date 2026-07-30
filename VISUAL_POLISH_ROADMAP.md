@@ -45,7 +45,7 @@ toàn app dựa trên ảnh thật, và có thêm 1 vài phát hiện là **bug 
 
 ## 2. Nhóm F — Hệ thống icon: thống nhất 1 ngôn ngữ hình khối duy nhất
 
-- [ ] **F1. Kiểm kê toàn bộ kiểu icon-badge đang tồn tại song song** — qua ảnh
+- [x] **F1. Kiểm kê toàn bộ kiểu icon-badge đang tồn tại song song** — qua ảnh
   đếm được ít nhất **3 kiểu khác nhau** cùng lúc trong app: (1) hình tròn phẳng
   pastel (Stress, Nhịp tim, Giấc ngủ, Hydration, Tâm trạng ở Tổng quan; Chu kỳ/
   triệu chứng, Nhịp tim, Giấc ngủ... ở màn Ghi nhận); (2) "blob" bo góc bất đối
@@ -211,3 +211,32 @@ dùng ở `QUALITY_UX_ROADMAP.md` — ngày thực hiện, module nào, làm gì
   - Người thực hiện: Claude. File package gửi cho user:
     `module_E3_history_dividers.zip` (2 file: `app/cycle/page.tsx`,
     `VISUAL_POLISH_ROADMAP.md`).
+- **2026-07-28** — **Hoàn thành F1 (thống nhất icon-badge tròn phẳng →
+  `BlobIcon`)**, phạm vi được thu hẹp có chủ đích (xem lý do bên dưới).
+  - **Đã đổi sang `BlobIcon`** (4 file, mỗi icon-badge tròn phẳng 1 màu):
+    - `app/log/page.tsx`: 8 ô chọn chỉ số ở màn "Ghi nhận hôm nay".
+    - `components/ui/MetricCard.tsx`: icon header mọi metric card ở Tổng quan
+      (Stress, Nhịp tim, Giấc ngủ, Hydration, Tâm trạng...).
+    - `app/profile/page.tsx`: 5 hàng menu (Báo cáo sức khoẻ, Bài tập Kegel,
+      Trắc nghiệm năng lượng, Thư viện kiến thức, Lịch hẹn) — badge "Kegel"
+      trước đó dùng gradient 2 màu (period→sleep) riêng, đã đơn giản về 1 màu
+      accent (period) để khớp hệ thống `BlobIcon` (mỗi badge giờ chỉ cần khai
+      báo 1 màu, không cần định nghĩa gradient riêng từng chỗ nữa).
+  - **CHỦ ĐỘNG KHÔNG đổi** 2 nhóm còn lại đã liệt kê trong roadmap gốc F1,
+    tách rõ lý do:
+    - **Card vuông đặc trong `HealthCheckIns.tsx`** ("Mức độ mệt mỏi", "Chu kỳ
+      không đều?") — các badge này dùng `q.gradient`, lấy từ CÙNG 1 mảng dữ
+      liệu (`CHECK_IN_QUIZZES`/`lib/cycle-insights.ts`) với 2 card "Vận
+      động"/"Năng suất" mà **F2 (mục kế tiếp trong roadmap)** đang nhắm tới xử
+      lý — 10 gradient 2-màu rời rạc không cùng 1 họ màu. Đổi HÌNH KHỐI ở đây
+      mà chưa xử lý xong MÀU SẮC ở F2 sẽ phải sửa lại 2 lần cùng 1 chỗ — nên
+      để nguyên hình vuông, gộp chung xử lý với F2.
+    - **Icon action/chrome khác** (nút đóng modal `X`, nút back mũi tên, avatar
+      tròn, khung skeleton loading...) — đây KHÔNG phải icon minh hoạ nội
+      dung (không có cặp icon+tiêu đề+mô tả đi kèm), đổi sang blob sẽ sai bản
+      chất (nút hành động cần hình dạng trung tính, không nên trông như 1 khối
+      minh hoạ).
+  - Đã chạy `tsc --noEmit` + `eslint src/` toàn repo — sạch.
+  - Người thực hiện: Claude. File package gửi cho user: `module_F1_blob_icons.zip`
+    (4 file: `app/log/page.tsx`, `components/ui/MetricCard.tsx`,
+    `app/profile/page.tsx`, `VISUAL_POLISH_ROADMAP.md`).

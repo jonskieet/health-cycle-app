@@ -21,6 +21,7 @@ import { predictCycle } from "@/lib/cycle-utils";
 import { isVipProfile } from "@/lib/vip";
 import { useToast } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/Skeleton";
+import BlobIcon from "@/components/ui/BlobIcon";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import MembershipCard from "@/components/profile/MembershipCard";
 import LockedFeature from "@/components/profile/LockedFeature";
@@ -179,12 +180,7 @@ export default function ProfilePage() {
               href="/profile/report"
               className="glass-card flex items-center gap-3 rounded-[22px] p-4"
             >
-              <span
-                className="flex h-9 w-9 items-center justify-center rounded-full text-white"
-                style={{ background: "var(--c-mood)" }}
-              >
-                <FileText size={16} />
-              </span>
+              <BlobIcon icon={FileText} bg="var(--c-mood)" fg="var(--c-mood)" size="sm" active />
               <span className="flex-1 text-left">
                 <span className="block text-sm font-semibold text-[var(--ink)]">
                   Báo cáo sức khỏe cho bác sĩ
@@ -215,12 +211,11 @@ export default function ProfilePage() {
 
       <LockedFeature locked={!vip} title="Bài tập Kegel VIP">
         <Link href="/kegel" className="glass-card flex items-center gap-3 rounded-[22px] p-4">
-          <span
-            className="flex h-9 w-9 items-center justify-center rounded-full text-white"
-            style={{ background: "linear-gradient(135deg, var(--c-period), var(--c-sleep))" }}
-          >
-            <HeartPulse size={16} />
-          </span>
+          {/* F1: bản gốc dùng gradient 2 màu (period→sleep) riêng cho mỗi
+              badge — đơn giản hoá về 1 màu accent duy nhất (period) để đồng
+              bộ với mọi badge khác trong hệ thống BlobIcon (mỗi badge giờ chỉ
+              cần 1 màu, không cần định nghĩa gradient riêng từng chỗ). */}
+          <BlobIcon icon={HeartPulse} bg="var(--c-period)" fg="var(--c-period)" size="sm" active />
           <span className="flex-1 text-left">
             <span className="block text-sm font-semibold text-[var(--ink)]">Bài tập Kegel</span>
             <span className="block text-xs text-[var(--ink-faint)]">
@@ -233,12 +228,7 @@ export default function ProfilePage() {
 
       <LockedFeature locked={!vip} title="Trắc nghiệm năng lượng VIP">
         <Link href="/fatigue-test" className="glass-card flex items-center gap-3 rounded-[22px] p-4">
-          <span
-            className="flex h-9 w-9 items-center justify-center rounded-full text-white"
-            style={{ background: "var(--c-stress)" }}
-          >
-            <Battery size={16} />
-          </span>
+          <BlobIcon icon={Battery} bg="var(--c-stress)" fg="var(--c-stress)" size="sm" active />
           <span className="flex-1 text-left">
             <span className="block text-sm font-semibold text-[var(--ink)]">Trắc nghiệm năng lượng</span>
             <span className="block text-xs text-[var(--ink-faint)]">
@@ -250,12 +240,7 @@ export default function ProfilePage() {
       </LockedFeature>
 
       <Link href="/library" className="glass-card flex items-center gap-3 rounded-[22px] p-4">
-        <span
-          className="flex h-9 w-9 items-center justify-center rounded-full text-white"
-          style={{ background: "var(--c-sleep)" }}
-        >
-          <BookOpen size={16} />
-        </span>
+        <BlobIcon icon={BookOpen} bg="var(--c-sleep)" fg="var(--c-sleep)" size="sm" active />
         <span className="flex-1 text-left">
           <span className="block text-sm font-semibold text-[var(--ink)]">Thư viện kiến thức</span>
           <span className="block text-xs text-[var(--ink-faint)]">
@@ -266,12 +251,7 @@ export default function ProfilePage() {
       </Link>
 
       <Link href="/appointments" className="glass-card flex items-center gap-3 rounded-[22px] p-4">
-        <span
-          className="flex h-9 w-9 items-center justify-center rounded-full text-white"
-          style={{ background: "var(--c-fertile)" }}
-        >
-          <CalendarClock size={16} />
-        </span>
+        <BlobIcon icon={CalendarClock} bg="var(--c-fertile)" fg="var(--c-fertile)" size="sm" active />
         <span className="flex-1 text-left">
           <span className="block text-sm font-semibold text-[var(--ink)]">Lịch hẹn</span>
           <span className="block text-xs text-[var(--ink-faint)]">Quản lý các buổi khám sắp tới</span>

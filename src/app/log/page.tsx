@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { HeartPulse, Moon, Droplets, Smile, Flame, Droplet, Scale, Thermometer } from "lucide-react";
 import CycleLogForm from "@/components/log/CycleLogForm";
 import MetricLogForm from "@/components/log/MetricLogForm";
+import BlobIcon from "@/components/ui/BlobIcon";
 import { MetricType, useMetricTrend } from "@/lib/queries";
 
 const metricConfigs: Record<Exclude<MetricType, never>, {
@@ -73,12 +74,13 @@ function LogPageInner() {
             onClick={() => setOpen(key)}
             className="glass-card flex flex-col items-start gap-3 rounded-[22px] p-5 text-left active:scale-[0.98]"
           >
-            <span
-              className="flex h-9 w-9 items-center justify-center rounded-full"
-              style={{ background: `color-mix(in srgb, ${color} 18%, white)` }}
-            >
-              <Icon size={18} style={{ color }} />
-            </span>
+            {/* F1: đổi khối tròn phẳng sang BlobIcon — thống nhất ngôn ngữ
+                icon minh hoạ toàn app (trước đây mỗi màn 1 kiểu khác nhau:
+                tròn phẳng ở đây, blob ở Kegel/Fatigue, vuông đặc ở Kiểm tra
+                sức khoẻ...). Không dùng `active` — bản gốc là nền pastel nhạt
+                + icon màu đậm (không phải khối màu đặc), giữ đúng độ tương
+                phản cũ, chỉ đổi hình khối tròn → blob. */}
+            <BlobIcon icon={Icon} bg={`color-mix(in srgb, ${color} 18%, white)`} fg={color} size="sm" />
             <span className="text-sm font-semibold text-[var(--ink)]">{label}</span>
           </button>
         ))}

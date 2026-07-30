@@ -1,5 +1,6 @@
 import { LucideIcon } from "lucide-react";
 import MiniBars from "./MiniBars";
+import BlobIcon from "./BlobIcon";
 
 interface MetricCardProps {
   icon: LucideIcon;
@@ -32,13 +33,10 @@ export default function MetricCard({
           "Hôm nay" dính sát tên hoạt động do không đủ chỗ trong hàng header
           hẹp (đặc biệt các tên dài như "Nhịp tim" bị xuống dòng đúng ngay chỗ
           nhãn thừa này). */}
+      {/* F1: BlobIcon thay cho khối tròn phẳng — thống nhất icon minh hoạ
+          toàn app. */}
       <div className="flex items-center gap-2">
-        <span
-          className="flex h-8 w-8 items-center justify-center rounded-full"
-          style={{ background: `color-mix(in srgb, ${color} 18%, white)` }}
-        >
-          <Icon size={16} style={{ color }} strokeWidth={2.25} />
-        </span>
+        <BlobIcon icon={Icon} bg={`color-mix(in srgb, ${color} 18%, white)`} fg={color} size="sm" />
         <span className="text-sm font-semibold text-[var(--ink)]">{title}</span>
       </div>
 
