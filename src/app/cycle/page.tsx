@@ -111,25 +111,23 @@ export default function CyclePage() {
                 periodColor="var(--c-period)"
                 fertileColor="var(--c-fertile)"
               >
-                <span className="text-xs font-medium text-[var(--ink-faint)]">
+                <span className="text-[11px] font-medium text-[var(--ink-faint)]">
                   {phaseLabel[prediction.phase]}
                 </span>
-                <span className="font-display text-4xl font-extrabold text-[var(--ink)]">
-                  {prediction.phase === "period"
-                    ? `${prediction.currentDay} ngày`
-                    : `Ngày ${prediction.currentDay}`}
+                <span className="font-display text-[26px] font-extrabold leading-tight text-[var(--ink)]">
+                  Ngày {prediction.currentDay}
                 </span>
-                <span className="max-w-[10rem] text-xs leading-snug text-[var(--ink-soft)]">
+                <span className="max-w-[8.5rem] text-[11px] leading-snug text-[var(--ink-soft)]">
                   {phaseSubtitle[prediction.phase]}
                 </span>
                 <button
                   type="button"
                   onClick={() => setAddingNew(true)}
-                  className="mt-1 flex items-center gap-1 rounded-full px-4 py-2 text-xs font-bold text-white"
+                  className="mt-1 flex items-center gap-0.5 rounded-full px-3.5 py-1.5 text-[11px] font-bold text-white"
                   style={{ background: phaseColor[prediction.phase] }}
                 >
-                  Nhật ký kỳ kinh
-                  <ChevronRight size={14} />
+                  Nhật ký
+                  <ChevronRight size={12} />
                 </button>
               </CycleRadialDial>
 

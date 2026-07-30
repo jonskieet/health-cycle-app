@@ -1,22 +1,19 @@
 "use client";
 
-// J5 (sua 3 loi sau khi xem anh chup may that cua ban J4):
-// 1. Chu tren dai mau bi KEO GIAN qua muc ("Kỳ kinh" thanh "K ỳ  k i n h"
-//    deu deu). Nguyen nhan: J4 ep `textLength` = het chieu dai CUNG (vd
-//    ~100px) trong khi chu that su chi dai ~40px o co chu do -> trinh
-//    duyet phai keo gian tung ky tu ra ~2.5 lan de lap day 100px. Sua: chi
-//    dung `textLength` de THU NHO khi chu dai hon cung (chong tran), khong
-//    bao gio dung no de PHONG TO chu khi cung con du cho - lay
-//    `Math.min(do_dai_chu_tu_nhien_uoc_luong, do_dai_cung_kha_dung)`.
-// 2. Huy hieu tron o 2 diem noi qua to (dang ban bandWidth*1.9). Sua: giam
-//    con ~1.2x be day dai mau, gan voi ty le trong anh mau.
-// 3. Mui ten trong huy hieu khong theo huong cua vong chu ky (dai mau di
-//    theo chieu kim dong ho nhung ban cu gan cung 1 huong "xuong"/"len" cho
-//    ca 2 huy hieu, sai huong tai vi tri gan ngang o mot huy hieu). Sua:
-//    KHONG dung 2 huong co dinh (down/up) nua - thay bang 1 mui ten hinh
-//    chevron xoay theo dung goc tiep tuyen chieu kim dong ho tai vi tri do
-//    (transform rotate = angleDeg), nen luon "chi" dung huong dong chay
-//    cua vong chu ky bat ke huy hieu nam o dau tren vong tron.
+// J6 (them theo yeu cau moi): them 1 VONG THANH NHO (tick) BAO QUANH vong
+// tron, moi thanh dai dien cho 1 NGAY trong chu ky (tong so thanh =
+// avgCycleLength) - thanh tai NGAY HIEN TAI duoc lam noi bat (dam +dai
+// hon). Them 1 CHI BAO HINH GIOT NUOC (teardrop) nam NGOAI vong, dau nhon
+// cham dung vao thanh cua ngay hien tai de "chi" vao đo - huong cua giot
+// nuoc tu xoay theo goc (`rotate(angleDeg)`) nen dau nhon luon huong dung
+// vao tam vong tron bat ke ngay hien tai roi vao vi tri nao quanh vong.
+//
+// J5 (giu nguyen, van con hieu luc):
+// 1. Chu tren dai mau CHI thu nho khi can (khong bao gio phong to/keo
+//    gian) - lay `Math.min(do_dai_chu_tu_nhien, do_dai_cung_kha_dung)`.
+// 2. Huy hieu tron o 2 diem noi giua 2 dai mau nho lai (~1.2x be day dai).
+// 3. Mui ten trong huy hieu xoay theo dung huong tiep tuyen chieu kim dong
+//    ho tai vi tri dat no, khong con gan cung 1 huong cho ca 2 huy hieu.
 
 function polar(cx: number, cy: number, r: number, angleDeg: number) {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
@@ -130,6 +127,75 @@ function JunctionBadge({ cx, cy, r, angleDeg, size }: JunctionBadgeProps) {
   );
 }
 
+interface DayTicksProps {
+  cx: number;
+  cy: number;
+  r: number;
+  count: number;
+  currentDay: number;
+  tickLength: number;
+  majorEvery?: number;
+}
+
+/** Vong thanh nho quanh vien - moi thanh = 1 ngay trong chu ky. */
+function DayTicks({ cx, cy, r, count, currentDay, tickLength, majorEvery = 7 }: DayTicksProps) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => {
+        const day = i + 1;
+        const deg = (i / count) * 360;
+        const isToday = day === currentDay;
+        const isMajor = !isToday && day % majorEvery === 0;
+        const len = isToday ? tickLength * 1.5 : isMajor ? tickLength * 1.15 : tickLength * 0.8;
+        const inner = polar(cx, cy, r - len, deg);
+        const outer = polar(cx, cy, r + len * 0.15, deg);
+        return (
+          <line
+            key={day}
+            x1={inner.x}
+            y1={inner.y}
+            x2={outer.x}
+            y2={outer.y}
+            stroke={isToday ? "var(--ink)" : "var(--ink)"}
+            strokeOpacity={isToday ? 0.9 : isMajor ? 0.35 : 0.18}
+            strokeWidth={isToday ? 2.6 : isMajor ? 1.6 : 1.1}
+            strokeLinecap="round"
+          />
+        );
+      })}
+    </>
+  );
+}
+
+interface TodayTeardropProps {
+  cx: number;
+  cy: number;
+  r: number;
+  angleDeg: number;
+  size: number;
+  color: string;
+}
+
+/**
+ * Chi bao hinh giot nuoc, dau nhon cham dung vao thanh ngay hien tai tren
+ * vong tick. Xoay theo `angleDeg` (cung cach tinh nhu `JunctionBadge`) nen
+ * dau nhon luon huong vao tam vong tron, bat ke ngay hien tai o vi tri nao.
+ */
+function TodayTeardrop({ cx, cy, r, angleDeg, size, color }: TodayTeardropProps) {
+  const tip = polar(cx, cy, r, angleDeg);
+  const bulbR = size * 0.5;
+  const h = size * 1.35;
+  const d = `M 0 0
+    C ${-bulbR * 0.95} ${-h * 0.5} ${-bulbR} ${-h * 0.95} 0 ${-h}
+    C ${bulbR} ${-h * 0.95} ${bulbR * 0.95} ${-h * 0.5} 0 0 Z`;
+  return (
+    <g transform={`translate(${tip.x}, ${tip.y}) rotate(${angleDeg})`}>
+      <path d={d} fill={color} stroke="var(--surface)" strokeWidth={1.5} />
+      <circle cx={0} cy={-h * 0.62} r={bulbR * 0.34} fill="var(--surface)" />
+    </g>
+  );
+}
+
 interface CycleRadialDialProps {
   size?: number;
   avgCycleLength: number;
@@ -142,20 +208,30 @@ interface CycleRadialDialProps {
 
 const TRACK_R_RATIO = 0.9;
 const BAND_WIDTH_RATIO = 0.1;
+// Canvas SVG lon hon kich thuoc "logic" (`size`) de vong tick + chi bao
+// giot nuoc moi (nam NGOAI dai mau) co du cho, khong bi cat. Div bao ngoai
+// van giu dung `width/height = size` (khong doi bo cuc trang goi component
+// - card cha da co du khoang trong xung quanh de phan tran ra ngoai nay
+// khong va cham gi).
+const CANVAS_RATIO = 1.45;
 
 export default function CycleRadialDial({
   size = 260,
   avgCycleLength,
   avgPeriodLength,
+  currentDay,
   periodColor,
   fertileColor,
   children,
 }: CycleRadialDialProps) {
-  const cx = size / 2;
-  const cy = size / 2;
+  const canvas = size * CANVAS_RATIO;
+  const cx = canvas / 2;
+  const cy = canvas / 2;
   const r = (size / 2) * TRACK_R_RATIO;
   const bandWidth = size * BAND_WIDTH_RATIO;
   const fontSize = Math.max(9, size * 0.038);
+  const tickLength = bandWidth * 0.55;
+  const tickR = r + bandWidth * 0.75;
 
   const dayToDeg = (day: number) => (day / avgCycleLength) * 360;
 
@@ -166,9 +242,19 @@ export default function CycleRadialDial({
   const fertileStartDeg = dayToDeg(Math.max(periodEndDeg / 360 * avgCycleLength + 1, ovulationDay - 5));
   const fertileEndDeg = dayToDeg(ovulationDay + 1);
 
+  const clampedDay = Math.min(currentDay, avgCycleLength);
+  const todayDeg = dayToDeg(clampedDay - 0.5);
+  const todayColor = clampedDay <= avgPeriodLength ? periodColor : "var(--ink)";
+
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block">
+      <svg
+        width={canvas}
+        height={canvas}
+        viewBox={`0 0 ${canvas} ${canvas}`}
+        className="absolute overflow-visible"
+        style={{ left: (size - canvas) / 2, top: (size - canvas) / 2 }}
+      >
         {/* Ray nen mo cho phan con lai cua vong tron (ngoai 2 dai mau) */}
         <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--ink)" strokeOpacity={0.06} strokeWidth={bandWidth} />
 
@@ -199,8 +285,25 @@ export default function CycleRadialDial({
 
         <JunctionBadge cx={cx} cy={cy} r={r} angleDeg={periodEndDeg} size={bandWidth * 1.2} />
         <JunctionBadge cx={cx} cy={cy} r={r} angleDeg={fertileStartDeg} size={bandWidth * 1.2} />
+
+        <DayTicks
+          cx={cx}
+          cy={cy}
+          r={tickR}
+          count={avgCycleLength}
+          currentDay={clampedDay}
+          tickLength={tickLength}
+        />
+        <TodayTeardrop
+          cx={cx}
+          cy={cy}
+          r={tickR + tickLength * 1.5 + 1}
+          angleDeg={todayDeg}
+          size={bandWidth * 0.6}
+          color={todayColor}
+        />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-8 text-center">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-9 text-center">
         {children}
       </div>
     </div>
