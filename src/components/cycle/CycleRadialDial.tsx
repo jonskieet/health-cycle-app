@@ -1,20 +1,23 @@
 "use client";
 
-// J7 (bam sat lai theo anh mau tham khao, bo chi bao giot nuoc bi loi):
-// 1. Bo han `TodayTeardrop` - anh mau khong co chi tiet nay, va no la
-//    nguon goc loi hien thi (oval + duong thang vot ra ngoai the o ban
-//    truoc). Ngay hien tai gio chi duoc nhan biet qua thanh tick dam/dai
-//    hon trong `DayTicks` (khong them phan tu rieng nao khac).
-// 2. Doi icon trong huy hieu tron den TU mui ten chevron SANG icon dong ho
-//    (kim gio + kim phut) giong het anh mau - khong con xoay theo goc nua
-//    (icon dong ho nhin giong nhau moi huong nen khong can xoay).
-// 3. Them DUONG TRANG DUT NET chay doc theo dai mau, noi tu giua chu
-//    (label) den huy hieu tron - giong hieu ung "leader line" trong anh
-//    mau, dung chinh cung tron ban kinh `r` (cung ban kinh voi dai mau).
-// 4. Them hoa tiet net gach cheo mo (hatch pattern) lam nen phia sau toan
-//    bo khoi vong tron, giong lop nen trang tri trong anh mau.
-// Vong tick (moi thanh = 1 ngay) VAN nam ngoai vong dai mau nhu ban truoc
-// - dung yeu cau, giu nguyen.
+// J8 (sua theo phan hoi: icon dong ho trong huy hieu KHONG the hien duoc
+// y nghia gi - kim gio/kim phut co dinh khong xoay nen nguoi dung khong
+// hieu no dang "chi" cai gi; vong tick cung trong qua thua/roi rac vi
+// tick phu (minor) mo qua muc, chi con vai tick dam (major) noi bat rieng
+// le trong khong gian trong -> nhin giong 1 vach den "lo lung" khong ro
+// nguon goc):
+// 1. Bo icon dong ho tinh, quay lai MUI TEN CHEVRON xoay dung theo goc
+//    tiep tuyen chieu kim dong ho tai vi tri dat no (da kiem chung dung o
+//    J5) - mui ten luon "chi" ro rang huong chu ky dang tien trien, de
+//    hieu hon nhieu so voi 1 mat dong ho dung yen.
+// 2. Tang do dam (opacity) CUA CA tick phu lan tick chinh de vong tick
+//    nhin lien mach nhu 1 dai, khong con cam giac "1-2 vach roi le".
+//
+// J7 (giu nguyen, van con hieu luc):
+// - Duong trang dut net noi tu chu den huy hieu, doc theo dai mau.
+// - Hoa tiet net gach cheo mo lam nen trang tri phia sau vong tick.
+// - Vong tick (moi thanh = 1 ngay) nam ngoai vong dai mau.
+// - Da bo han chi bao hinh giot nuoc (TodayTeardrop) tu J7.
 
 function polar(cx: number, cy: number, r: number, angleDeg: number) {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
@@ -115,19 +118,28 @@ interface JunctionBadgeProps {
   size: number;
 }
 
-/** Huy hieu tron den nho o diem noi giua 2 dai mau, chua icon dong ho (kim gio + kim phut) giong anh mau. */
+/**
+ * Huy hieu tron den nho o diem noi giua 2 dai mau. Mui ten ben trong luon
+ * xoay theo dung goc tiep tuyen CHIEU KIM DONG HO tai vi tri `angleDeg`
+ * (0deg = 12h, tang dan theo chieu kim dong ho) - vi vay huong mui ten
+ * luon khop voi huong "chay" thuc te cua chu ky, bat ke huy hieu nam o
+ * dau quanh vong tron.
+ */
 function JunctionBadge({ cx, cy, r, angleDeg, size }: JunctionBadgeProps) {
   const pos = polar(cx, cy, r, angleDeg);
   const half = size / 2;
-  const faceR = size * 0.28;
+  const arrow = size * 0.18;
   return (
-    <g transform={`translate(${pos.x}, ${pos.y})`}>
+    <g transform={`translate(${pos.x}, ${pos.y}) rotate(${angleDeg})`}>
       <circle cx={0} cy={0} r={half} fill="var(--ink)" stroke="var(--surface)" strokeWidth={2.5} />
-      <circle cx={0} cy={0} r={faceR} fill="none" stroke="#ffffff" strokeWidth={1.4} />
-      {/* kim gio */}
-      <line x1={0} y1={0} x2={0} y2={-faceR * 0.55} stroke="#ffffff" strokeWidth={1.4} strokeLinecap="round" />
-      {/* kim phut */}
-      <line x1={0} y1={0} x2={faceR * 0.65} y2={0} stroke="#ffffff" strokeWidth={1.4} strokeLinecap="round" />
+      <path
+        d={`M ${-arrow * 0.5} ${-arrow} L ${arrow * 0.5} 0 L ${-arrow * 0.5} ${arrow}`}
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </g>
   );
 }
@@ -162,8 +174,8 @@ function DayTicks({ cx, cy, r, count, currentDay, tickLength, majorEvery = 7 }: 
             x2={outer.x}
             y2={outer.y}
             stroke="var(--ink)"
-            strokeOpacity={isToday ? 0.85 : isMajor ? 0.32 : 0.16}
-            strokeWidth={isToday ? 2.4 : isMajor ? 1.6 : 1.1}
+            strokeOpacity={isToday ? 0.88 : isMajor ? 0.5 : 0.3}
+            strokeWidth={isToday ? 2.4 : isMajor ? 1.6 : 1.2}
             strokeLinecap="round"
           />
         );
