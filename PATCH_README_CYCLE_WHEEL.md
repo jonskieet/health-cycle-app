@@ -1,52 +1,47 @@
-# Patch: Cycle Wheel — xây lại từ đầu, phong cách hiện đại hơn
+# Patch: Cycle Wheel — phát triển thêm theo 2 mẫu tham khảo
 
 ## Cách áp dụng
 Giải nén đè file bên dưới lên gốc dự án (ghi đè, chỉ 1 file):
 - `src/components/cycle/CycleRadialDial.tsx`
 
-Không cần sửa nơi gọi (`src/app/cycle/page.tsx`) — props giữ nguyên
-(`size`, `avgCycleLength`, `avgPeriodLength`, `currentDay`, `periodColor`,
-`fertileColor`, `children`).
+Không cần sửa nơi gọi (`src/app/cycle/page.tsx`) — props giữ nguyên.
 
-## Đây là bản viết lại hoàn toàn (không phải vá tiếp bản cũ)
-Sau 2 lần vá vẫn còn lỗi thị giác, lần này bỏ hẳn cách tiếp cận cũ (nhiều
-lớp SVG chồng nhau + chữ cong trên path) và dựng lại theo hướng khác hẳn:
+## Đã tham khảo gì từ 2 ảnh mẫu
+- **Ảnh 1** (kiểu Flo): vòng số ngày cong quanh viền (18, 19, 20...), mỗi
+  số tự xoay theo hướng kinh tuyến tại vị trí của nó.
+- **Ảnh 2** (gradient tím-hồng): cảm giác "liền mạch" của cả vòng tròn,
+  chấm đánh dấu viền trắng dày + lõi màu đặc bên trong, minh hoạ trang trí
+  mờ ở giữa.
 
-- **Bỏ hoàn toàn chữ cong (`<textPath>`)** — nguồn gốc lỗi "chữ văng chéo
-  ra khỏi cung" ở 2 lần vá trước. Nhãn "Kỳ kinh" / "Cửa sổ thụ thai" giờ
-  là **chip HTML phẳng** đặt ngay cạnh mép cung, luôn đứng thẳng, tự đổi
-  hướng neo (trái/phải/giữa) theo vị trí quanh vòng tròn — không thể bị
-  méo hay tràn ra ngoài trên bất kỳ trình duyệt nào.
-- **Bỏ hoạ tiết gạch chéo (hatch pattern)** kiểu cũ, trông hơi cũ kỹ —
-  thay bằng 1 quầng sáng mờ (blurred aura) phía sau + vòng nền phẳng đơn
-  sắc, tạo chiều sâu kiểu "soft glow" đang phổ biến ở các app sức khoẻ
-  hiện đại (Oura, Whoop, Apple Health...).
-- **Cung màu dùng gradient** (đậm → nhạt) thay vì màu phẳng đơn, kèm 1 lớp
-  glow cùng màu mờ phía dưới — nhìn nổi khối, cao cấp hơn hẳn dải màu
-  phẳng cũ.
-- **Chấm "Hôm nay"** đổi từ huy hiệu tròn + icon check sang 1 **chấm tròn
-  tối giản có vòng sáng lan toả (pulse animation)** quanh nó — vẫn di
-  chuyển đúng theo `currentDay` như yêu cầu spec ban đầu, nhưng nhìn nhẹ
-  nhàng, hiện đại hơn, không còn chi tiết thừa (mũi tên/dấu check).
-- **Vòng tick ngày**: vẫn giữ đúng nguyên tắc "1 vạch = 1 ngày" nhưng làm
-  siêu mảnh + siêu mờ (opacity 12%, chỉ vạch mỗi 5 ngày đậm hơn 1 chút) —
-  tránh cảm giác "vòng răng cưa rối mắt" của các bản trước.
-- **Vùng nội dung giữa**: bỏ hoạ tiết gạch chéo, chỉ còn 1 thẻ tròn nền
-  `var(--surface)` với đổ bóng mềm rất nhẹ (soft shadow) — sạch, hiện đại,
-  không cạnh tranh thị giác với số ngày/nút CTA bên trong.
+## Những gì thêm/đổi so với bản trước (J10)
+1. **Số ngày quanh viền** (mới): cứ mỗi 5 ngày hiện 1 số (1, 5, 10, 15...),
+   tự xoay theo bán kính tại vị trí — không dùng chữ cong trên path (vì đây
+   chỉ là số 1–2 ký tự nên không gặp lỗi "văng chữ" từng có với chuỗi dài).
+   Các ngày còn lại chỉ còn 1 vạch rất mảnh, rất mờ (opacity 14%) thay vì
+   vạch dày như trước — đỡ rối mắt hơn khi đã có số.
+2. **Vòng nền đổi màu**: từ xám trung tính sang màu pha trộn (`color-mix`)
+   giữa `periodColor` và `fertileColor`, mờ 10% — cả vòng tròn nhìn liền
+   mạch, cùng "họ màu" với 2 cung chính, giống tinh thần ảnh 2, thay vì
+   nhìn như 2 đoạn màu rời rạc trên nền xám không ăn nhập.
+3. **Chấm "Hôm nay" đổi kiểu**: viền trắng dày (4px) + lõi màu đặc bên
+   trong (dùng màu tím `fertileColor` làm màu nhận diện cố định, không đổi
+   theo pha) — giống hệt phong cách chấm tròn viền trắng ở ảnh 2, thay vì
+   chấm đặc một màu như bản trước. Vẫn giữ vòng sáng lan toả (pulse) và vẫn
+   là phần tử duy nhất di chuyển theo `currentDay`.
+4. **Thêm hoạ tiết hoa/cánh hoa trang trí rất mờ (opacity 14%)** phía sau
+   nội dung giữa — lấy cảm hứng từ minh hoạ tử cung ở ảnh 2, nhưng đơn
+   giản hoá thành hình học trừu tượng (không vẽ icon giải phẫu chi tiết)
+   để giữ phong cách gọn, trung tính, không phụ thuộc 1 bộ icon cụ thể.
 
-## Vẫn giữ nguyên các nguyên tắc gốc từ spec
-- 2 cung màu (Kỳ kinh/Cửa sổ thụ thai) vẫn là **vị trí cố định theo ngày
-  chu kỳ**, không phải % hoàn thành — không animate như thanh tiến độ.
-- Chỉ có chấm "Hôm nay" là phần tử di chuyển quanh vòng.
-- Màu cung vẫn nhận qua props `periodColor`/`fertileColor` (đang truyền
-  `var(--c-period)`/`var(--c-fertile)` từ trang gọi) để giữ nhất quán với
-  theme sáng/tối có sẵn.
+## Vẫn giữ nguyên (đã ổn định, không sửa lại)
+- Nhãn pha ("Kỳ kinh"/"Cửa sổ thụ thai") vẫn là chip HTML phẳng đặt cạnh
+  cung — kỹ thuật này đã ổn định từ bản J10, không quay lại chữ cong SVG.
+- 2 cung màu vẫn là vị trí CỐ ĐỊNH theo ngày chu kỳ, không phải % hoàn
+  thành; chỉ chấm "Hôm nay" di chuyển.
+- Màu cung vẫn nhận qua props `periodColor`/`fertileColor` để giữ nhất
+  quán theme sáng/tối có sẵn.
 
-## Lưu ý kỹ thuật
-- Dùng `color-mix(in srgb, ...)` cho gradient/glow — cùng cú pháp app đã
-  dùng sẵn ở nơi khác trong `cycle/page.tsx`, không phải kỹ thuật mới.
-- Animation pulse dùng CSS `@keyframes` nhúng trực tiếp trong component
-  qua thẻ `<style>` — không cần thêm dependency nào.
-- Chưa chạy được `npm run build` trong môi trường patch (không có
-  `node_modules`) — nên chạy `npm run build`/`tsc --noEmit` sau khi áp.
+## Lưu ý
+Chưa chạy được `npm run build` trong môi trường patch (không có
+`node_modules`) — nên chạy `npm run build`/`tsc --noEmit` sau khi áp,
+đặc biệt để soát lại phần số ngày mới thêm.

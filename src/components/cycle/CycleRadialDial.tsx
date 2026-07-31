@@ -1,22 +1,21 @@
 "use client";
 
-// J10 — DAP DI XAY LAI TU DAU (thay vi vá tiếp bản J9).
-//
-// Huong thiet ke moi ("modern"):
-// - Bo hoan toan chu cong tren <textPath> (nguon goc loi J9 tung gap tren
-//   webkit) — nhan pha nay gio la 1 "chip" HTML phang, dat canh cung mau
-//   bang toa do da tinh san, luon doc thang, khong bao gio bi meo/vang.
-// - Bo lop "Decorative Ring" hoa tiet gach cheo kieu cu — thay bang 1 vong
-//   nen phang + 1 quang sang mo (blurred aura) phia sau cho co chieu sau,
-//   dung ngon ngu thiet ke "soft glow" pho bien o cac app suc khoe hien dai.
-// - Cung mau dung gradient (dam -> nhat) + do bong mem cung mau (drop
-//   shadow) thay vi mau phang don, nhin "cao cap" hon.
-// - Cham "Hom nay" doi tu "huy hieu hinh check" sang 1 cham tron nho co
-//   vong sang lan toa (pulse) — toi gian, hien dai, khong con chi tiet
-//   thua.
-// - Tick ngay: giu spec "1 vach = 1 ngay" nhung lam SIEU MANH + SIEU MO,
-//   chi vach moi 5 ngay noi ro hon mot chut — tranh cam giac "vong rang
-//   cua roi rac" cua ban cu.
+// J11 — tham khao 2 mau UI nguoi dung gui (1 mau dang Flo-style co so ngay
+// cong quanh vien + nut "Log Period" o giua; 1 mau dang gradient tim-hong
+// lien mach voi minh hoa trang tri o giua + cham danh dau tron vien trang)
+// de phat trien tiep tren nen tang J10:
+// - Them SO NGAY quanh vien (khong phai chi vach tick tron) — xoay huong
+//   kinh tuyen nhu mau 1, chi hien moi 5 ngay de khong roi.
+// - Vong nen gio la 1 dai pha tron mau nhat (tint tu chinh 2 mau period/
+//   fertile) thay vi xam trung tinh — cam giac "lien mach" nhu mau 2 thay
+//   vi 2 doan mau roi rac tren nen xam.
+// - Cham "Hom nay" doi kieu: vien trang day + loi mau dac o trong (giong
+//   cham tron trong mau 2) thay vi cham dac full mau — nhin "cao cap" hon.
+// - Them 1 hoa tiet hoa/canh hoa trang tri rat mo phia sau noi dung giua,
+//   lay cam hung tu minh hoa tu cung o mau 2 nhung don gian hoa thanh hinh
+//   hoc truu tuong (tranh ve icon giai phau chi tiet).
+// Giu nguyen toan bo nen tang ky thuat cua J10 (chip HTML phang cho nhan,
+// khong dung textPath) vi day la phan da on dinh, khong con loi.
 
 function polar(cx: number, cy: number, r: number, angleDeg: number) {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
@@ -39,17 +38,16 @@ interface DayTicksProps {
   majorEvery?: number;
 }
 
-/** Vong tick sieu manh — moi vach = 1 ngay, chi la tham chieu thoi gian, khong phai chi bao tien do. */
+/** Vach ngay sieu manh giua 2 so — van giu dung "1 vach = 1 ngay" nhung khong noi bat. */
 function DayTicks({ cx, cy, r, count, tickLength, majorEvery = 5 }: DayTicksProps) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => {
         const day = i + 1;
+        if (day % majorEvery === 0) return null; // ngay tron chuc/5 da co so, khong ve them vach
         const deg = (i / count) * 360;
-        const isMajor = day % majorEvery === 0;
-        const len = isMajor ? tickLength * 1.7 : tickLength;
         const inner = polar(cx, cy, r, deg);
-        const outer = polar(cx, cy, r + len, deg);
+        const outer = polar(cx, cy, r + tickLength, deg);
         return (
           <line
             key={day}
@@ -58,10 +56,53 @@ function DayTicks({ cx, cy, r, count, tickLength, majorEvery = 5 }: DayTicksProp
             x2={outer.x}
             y2={outer.y}
             stroke="var(--ink)"
-            strokeOpacity={isMajor ? 0.28 : 0.12}
-            strokeWidth={isMajor ? 1.4 : 1}
+            strokeOpacity={0.14}
+            strokeWidth={1}
             strokeLinecap="round"
           />
+        );
+      })}
+    </>
+  );
+}
+
+interface DayNumbersProps {
+  cx: number;
+  cy: number;
+  r: number;
+  count: number;
+  fontSize: number;
+  majorEvery?: number;
+}
+
+/**
+ * So ngay quanh vien (lay cam hung tu mau tham khao co vong so 18-26...).
+ * Moi so tu xoay huong kinh tuyen tai vi tri cua no — an toan hon nhieu so
+ * voi chu tren <textPath> vi day chi la 1-2 ky tu, khong bi hieu ung
+ * "van ra ngoai" nhu chuoi chu dai.
+ */
+function DayNumbers({ cx, cy, r, count, fontSize, majorEvery = 5 }: DayNumbersProps) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => {
+        const day = i + 1;
+        if (day % majorEvery !== 0) return null;
+        const deg = (i / count) * 360;
+        const pos = polar(cx, cy, r, deg);
+        return (
+          <text
+            key={day}
+            x={pos.x}
+            y={pos.y}
+            fontSize={fontSize}
+            fontWeight={600}
+            fill="var(--ink-faint)"
+            textAnchor="middle"
+            dominantBaseline="middle"
+            transform={`rotate(${deg}, ${pos.x}, ${pos.y})`}
+          >
+            {day}
+          </text>
         );
       })}
     </>
@@ -81,7 +122,7 @@ interface PhaseArcProps {
   glow: string;
 }
 
-/** Layer cung mau — gradient + do mo mem (glow) phia duoi, bo tron 2 dau. Khong con chu tren cung. */
+/** Cung mau gradient + glow mem phia duoi, bo tron 2 dau — nhan pha nam o ngoai duoi dang chip HTML rieng. */
 function PhaseArc({ gradientId, cx, cy, r, bandWidth, fromDeg, toDeg, colorFrom, colorTo, glow }: PhaseArcProps) {
   const from = polar(cx, cy, r, fromDeg);
   const to = polar(cx, cy, r, toDeg);
@@ -94,7 +135,7 @@ function PhaseArc({ gradientId, cx, cy, r, bandWidth, fromDeg, toDeg, colorFrom,
           <stop offset="100%" stopColor={colorTo} />
         </linearGradient>
       </defs>
-      <path d={d} fill="none" stroke={glow} strokeWidth={bandWidth + 7} strokeLinecap="round" opacity={0.22} />
+      <path d={d} fill="none" stroke={glow} strokeWidth={bandWidth + 8} strokeLinecap="round" opacity={0.2} />
       <path d={d} fill="none" stroke={`url(#${gradientId})`} strokeWidth={bandWidth} strokeLinecap="round" />
     </>
   );
@@ -109,13 +150,7 @@ interface PhaseChipProps {
   label: string;
 }
 
-/**
- * Nhan pha dang "chip" HTML phang (khong phai chu cong SVG) — dat o mep
- * ngoai cung mau theo goc giua cung, TU DONG doi huong can trai/phai/tren
- * tuy vi tri quanh vong tron de khong bao gio bi trang chu bi cat/chong
- * len tick. Day la cach an toan nhat tren moi trinh duyet, thay cho
- * <textPath> tung gay loi.
- */
+/** Chip HTML phang cho nhan pha — khong dung chu cong SVG (da on dinh tu J10, khong doi lai). */
 function PhaseChip({ cx, cy, r, angleDeg, color, label }: PhaseChipProps) {
   const pos = polar(cx, cy, r, angleDeg);
   const norm = ((angleDeg % 360) + 360) % 360;
@@ -148,15 +183,53 @@ interface TodayDotProps {
   color: string;
 }
 
-/** Layer marker — 1 cham "Hom nay" toi gian, co vong sang lan toa (pulse), DI CHUYEN theo currentDay. */
+/**
+ * Cham "Hom nay" — doi kieu theo mau tham khao (mau 2): vien trang day +
+ * loi mau dac ben trong, kem vong sang lan toa (pulse). Van la phan tu
+ * DUY NHAT di chuyen theo currentDay quanh vong.
+ */
 function TodayDot({ cx, cy, r, angleDeg, size, color }: TodayDotProps) {
   const pos = polar(cx, cy, r, angleDeg);
   return (
     <g transform={`translate(${pos.x}, ${pos.y})`}>
-      <circle cx={0} cy={0} r={size * 1.9} fill={color} opacity={0.25} className="cycle-dial-pulse" />
-      <circle cx={0} cy={0} r={size + 3} fill="#ffffff" />
+      <circle cx={0} cy={0} r={size * 2.1} fill={color} opacity={0.22} className="cycle-dial-pulse" />
+      <circle cx={0} cy={0} r={size + 4} fill="#ffffff" />
       <circle cx={0} cy={0} r={size} fill={color} />
     </g>
+  );
+}
+
+/** Hoa tiet trang tri rat mo trong long vung noi dung giua — lay cam hung tu minh hoa o mau 2, don gian hoa thanh hinh hoc truu tuong. */
+function CenterBlossom({ size, color1, color2 }: { size: number; color1: string; color2: string }) {
+  const c = size / 2;
+  const petals = 6;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="absolute" style={{ left: 0, top: 0 }}>
+      <defs>
+        <radialGradient id="cycle-dial-blossom-grad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={color1} />
+          <stop offset="100%" stopColor={color2} />
+        </radialGradient>
+      </defs>
+      <g opacity={0.14}>
+        {Array.from({ length: petals }).map((_, i) => {
+          const angle = (i / petals) * 360;
+          const pos = polar(c, c, size * 0.21, angle);
+          return (
+            <ellipse
+              key={i}
+              cx={pos.x}
+              cy={pos.y}
+              rx={size * 0.17}
+              ry={size * 0.11}
+              fill="url(#cycle-dial-blossom-grad)"
+              transform={`rotate(${angle}, ${pos.x}, ${pos.y})`}
+            />
+          );
+        })}
+        <circle cx={c} cy={c} r={size * 0.08} fill="url(#cycle-dial-blossom-grad)" opacity={0.8} />
+      </g>
+    </svg>
   );
 }
 
@@ -170,12 +243,13 @@ interface CycleRadialDialProps {
   children?: React.ReactNode;
 }
 
-const RING_R_RATIO = 0.4; // ban kinh vong cung mau
+const RING_R_RATIO = 0.4;
 const BAND_WIDTH_RATIO = 0.095;
-const CENTER_D_RATIO = 0.62; // duong kinh vung noi dung giua
-const TICK_R_RATIO = 0.485;
+const CENTER_D_RATIO = 0.6;
+const TICK_R_RATIO = 0.47;
+const NUMBER_R_RATIO = 0.5;
 const TODAY_DOT_R_RATIO = 5.5 / 260;
-const CANVAS_RATIO = 1.3;
+const CANVAS_RATIO = 1.34;
 
 export default function CycleRadialDial({
   size = 260,
@@ -193,7 +267,9 @@ export default function CycleRadialDial({
   const r = size * RING_R_RATIO;
   const bandWidth = size * BAND_WIDTH_RATIO;
   const tickR = size * TICK_R_RATIO;
-  const tickLength = bandWidth * 0.5;
+  const tickLength = bandWidth * 0.45;
+  const numberR = size * NUMBER_R_RATIO;
+  const numberFontSize = Math.max(8, size * 0.032);
   const centerR = (size * CENTER_D_RATIO) / 2;
   const todayDotR = size * TODAY_DOT_R_RATIO;
   const chipR = r + bandWidth / 2 + 4;
@@ -210,6 +286,10 @@ export default function CycleRadialDial({
   const clampedDay = Math.min(Math.max(currentDay, 1), avgCycleLength);
   const markerDeg = dayToDeg(clampedDay - 0.5);
 
+  // Mau vong nen: tron nhe 2 mau pha chinh de vong tron nhin "lien mach"
+  // giong mau tham khao thay vi 1 mau xam trung tinh khong lien quan.
+  const baseRingColor = `color-mix(in srgb, ${periodColor} 50%, ${fertileColor})`;
+
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <style>{`
@@ -225,11 +305,11 @@ export default function CycleRadialDial({
         }
       `}</style>
 
-      {/* Quang sang mo phia sau vong tron — tao chieu sau kieu "soft glow" thay cho hoa tiet gach cheo cu. */}
+      {/* Quang sang mo phia sau vong tron. */}
       <div
         className="absolute inset-0 rounded-full"
         style={{
-          background: `radial-gradient(circle, color-mix(in srgb, ${fertileColor} 18%, transparent) 0%, transparent 70%)`,
+          background: `radial-gradient(circle, color-mix(in srgb, ${fertileColor} 16%, transparent) 0%, transparent 70%)`,
           filter: "blur(18px)",
         }}
       />
@@ -239,10 +319,11 @@ export default function CycleRadialDial({
         style={{ width: canvas, height: canvas, left: (size - canvas) / 2, top: (size - canvas) / 2 }}
       >
         <svg width={canvas} height={canvas} viewBox={`0 0 ${canvas} ${canvas}`} className="absolute overflow-visible">
-          {/* Vong nen phang, mong, trung tinh — thay cho vong hoa tiet gach cheo cu. */}
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--ink)" strokeOpacity={0.05} strokeWidth={bandWidth} />
+          {/* Vong nen tinh mau tu 2 pha chinh, thay cho xam trung tinh — cam giac "lien mach" giong mau tham khao. */}
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke={baseRingColor} strokeOpacity={0.1} strokeWidth={bandWidth} />
 
           <DayTicks cx={cx} cy={cy} r={tickR} count={avgCycleLength} tickLength={tickLength} />
+          <DayNumbers cx={cx} cy={cy} r={numberR} count={avgCycleLength} fontSize={numberFontSize} />
 
           <PhaseArc
             gradientId="cycle-dial-period-grad"
@@ -269,7 +350,7 @@ export default function CycleRadialDial({
             glow={fertileColor}
           />
 
-          <TodayDot cx={cx} cy={cy} r={r} angleDeg={markerDeg} size={todayDotR} color="var(--ink)" />
+          <TodayDot cx={cx} cy={cy} r={r} angleDeg={markerDeg} size={todayDotR} color={fertileColor} />
         </svg>
 
         <PhaseChip
@@ -290,7 +371,7 @@ export default function CycleRadialDial({
         />
       </div>
 
-      {/* Vung noi dung giua — the mem, do bong nhe, khong con hoa tiet gach cheo. */}
+      {/* Vung noi dung giua — the mem, do bong nhe. */}
       <div
         className="absolute rounded-full"
         style={{
@@ -302,6 +383,9 @@ export default function CycleRadialDial({
           boxShadow: "0 10px 26px -14px rgba(0,0,0,0.16)",
         }}
       />
+      <div className="absolute" style={{ left: size / 2 - centerR, top: size / 2 - centerR }}>
+        <CenterBlossom size={centerR * 2} color1={periodColor} color2={fertileColor} />
+      </div>
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-9 text-center">
         {children}
       </div>
