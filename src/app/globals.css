@@ -40,6 +40,7 @@
   --shadow-card-2: 0 10px 28px -10px rgba(36, 27, 47, 0.16);
   --shadow-card-strong-1: 0 2px 4px rgba(36, 27, 47, 0.08);
   --shadow-card-strong-2: 0 26px 48px -14px rgba(124, 111, 240, 0.32);
+  --nav-shadow: rgba(36, 27, 47, 0.16);
 
   /* Accents per metric */
   --c-stress: #f4a261;
@@ -86,6 +87,7 @@
   --shadow-card-2: 0 16px 32px -12px rgba(0, 0, 0, 0.45);
   --shadow-card-strong-1: 0 1px 0 rgba(255, 255, 255, 0.06) inset;
   --shadow-card-strong-2: 0 22px 44px -12px rgba(124, 111, 240, 0.4);
+  --nav-shadow: rgba(0, 0, 0, 0.5);
 
   --background: var(--aurora-a);
   --foreground: var(--ink);
@@ -143,17 +145,20 @@ body {
 
 /* Bottom nav bar — nền ĐẶC 100% (không backdrop-filter/blur, không alpha
    trong suốt như .glass-card-strong) theo yêu cầu hiển thị rõ hoàn toàn.
-   Phần "lõm xuống" quanh nút FAB "Ghi nhận" (kiểu ảnh tham khảo Moontide)
-   được tạo bằng mask-image radial-gradient: một vòng tròn trong suốt tại
-   chính giữa mép trên (50% 0%) "khoét" một nửa hình tròn lõm vào cạnh trên
-   của thanh pill, ôm lấy nút FAB nổi phía trên. Dùng mask thay vì vẽ path
-   SVG để tự co giãn theo mọi độ rộng thanh nav mà không bị méo hình. */
-.bottom-nav-bar {
-  background: var(--surface);
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-card-strong-1), var(--shadow-card-strong-2);
-  -webkit-mask-image: radial-gradient(circle 34px at 50% 0%, transparent 99%, #000 100%);
-  mask-image: radial-gradient(circle 34px at 50% 0%, transparent 99%, #000 100%);
+   Fix (2026-07-31 #2): phần "lõm xuống" quanh FAB LÚC ĐẦU dùng mask-image
+   radial-gradient (khoét 1 hình tròn thuần) — nhưng tại 2 điểm nối giữa cạnh
+   thẳng và cung tròn, tiếp tuyến đổi hướng đột ngột 90° (cạnh nằm ngang gặp
+   cung có tiếp tuyến thẳng đứng) nên luôn tạo góc NHỌN dù bán kính notch có
+   đổi thế nào — mask không có cách "vuốt" mềm 2 mép này. Thay bằng path SVG
+   vẽ tay (component `NotchNavShape` trong BottomNav.tsx) dùng cubic-bezier
+   để nối mượt (tiếp tuyến liên tục, không gãy góc) từ cạnh phẳng vào cung
+   tròn ở cả 2 đầu — kiểu notch chuẩn vẫn thấy ở các thanh bottom-nav có FAB
+   lõm (Material BottomAppBar). SVG đo kích thước thật của thanh nav bằng
+   ResizeObserver nên luôn khớp pixel, không bị méo khi co giãn theo màn hình.
+   `--nav-shadow` bên dưới dùng cho filter: drop-shadow() trên SVG (thay cho
+   box-shadow vì phần tử tạo bóng giờ là <path>, không phải div nền nữa). */
+.bottom-nav-shape {
+  filter: drop-shadow(0 2px 3px rgba(36, 27, 47, 0.07)) drop-shadow(0 16px 28px var(--nav-shadow));
 }
 
 /* Phone frame — bọc UI thành khung điện thoại, căn giữa trên màn hình lớn */
