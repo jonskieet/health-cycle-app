@@ -48,6 +48,27 @@ Viết lại toàn bộ component theo đúng 6 lớp trong spec:
   từ trước (ngoài `CycleRadialDial`), đúng đúng vị trí spec mô tả (không
   gắn liền wheel) — không cần đổi.
 
+## Bản vá lỗi (sau khi bạn gửi ảnh chụp thực tế)
+Ảnh chụp cho thấy 2 lỗi rõ ràng — cả 2 đều đã sửa trong file mới:
+
+1. **Nhãn "Cửa sổ thụ thai" bung ra khỏi cung, chạy chéo xuyên qua vòng
+   tick.** Nguyên nhân: bản trước ép độ dài chữ bằng `textLength` +
+   `lengthAdjust="spacingAndGlyphs"` trên `<textPath>` cong — nhiều
+   WebKit/trình duyệt mobile render sai khi `textLength` vượt quá độ dài
+   thật của path, khiến chữ "văng" thẳng ra ngoài thay vì bám theo cung.
+   Đã bỏ hẳn `textLength`/`lengthAdjust`, thay bằng cách tự giảm cỡ chữ
+   (`fontSize`) nếu nhãn tự nhiên rộng hơn khoảng trống của cung — cách
+   này không phụ thuộc hành vi textPath khác nhau giữa các trình duyệt.
+2. **Chấm "Hôm nay" đè lên nội dung giữa (chữ/nút "Nhật ký").** Nguyên
+   nhân: bán kính vòng Phase Ring (nơi đặt chấm) và bán kính Center
+   Circle quá gần nhau (chỉ cách ~4px), nên chấm 36px gần như nằm trọn
+   trong vùng nội dung. Đã giãn lại hình học: thu Center Circle từ 72%
+   xuống 60% đường kính, đẩy Phase Ring ra xa hơn (39.5%), giảm chấm
+   "Hôm nay" xuống 30px — giờ chấm chỉ đè nhẹ lên mép cung màu như đúng ý
+   spec, không chạm vào nội dung giữa. Đồng thời gộp Decorative Ring
+   (Layer 2) về chung bán kính với Phase Ring thay vì để 2 vòng tách rời
+   nằm lệch nhau (khiến hình trước trông có 2 vòng xám lỏng lẻo).
+
 ## Đề xuất kiểm tra sau khi áp patch
 Chưa chạy được `npm run build` trong môi trường patch (không có
 `node_modules`) — nên chạy `npm run build`/`tsc --noEmit` sau khi áp,

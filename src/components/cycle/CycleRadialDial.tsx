@@ -60,10 +60,19 @@ function PhaseArc({ id, cx, cy, r, bandWidth, fromDeg, toDeg, color, label, font
     : describeArc(cx, cy, r, fromDeg, toDeg, 1);
   const bandPathD = describeArc(cx, cy, r, fromDeg, toDeg, 1);
 
+  // FIX (bug): truoc day dung `textLength` + `lengthAdjust="spacingAndGlyphs"`
+  // tren 1 <textPath> cong — nhieu WebKit/mobile browser render sai khi
+  // textLength vuot qua do dai thuc te cua path, chu se "bung" ra ngoai
+  // thanh 1 duong thang cheo (dung loi trong anh chup man hinh: nhan
+  // "Cửa sổ thụ thai" van ra khoi cung, xuyen qua vong tick). Thay vi ep
+  // do dai bang thuoc tinh textLength, giam thang co chu (fontSize) neu
+  // chu tu nhien rong hon khong gian cung cho phep — an toan tren moi
+  // trinh duyet vi khong con dua vao hanh vi textLength/lengthAdjust tren
+  // path cong nua.
   const fullLen = arcLengthPx(r, fromDeg, toDeg);
   const available = Math.max(8, fullLen - bandWidth * 1.2);
   const naturalWidth = estimateTextWidth(label, fontSize);
-  const fitLen = Math.min(naturalWidth, available);
+  const fittedFontSize = naturalWidth > available ? Math.max(7.5, fontSize * (available / naturalWidth)) : fontSize;
 
   return (
     <>
@@ -71,15 +80,8 @@ function PhaseArc({ id, cx, cy, r, bandWidth, fromDeg, toDeg, color, label, font
         <path id={id} d={textPathD} fill="none" />
       </defs>
       <path d={bandPathD} fill="none" stroke={color} strokeWidth={bandWidth} strokeLinecap="round" />
-      <text fontSize={fontSize} fontWeight={600} fill="#ffffff" letterSpacing="0.2">
-        <textPath
-          href={`#${id}`}
-          xlinkHref={`#${id}`}
-          startOffset="50%"
-          textAnchor="middle"
-          textLength={fitLen}
-          lengthAdjust="spacingAndGlyphs"
-        >
+      <text fontSize={fittedFontSize} fontWeight={600} fill="#ffffff" letterSpacing="0.2">
+        <textPath href={`#${id}`} xlinkHref={`#${id}`} startOffset="50%" textAnchor="middle">
           {label}
         </textPath>
       </text>
@@ -172,11 +174,21 @@ interface CycleRadialDialProps {
 
 // Ty le hinh hoc theo dung Cycle_Wheel_Design_Specification.md, quy ve
 // phan tram cua `size` (duong kinh logic cua wheel).
-const PHASE_R_RATIO = 0.375; // ban kinh vong Phase Timeline (Layer 3)
-const BAND_WIDTH_RATIO = 0.1; // do day cung mau
-const DECORATIVE_R_RATIO = 0.43; // ban kinh vong nen trang tri (Layer 2)
-const CENTER_CIRCLE_D_RATIO = 0.72; // duong kinh Center Circle (Layer 5) ≈72% wheel
-const MARKER_D_RATIO = 36 / 260; // duong kinh cham Hom nay, ty le theo spec (36px @ size 260)
+//
+// FIX (bug): ban truoc PHASE_R_RATIO (0.375) va CENTER_CIRCLE_D_RATIO/2
+// (0.36) qua gan nhau (chi cach ~0.015*size, ~4px o size=260) nen cham
+// "Hom nay" (Layer 4, dat tam tai PHASE_R_RATIO) bi de het len Layer 6
+// (Pha hien tai / So ngay / nut CTA) — dung loi trong anh chup man hinh:
+// dau check nam chong len vien khung noi dung giua. Gian lai khoang cach:
+// thu nho Center Circle (0.60 thay vi 0.72) va day vong Phase ra xa hon
+// (0.395) de co khoang trong ro rang giua Layer 5 va Layer 3/4, dung tinh
+// than "Generous spacing is essential" trong spec.
+const RING_R_RATIO = 0.395; // ban kinh vong Phase Timeline (Layer 3) — Decorative Ring (Layer 2) dung chung ban kinh nay
+const BAND_WIDTH_RATIO = 0.105; // do day cung mau
+const DECORATIVE_WIDTH_MULT = 1.9; // do day Decorative Ring so voi bandWidth (vong nen mem lam hau canh cho cung mau)
+const CENTER_CIRCLE_D_RATIO = 0.6; // duong kinh Center Circle (Layer 5)
+const MARKER_D_RATIO = 30 / 260; // duong kinh cham Hom nay, du de de len mep cung nhung khong cham Center Circle
+const TICK_R_RATIO = 0.485; // ban kinh vong tick (Layer 1) — nam han ngoai Phase Ring
 // Canvas SVG lon hon size logic de vong tick (nam NGOAI cung mau) co du cho, khong bi cat mep.
 const CANVAS_RATIO = 1.22;
 
@@ -193,13 +205,17 @@ export default function CycleRadialDial({
   const cx = canvas / 2;
   const cy = canvas / 2;
 
-  const r = size * PHASE_R_RATIO;
+  const r = size * RING_R_RATIO;
   const bandWidth = size * BAND_WIDTH_RATIO;
   const fontSize = Math.max(9, size * 0.038);
 
-  const decorativeR = size * DECORATIVE_R_RATIO;
-  const tickR = decorativeR + bandWidth * 0.28;
-  const tickLength = bandWidth * 0.65;
+  // Decorative Ring (Layer 2) dung chung ban kinh voi Phase Ring (Layer 3) —
+  // no la lop nen mem NAM DUOI cung mau, khong phai 1 vong rieng nam ngoai
+  // Phase Ring nhu ban truoc (khien 2 vong tach roi, nhin lung cung).
+  const decorativeR = r;
+  const decorativeWidth = bandWidth * DECORATIVE_WIDTH_MULT;
+  const tickR = size * TICK_R_RATIO;
+  const tickLength = bandWidth * 0.55;
 
   const centerCircleR = (size * CENTER_CIRCLE_D_RATIO) / 2;
   const markerOuterSize = size * MARKER_D_RATIO;
@@ -240,14 +256,14 @@ export default function CycleRadialDial({
         <DayTicks cx={cx} cy={cy} r={tickR} count={avgCycleLength} tickLength={tickLength} />
 
         {/* Layer 2 — Decorative Background Ring: vong mo #F5F5F7, hoa tiet gach cheo 3-5%, tach timeline khoi tam. */}
-        <circle cx={cx} cy={cy} r={decorativeR} fill="none" stroke="#F5F5F7" strokeWidth={bandWidth * 1.7} />
+        <circle cx={cx} cy={cy} r={decorativeR} fill="none" stroke="#F5F5F7" strokeWidth={decorativeWidth} />
         <circle
           cx={cx}
           cy={cy}
           r={decorativeR}
           fill="none"
           stroke={`url(#${hatchId})`}
-          strokeWidth={bandWidth * 1.7}
+          strokeWidth={decorativeWidth}
           opacity={0.04}
         />
 
