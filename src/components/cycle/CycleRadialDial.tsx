@@ -1,23 +1,18 @@
 "use client";
 
-// J8 (sua theo phan hoi: icon dong ho trong huy hieu KHONG the hien duoc
-// y nghia gi - kim gio/kim phut co dinh khong xoay nen nguoi dung khong
-// hieu no dang "chi" cai gi; vong tick cung trong qua thua/roi rac vi
-// tick phu (minor) mo qua muc, chi con vai tick dam (major) noi bat rieng
-// le trong khong gian trong -> nhin giong 1 vach den "lo lung" khong ro
-// nguon goc):
-// 1. Bo icon dong ho tinh, quay lai MUI TEN CHEVRON xoay dung theo goc
-//    tiep tuyen chieu kim dong ho tai vi tri dat no (da kiem chung dung o
-//    J5) - mui ten luon "chi" ro rang huong chu ky dang tien trien, de
-//    hieu hon nhieu so voi 1 mat dong ho dung yen.
-// 2. Tang do dam (opacity) CUA CA tick phu lan tick chinh de vong tick
-//    nhin lien mach nhu 1 dai, khong con cam giac "1-2 vach roi le".
+// J9 (theo Cycle_Wheel_Design_Specification.md — viết lại toàn bộ component):
+// Day KHONG con la 1 progress ring. Day la 1 duong tron 360 do bieu dien
+// TOAN BO chu ky, voi cac lop doc lap:
+//   Layer 1  Outer Tick Ring       — moi vach = 1 ngay trong chu ky
+//   Layer 2  Decorative Bg Ring    — vong mo trang tri, tach timeline khoi tam
+//   Layer 3  Phase Timeline Ring   — cung mau CO DINH cho Ky kinh / Cua so thu thai
+//   Layer 4  Current Position Marker — cham "Hom nay", DI CHUYEN theo currentDay
+//   Layer 5  Center Circle         — nen tron nhat o giua
+//   Layer 6  Center Content        — do children ben ngoai truyen vao
 //
-// J7 (giu nguyen, van con hieu luc):
-// - Duong trang dut net noi tu chu den huy hieu, doc theo dai mau.
-// - Hoa tiet net gach cheo mo lam nen trang tri phia sau vong tick.
-// - Vong tick (moi thanh = 1 ngay) nam ngoai vong dai mau.
-// - Da bo han chi bao hinh giot nuoc (TodayTeardrop) tu J7.
+// Quan trong: 2 cung mau (period/fertile) la vi tri CO DINH theo ngay chu
+// ky, KHONG phai % hoan thanh — khong duoc animate nhu 1 gauge. Chi co
+// Layer 4 (marker Hom nay) la di chuyen quanh vong theo currentDay.
 
 function polar(cx: number, cy: number, r: number, angleDeg: number) {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
@@ -35,14 +30,12 @@ function arcLengthPx(r: number, fromDeg: number, toDeg: number) {
   return (Math.abs(toDeg - fromDeg) * Math.PI * r) / 180;
 }
 
-// Uoc luong tho do rong tu nhien cua chu in dam theo fontSize (khong the
-// do chinh xac vi day la SSR-friendly, khong dung canvas) - he so ~0.58
-// la trung binh hop ly cho font sans-serif dam, chu hoa dau tieng Viet.
+// Uoc luong tho do rong chu in dam theo fontSize (SSR-friendly, khong dung canvas).
 function estimateTextWidth(label: string, fontSize: number) {
   return label.length * fontSize * 0.58;
 }
 
-interface BandProps {
+interface PhaseArcProps {
   id: string;
   cx: number;
   cy: number;
@@ -53,16 +46,13 @@ interface BandProps {
   color: string;
   label: string;
   fontSize: number;
-  /** Huy hieu (va duong dan trang) nam o dau "from" hay dau "to" cua cung. */
-  badgeAtStart: boolean;
 }
 
 /**
- * 1 dai mau day (band) + chu cong nam giua dai (fit khi can thu nho, khong
- * bao gio bi phong to/keo gian) + 1 duong trang dut net noi tu chu den
- * huy hieu tron o dau con lai cua cung.
+ * Layer 3 — 1 doan cung "phase" voi bo tron 2 dau (rounded caps) + nhan chu
+ * cong theo dung do cong cua cung (khong bao gio hien thi nhan nam ngang).
  */
-function ArcBand({ id, cx, cy, r, bandWidth, fromDeg, toDeg, color, label, fontSize, badgeAtStart }: BandProps) {
+function PhaseArc({ id, cx, cy, r, bandWidth, fromDeg, toDeg, color, label, fontSize }: PhaseArcProps) {
   const mid = (fromDeg + toDeg) / 2;
   const bottomHalf = mid > 95 && mid < 265;
   const textPathD = bottomHalf
@@ -75,26 +65,13 @@ function ArcBand({ id, cx, cy, r, bandWidth, fromDeg, toDeg, color, label, fontS
   const naturalWidth = estimateTextWidth(label, fontSize);
   const fitLen = Math.min(naturalWidth, available);
 
-  const badgeDeg = badgeAtStart ? fromDeg : toDeg;
-  const leaderSweep = badgeDeg > mid ? 1 : 0;
-  const leaderPathD = describeArc(cx, cy, r, mid, badgeDeg, leaderSweep);
-
   return (
     <>
       <defs>
         <path id={id} d={textPathD} fill="none" />
       </defs>
       <path d={bandPathD} fill="none" stroke={color} strokeWidth={bandWidth} strokeLinecap="round" />
-      <path
-        d={leaderPathD}
-        fill="none"
-        stroke="#ffffff"
-        strokeOpacity={0.75}
-        strokeWidth={1.4}
-        strokeDasharray="1 4"
-        strokeLinecap="round"
-      />
-      <text fontSize={fontSize} fontWeight={700} fill="#ffffff" letterSpacing="0.2">
+      <text fontSize={fontSize} fontWeight={600} fill="#ffffff" letterSpacing="0.2">
         <textPath
           href={`#${id}`}
           xlinkHref={`#${id}`}
@@ -110,33 +87,34 @@ function ArcBand({ id, cx, cy, r, bandWidth, fromDeg, toDeg, color, label, fontS
   );
 }
 
-interface JunctionBadgeProps {
+interface TodayMarkerProps {
   cx: number;
   cy: number;
   r: number;
   angleDeg: number;
-  size: number;
+  outerSize: number;
 }
 
 /**
- * Huy hieu tron den nho o diem noi giua 2 dai mau. Mui ten ben trong luon
- * xoay theo dung goc tiep tuyen CHIEU KIM DONG HO tai vi tri `angleDeg`
- * (0deg = 12h, tang dan theo chieu kim dong ho) - vi vay huong mui ten
- * luon khop voi huong "chay" thuc te cua chu ky, bat ke huy hieu nam o
- * dau quanh vong tron.
+ * Layer 4 — cham "Hom nay" duy nhat, DI CHUYEN theo currentDay (khac han
+ * huy hieu tinh o diem noi 2 cung nhu ban cu). Vong ngoai trang + shadow
+ * noi, vong trong toi mau, dau check o giua. Cham nam de len mep cung mau
+ * (overlap nhe), khong nam lot han vao trong stroke.
  */
-function JunctionBadge({ cx, cy, r, angleDeg, size }: JunctionBadgeProps) {
+function TodayMarker({ cx, cy, r, angleDeg, outerSize }: TodayMarkerProps) {
   const pos = polar(cx, cy, r, angleDeg);
-  const half = size / 2;
-  const arrow = size * 0.18;
+  const outerR = outerSize / 2;
+  const innerR = outerR * (28 / 36);
   return (
-    <g transform={`translate(${pos.x}, ${pos.y}) rotate(${angleDeg})`}>
-      <circle cx={0} cy={0} r={half} fill="var(--ink)" stroke="var(--surface)" strokeWidth={2.5} />
+    <g transform={`translate(${pos.x}, ${pos.y})`}>
+      <circle cx={0} cy={0} r={outerR + 2} fill="#000000" opacity={0.14} />
+      <circle cx={0} cy={0} r={outerR} fill="#ffffff" />
+      <circle cx={0} cy={0} r={innerR} fill="#202020" />
       <path
-        d={`M ${-arrow * 0.5} ${-arrow} L ${arrow * 0.5} 0 L ${-arrow * 0.5} ${arrow}`}
+        d={`M ${-innerR * 0.42} ${0} L ${-innerR * 0.1} ${innerR * 0.32} L ${innerR * 0.45} ${-innerR * 0.35}`}
         fill="none"
         stroke="#ffffff"
-        strokeWidth={2}
+        strokeWidth={Math.max(1.5, innerR * 0.16)}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -149,21 +127,19 @@ interface DayTicksProps {
   cy: number;
   r: number;
   count: number;
-  currentDay: number;
   tickLength: number;
   majorEvery?: number;
 }
 
-/** Vong thanh nho quanh vien, nam ngoai vong dai mau - moi thanh = 1 ngay trong chu ky. */
-function DayTicks({ cx, cy, r, count, currentDay, tickLength, majorEvery = 7 }: DayTicksProps) {
+/** Layer 1 — vong tick ngoai cung, moi vach = 1 ngay trong chu ky (thuan tuy tham chieu, khong phai chi bao tien do). */
+function DayTicks({ cx, cy, r, count, tickLength, majorEvery = 5 }: DayTicksProps) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => {
         const day = i + 1;
         const deg = (i / count) * 360;
-        const isToday = day === currentDay;
-        const isMajor = !isToday && day % majorEvery === 0;
-        const len = isToday ? tickLength * 1.6 : isMajor ? tickLength * 1.2 : tickLength * 0.8;
+        const isMajor = day % majorEvery === 0;
+        const len = isMajor ? tickLength * 1.5 : tickLength;
         const inner = polar(cx, cy, r, deg);
         const outer = polar(cx, cy, r + len, deg);
         return (
@@ -173,9 +149,9 @@ function DayTicks({ cx, cy, r, count, currentDay, tickLength, majorEvery = 7 }: 
             y1={inner.y}
             x2={outer.x}
             y2={outer.y}
-            stroke="var(--ink)"
-            strokeOpacity={isToday ? 0.88 : isMajor ? 0.5 : 0.3}
-            strokeWidth={isToday ? 2.4 : isMajor ? 1.6 : 1.2}
+            stroke="#2F2F2F"
+            strokeOpacity={0.35}
+            strokeWidth={1.5}
             strokeLinecap="round"
           />
         );
@@ -194,10 +170,14 @@ interface CycleRadialDialProps {
   children?: React.ReactNode;
 }
 
-const TRACK_R_RATIO = 0.78;
-const BAND_WIDTH_RATIO = 0.1;
-// Canvas SVG hoi lon hon kich thuoc "logic" (`size`) de vong tick (nam
-// NGOAI dai mau) co du cho, khong bi cat o mep.
+// Ty le hinh hoc theo dung Cycle_Wheel_Design_Specification.md, quy ve
+// phan tram cua `size` (duong kinh logic cua wheel).
+const PHASE_R_RATIO = 0.375; // ban kinh vong Phase Timeline (Layer 3)
+const BAND_WIDTH_RATIO = 0.1; // do day cung mau
+const DECORATIVE_R_RATIO = 0.43; // ban kinh vong nen trang tri (Layer 2)
+const CENTER_CIRCLE_D_RATIO = 0.72; // duong kinh Center Circle (Layer 5) ≈72% wheel
+const MARKER_D_RATIO = 36 / 260; // duong kinh cham Hom nay, ty le theo spec (36px @ size 260)
+// Canvas SVG lon hon size logic de vong tick (nam NGOAI cung mau) co du cho, khong bi cat mep.
 const CANVAS_RATIO = 1.22;
 
 export default function CycleRadialDial({
@@ -212,11 +192,17 @@ export default function CycleRadialDial({
   const canvas = size * CANVAS_RATIO;
   const cx = canvas / 2;
   const cy = canvas / 2;
-  const r = (size / 2) * TRACK_R_RATIO;
+
+  const r = size * PHASE_R_RATIO;
   const bandWidth = size * BAND_WIDTH_RATIO;
   const fontSize = Math.max(9, size * 0.038);
-  const tickLength = bandWidth * 0.7;
-  const tickR = r + bandWidth * 0.75;
+
+  const decorativeR = size * DECORATIVE_R_RATIO;
+  const tickR = decorativeR + bandWidth * 0.28;
+  const tickLength = bandWidth * 0.65;
+
+  const centerCircleR = (size * CENTER_CIRCLE_D_RATIO) / 2;
+  const markerOuterSize = size * MARKER_D_RATIO;
 
   const dayToDeg = (day: number) => (day / avgCycleLength) * 360;
 
@@ -227,10 +213,12 @@ export default function CycleRadialDial({
   const fertileStartDeg = dayToDeg(Math.max(periodEndDeg / 360 * avgCycleLength + 1, ovulationDay - 5));
   const fertileEndDeg = dayToDeg(ovulationDay + 1);
 
-  const clampedDay = Math.min(currentDay, avgCycleLength);
+  const clampedDay = Math.min(Math.max(currentDay, 1), avgCycleLength);
+  // Layer 4: vi tri cham "Hom nay" — DUY NHAT phan tu di chuyen theo currentDay.
+  // Dat o giua ngay hien tai (trung diem [day-1, day]) de nam tren duong tick tuong ung.
+  const markerDeg = dayToDeg(clampedDay - 0.5);
 
-  // Hoa tiet net gach cheo mo lam nen trang tri phia sau vong tron, giong
-  // lop nen trong anh mau - 1 pattern SVG lap lai, mau tim/hong rat nhat.
+  // Hoa tiet net gach cheo rat mo dung chung cho Layer 2 va Layer 5 (////, opacity 3-5%).
   const hatchId = "cycle-dial-hatch";
 
   return (
@@ -244,15 +232,30 @@ export default function CycleRadialDial({
       >
         <defs>
           <pattern id={hatchId} width={9} height={9} patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-            <line x1={0} y1={0} x2={0} y2={9} stroke="var(--c-fertile)" strokeOpacity={0.22} strokeWidth={1} />
+            <line x1={0} y1={0} x2={0} y2={9} stroke="#2F2F2F" strokeOpacity={0.4} strokeWidth={1} />
           </pattern>
         </defs>
-        <circle cx={cx} cy={cy} r={r + bandWidth * 0.5} fill={`url(#${hatchId})`} />
 
-        {/* Ray nen mo cho phan con lai cua vong tron (ngoai 2 dai mau) */}
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--ink)" strokeOpacity={0.06} strokeWidth={bandWidth} />
+        {/* Layer 1 — Outer Tick Ring: moi vach = 1 ngay, day 1.5px, moi ngay thu 5 dai hon. */}
+        <DayTicks cx={cx} cy={cy} r={tickR} count={avgCycleLength} tickLength={tickLength} />
 
-        <ArcBand
+        {/* Layer 2 — Decorative Background Ring: vong mo #F5F5F7, hoa tiet gach cheo 3-5%, tach timeline khoi tam. */}
+        <circle cx={cx} cy={cy} r={decorativeR} fill="none" stroke="#F5F5F7" strokeWidth={bandWidth * 1.7} />
+        <circle
+          cx={cx}
+          cy={cy}
+          r={decorativeR}
+          fill="none"
+          stroke={`url(#${hatchId})`}
+          strokeWidth={bandWidth * 1.7}
+          opacity={0.04}
+        />
+
+        {/* Cac pha con lai (khong phai Ky kinh/Cua so thu thai) hoa mo vao nen — trong so hinh anh thap hon han. */}
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--ink)" strokeOpacity={0.05} strokeWidth={bandWidth} />
+
+        {/* Layer 3 — Phase Timeline Ring: 2 cung CO DINH theo ngay chu ky, khong phai % hoan thanh. */}
+        <PhaseArc
           id="cycle-dial-period-band"
           cx={cx}
           cy={cy}
@@ -263,9 +266,8 @@ export default function CycleRadialDial({
           color={periodColor}
           label="Kỳ kinh"
           fontSize={fontSize}
-          badgeAtStart={false}
         />
-        <ArcBand
+        <PhaseArc
           id="cycle-dial-fertile-band"
           cx={cx}
           cy={cy}
@@ -276,21 +278,17 @@ export default function CycleRadialDial({
           color={fertileColor}
           label="Cửa sổ thụ thai"
           fontSize={fontSize}
-          badgeAtStart={true}
         />
 
-        <JunctionBadge cx={cx} cy={cy} r={r} angleDeg={periodEndDeg} size={bandWidth * 1.2} />
-        <JunctionBadge cx={cx} cy={cy} r={r} angleDeg={fertileStartDeg} size={bandWidth * 1.2} />
+        {/* Layer 4 — Current Position Marker: cham "Hom nay" duy nhat, di chuyen theo currentDay. */}
+        <TodayMarker cx={cx} cy={cy} r={r} angleDeg={markerDeg} outerSize={markerOuterSize} />
 
-        <DayTicks
-          cx={cx}
-          cy={cy}
-          r={tickR}
-          count={avgCycleLength}
-          currentDay={clampedDay}
-          tickLength={tickLength}
-        />
+        {/* Layer 5 — Center Circle: nen tron nhat giua wheel, cung hoa tiet voi Layer 2, khong vien. */}
+        <circle cx={cx} cy={cy} r={centerCircleR} fill="#F5F5F7" />
+        <circle cx={cx} cy={cy} r={centerCircleR} fill={`url(#${hatchId})`} opacity={0.04} />
       </svg>
+
+      {/* Layer 6 — Center Content: do phia goi (children) quyet dinh thu tu Pha / So ngay / Nhan / CTA. */}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-9 text-center">
         {children}
       </div>
