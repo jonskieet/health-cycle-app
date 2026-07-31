@@ -25,29 +25,31 @@ const rightItems = [
 ];
 const fab = { href: "/log", label: "Ghi nhận", icon: Plus };
 
-// Bán kính "lõm" của gợn sóng quanh FAB — lớn hơn bán kính nút thật (32) một
-// chút để tạo khoảng hở, nhưng nông hơn kiểu notch tròn sâu cũ để giữ đúng
-// cảm giác "gợn sóng" mềm mại thay vì "cắn" hẳn một miếng bán nguyệt.
-const NOTCH_RADIUS = 46;
+// Bán kính "lõm" của gợn sóng quanh FAB — đo theo ảnh mẫu mới nhất: phần lõm
+// SÂU gần chạm đáy thanh nav (không phải lõm nông như bản trước), tạo thành
+// 1 đường cong mượt dạng sin/chữ U rộng, 2 bên nhô lên phẳng ngay sát viền
+// nút. Rộng hơn bán kính FAB thật (32) để 2 mép cong không đâm vào nút.
+const NOTCH_RADIUS = 58;
 const TOP_RADIUS = 30;
 
 /**
  * Vẽ path thanh nav: 2 góc trên bo TOP_RADIUS, 2 góc dưới vuông, cạnh trên
- * có 1 chỗ lõm dạng gợn sóng quanh tâm (nơi FAB nổi đè lên). Đoạn cong lõm
- * dùng 1 cung tròn nông (sagitta nhỏ so với bề rộng) nối vào 2 cạnh thẳng
- * bằng cubic-bezier ở 2 đầu để tiếp tuyến liên tục — tránh góc gãy 90° từng
- * gặp ở bản notch tròn sâu trước đây.
+ * lõm SÂU dạng gợn sóng (gần như nửa hình sin) quanh tâm — nơi FAB nổi đè
+ * lên. Khác bản lõm nông trước đó: đáy của gợn sóng gần chạm mép dưới thanh
+ * nav (dip ≈ 70% chiều cao thanh), 2 cung cong nối bằng cubic-bezier để
+ * tiếp tuyến mượt ở cả điểm nối với cạnh phẳng lẫn tại đáy — không có cạnh
+ * gãy, không có đoạn thẳng ở đáy (khác notch chữ V), đúng dạng "wavy dip"
+ * bị đẩy sâu xuống như trong ảnh tham khảo mới nhất.
  */
 function buildWaveNotchPath(width: number, height: number, notchRadius: number, topRadius: number) {
   if (width <= 0 || height <= 0) return "";
 
   const cx = width / 2;
   const r = Math.min(topRadius, height / 2, width / 2);
-  const ext = 22; // độ dài đoạn vuốt cong 2 bên notch — càng dài gợn sóng càng "trải rộng", mềm hơn
-  const curve = 10; // độ lệch control point, quyết định độ nông/sâu cảm nhận của gợn sóng
-  // Độ sâu thực tế của notch nông hơn bán kính danh nghĩa (chia 1.6) để tạo
-  // cảm giác "gợn sóng" thay vì "khoét lõm" — dip nhẹ, không phải nửa hình tròn đầy đủ.
-  const dip = notchRadius / 1.6;
+  const ext = 14; // đoạn vuốt cong nối cạnh phẳng vào gợn sóng
+  // Đáy gợn sóng lõm gần chạm mép dưới thanh nav — chỉ chừa margin nhỏ để
+  // không cắt lộ nội dung phía sau qua khe hở.
+  const dip = height - 14;
   const notchStart = cx - notchRadius - ext;
   const notchEnd = cx + notchRadius + ext;
 
@@ -55,9 +57,10 @@ function buildWaveNotchPath(width: number, height: number, notchRadius: number, 
     M0,${r}
     Q0,0 ${r},0
     L${notchStart},0
-    C${notchStart + ext},0 ${cx - notchRadius},${dip * 0.55} ${cx - notchRadius * 0.55},${dip}
-    Q${cx},${dip + curve} ${cx + notchRadius * 0.55},${dip}
-    C${cx + notchRadius},${dip * 0.55} ${notchEnd - ext},0 ${notchEnd},0
+    C${notchStart + ext},0 ${cx - notchRadius},0 ${cx - notchRadius},${dip * 0.32}
+    C${cx - notchRadius},${dip * 0.82} ${cx - notchRadius * 0.42},${dip} ${cx},${dip}
+    C${cx + notchRadius * 0.42},${dip} ${cx + notchRadius},${dip * 0.82} ${cx + notchRadius},${dip * 0.32}
+    C${cx + notchRadius},0 ${notchEnd - ext},0 ${notchEnd},0
     L${width - r},0
     Q${width},0 ${width},${r}
     L${width},${height}
