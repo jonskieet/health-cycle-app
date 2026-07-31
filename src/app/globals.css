@@ -54,6 +54,17 @@
 
   --background: var(--aurora-a);
   --foreground: var(--ink);
+
+  /* Module — Premium Floating Bottom Navigation (2026-07-31 #3): màu riêng
+     cho thanh nav mới, tách khỏi --c-period (hồng, dùng cho dữ liệu chu kỳ)
+     để đổi tông nav không ảnh hưởng biểu đồ/badge. --nav-bar-bg là nền kính
+     mờ hơi trong suốt (rgba, không phải --surface đặc) đúng tinh thần
+     "floating glass". --nav-bar-solid dùng riêng cho viền FAB — PHẢI là màu
+     ĐẶC (không alpha) để viền không lộ nội dung phía sau xuyên qua. */
+  --nav-bar-bg: rgba(255, 255, 255, 0.96);
+  --nav-bar-solid: #ffffff;
+  --nav-active: #b56dff;
+  --nav-inactive: #7a7a7a;
 }
 
 /* Module — Theme "Đêm dịu" (P9). Chỉ đổi các biến nền/chữ/kính (aurora, ink, glass) —
@@ -88,6 +99,14 @@
   --shadow-card-strong-1: 0 1px 0 rgba(255, 255, 255, 0.06) inset;
   --shadow-card-strong-2: 0 22px 44px -12px rgba(124, 111, 240, 0.4);
   --nav-shadow: rgba(0, 0, 0, 0.5);
+
+  /* Dark theme: kính mờ tối thay vì trắng, vẫn giữ độ trong suốt để lộ
+     backdrop-blur; viền FAB đổi sang --surface tối để không tạo vòng trắng
+     lạc tông giữa nền tối. */
+  --nav-bar-bg: rgba(36, 26, 48, 0.86);
+  --nav-bar-solid: #241a30;
+  --nav-active: #c98bff;
+  --nav-inactive: #8a84a0;
 
   --background: var(--aurora-a);
   --foreground: var(--ink);
@@ -157,8 +176,16 @@ body {
    ResizeObserver nên luôn khớp pixel, không bị méo khi co giãn theo màn hình.
    `--nav-shadow` bên dưới dùng cho filter: drop-shadow() trên SVG (thay cho
    box-shadow vì phần tử tạo bóng giờ là <path>, không phải div nền nữa). */
-.bottom-nav-shape {
-  filter: drop-shadow(0 2px 3px rgba(36, 27, 47, 0.07)) drop-shadow(0 16px 28px var(--nav-shadow));
+/* Module — Premium Floating Bottom Navigation (2026-07-31 #3): thay
+   .bottom-nav-shape (drop-shadow cho SVG notch cũ, không còn phần tử SVG
+   nào để áp filter này nữa) bằng animation nhấn cho FAB — scale 1 → 0.94 →
+   1 trong 220ms, đúng yêu cầu "Press Animation" của bản thiết kế mới. */
+.fab-float {
+  transition: transform 220ms ease-out;
+}
+
+.nav-item:active {
+  opacity: 0.7;
 }
 
 /* Phone frame — bọc UI thành khung điện thoại, căn giữa trên màn hình lớn */
