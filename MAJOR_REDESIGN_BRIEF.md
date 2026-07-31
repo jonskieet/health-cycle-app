@@ -125,3 +125,32 @@
     ro UX cao hơn hẳn phần tô màu, giữ nguyên điều hướng "1 tháng + nút </>".
   - `tsc --noEmit` + `eslint` sạch trên file đã sửa.
   - Patch: `patch_J3_seamless_calendar_band.zip`.
+
+- **2026-07-31 — Fix lệch thanh nav sau J8 + thiết kế lại vòng tròn chu kỳ
+  (theo ảnh Moontide chủ dự án gửi)**: Chủ dự án phản hồi 2 việc: (1) thanh
+  nav bị lệch sau khi đưa "Ghi nhận" lên FAB (do trước 4 mục giờ còn 3); (2)
+  muốn vòng tròn chu kỳ đổi sang kiểu ảnh Moontide (vòng số ngày đầy đủ +
+  khối tròn tối giữa) thay vì kiểu J2 cũ. Đã crop phóng to vùng nav và vùng
+  vòng tròn trong ảnh Moontide để soi kỹ trước khi code, không đoán qua mô
+  tả chữ.
+  - Nguyên nhân lệch nav: 3 mục phẳng còn lại chia 2 trái/1 phải — dù mỗi ô
+    `flex-1` bằng nhau về độ rộng, tổng ô 2 bên lệch (2 vs 1) khiến điểm
+    giữa thật của thanh (FAB neo `left-1/2`) rơi lệch khỏi ô đệm giữa. Ảnh
+    Moontide xác nhận bố cục đúng là 2+2. Sửa: thêm "Thư viện" (dùng lại
+    `app/library/page.tsx` có sẵn, trước chỉ vào qua menu trang Cá nhân) làm
+    mục thứ 4, khôi phục đúng 2+2.
+  - `CycleRadialDial.tsx`: viết lại — vòng SỐ NGÀY đầy đủ (không chỉ mỗi 5
+    ngày), số tô đậm màu theo pha (hành kinh/cửa sổ thụ thai) thay cho 2
+    cung màu gradient tô nền cũ; ngày hiện tại có badge nền tròn. Khối giữa
+    đổi từ thẻ trắng sang khối tròn tối màu (tự pha từ `--c-period`/
+    `--c-fertile`, không dùng xanh navy như ảnh mẫu) + hoạ tiết sóng mờ
+    NGUYÊN BẢN (không sao chép hình vẽ trăng lưỡi liềm cụ thể — tuân thủ
+    ràng buộc bản quyền mục 3). Bỏ 2 chip nhãn nổi ngoài viền (đã trùng
+    thông tin với 2 thẻ bên dưới vòng).
+  - `app/cycle/page.tsx`: đổi màu chữ bên trong vòng (`children` truyền vào
+    `CycleRadialDial`) từ tông tối `--ink` sang trắng/trắng-mờ cho khớp nền
+    tối mới của khối giữa.
+  - Đã dựng thử vòng số bằng script Python độc lập để kiểm tra khoảng cách
+    trước khi đóng gói — không tràn/chồng chữ ở 28 ngày (giá trị mặc định).
+  - `tsc --noEmit` + `eslint` sạch trên 3 file đã sửa.
+  - Patch: `patch_fix_nav_and_dial_redesign.zip`.

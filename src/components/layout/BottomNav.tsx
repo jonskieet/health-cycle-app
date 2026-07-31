@@ -2,18 +2,27 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, Droplet, Plus, User } from "lucide-react";
+import { LayoutGrid, Droplet, Plus, BookOpen, User } from "lucide-react";
 
-// J8 (MAJOR_REDESIGN_BRIEF.md): "Ghi nhận" đổi từ 1 mục ngang hàng sang 1 nút
-// tròn NỔI, LỚN hơn, đè lên mép trên thanh nav — giống thanh nav dưới trong
-// `ref-01-cycle-bar-history.png` và màn 2 của
-// `ref-06-radial-dial-mascot-mockup.webp`. Tách riêng khỏi mảng `items` 2 bên
-// (giờ chỉ còn 2 mục mỗi bên) để rộng chỗ đặt FAB ở giữa.
+// Fix (2026-07-31): sau khi đưa "Ghi nhận" lên thành FAB (J8), thanh nav chỉ
+// còn 3 mục phẳng (Tổng quan, Chu kỳ, Cá nhân) — chia 2 bên trái/2 phải
+// không đều (2 mục trái, 1 mục phải) khiến layout LỆCH thật sự: `flex-1`
+// đều nhau về ĐỘ RỘNG từng ô, nhưng điểm giữa thật của cả thanh (nơi FAB neo
+// `left-1/2`) rơi vào ranh giới giữa mục trái thứ 2 và ô đệm — không phải
+// giữa ô đệm — vì tổng số ô 2 bên lệch nhau (2 vs 1). Ảnh tham khảo Moontide
+// dùng đúng bố cục 2 mục trái + 2 mục phải + FAB giữa (Home, Calendar, rồi
+// FAB, rồi Symptoms, Report, Settings — soi kỹ ảnh xác nhận đối xứng thật).
+// Sửa bằng cách thêm 1 mục thứ 4: "Thư viện" (`app/library/page.tsx` đã có
+// sẵn từ trước, hiện chỉ vào được qua menu trang Cá nhân — không phải trang
+// mới) lên làm mục thứ 2 bên phải, khôi phục đúng 2+2 đối xứng thật.
 const leftItems = [
   { href: "/", label: "Tổng quan", icon: LayoutGrid },
   { href: "/cycle", label: "Chu kỳ", icon: Droplet },
 ];
-const rightItems = [{ href: "/profile", label: "Cá nhân", icon: User }];
+const rightItems = [
+  { href: "/library", label: "Thư viện", icon: BookOpen },
+  { href: "/profile", label: "Cá nhân", icon: User },
+];
 const fab = { href: "/log", label: "Ghi nhận", icon: Plus };
 
 export default function BottomNav() {

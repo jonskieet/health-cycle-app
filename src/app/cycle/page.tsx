@@ -111,13 +111,13 @@ export default function CyclePage() {
                 periodColor="var(--c-period)"
                 fertileColor="var(--c-fertile)"
               >
-                <span className="text-[11px] font-medium text-[var(--ink-faint)]">
+                <span className="text-[11px] font-medium text-white/70">
                   {phaseLabel[prediction.phase]}
                 </span>
-                <span className="font-display text-[26px] font-extrabold leading-tight text-[var(--ink)]">
+                <span className="font-display text-[26px] font-extrabold leading-tight text-white">
                   Ngày {prediction.currentDay}
                 </span>
-                <span className="max-w-[8.5rem] text-[11px] leading-snug text-[var(--ink-soft)]">
+                <span className="max-w-[8.5rem] text-[11px] leading-snug text-white/80">
                   {phaseSubtitle[prediction.phase]}
                 </span>
                 <button
