@@ -176,10 +176,14 @@ body {
    ResizeObserver nên luôn khớp pixel, không bị méo khi co giãn theo màn hình.
    `--nav-shadow` bên dưới dùng cho filter: drop-shadow() trên SVG (thay cho
    box-shadow vì phần tử tạo bóng giờ là <path>, không phải div nền nữa). */
-/* Module — Premium Floating Bottom Navigation (2026-07-31 #3): thay
-   .bottom-nav-shape (drop-shadow cho SVG notch cũ, không còn phần tử SVG
-   nào để áp filter này nữa) bằng animation nhấn cho FAB — scale 1 → 0.94 →
-   1 trong 220ms, đúng yêu cầu "Press Animation" của bản thiết kế mới. */
+/* Module — Premium Floating Bottom Navigation (2026-07-31 #4): nền thanh
+   nav giờ lại là <path> SVG (để vẽ được gợn sóng lõm quanh FAB), nên bóng đổ
+   phải dùng filter: drop-shadow() thay vì box-shadow (không áp dụng được lên
+   path). Giữ độ mềm rất nhẹ đúng spec "floating glass". */
+.bottom-nav-shape {
+  filter: drop-shadow(0 -8px 32px rgba(36, 27, 47, 0.05));
+}
+
 .fab-float {
   transition: transform 220ms ease-out;
 }
