@@ -70,6 +70,58 @@ const typeColor: Record<string, string> = {
   fertile: "var(--c-fertile)",
 };
 
+// J3 (MAJOR_REDESIGN_BRIEF.md): lịch trước đây tô mỗi ngày 1 hình tròn RỜI
+// RẠC. Giờ: các ngày LIÊN TIẾP cùng loại (hành kinh/cửa sổ thụ thai/rụng
+// trứng) trong CÙNG 1 HÀNG (tuần) được nối thành 1 dải nền liền mạch, bo góc
+// CHỈ Ở 2 ĐẦU dải — giống màn 2 của `ref-06-radial-dial-mascot-mockup.webp`.
+// Chỉ nối trong cùng hàng (không nối qua hàng khác) vì lưới vốn đã ngắt dòng
+// trực quan ở cuối mỗi tuần, đúng với chính ảnh tham khảo (dải "Cửa sổ thụ
+// thai" ngày 23–27 không nối tràn sang hàng dưới dù dài hơn 1 tuần).
+// Không đổi cấu trúc "1 tháng + nút </>": brief cho phép tách riêng phần
+// "cuộn dọc nhiều tháng" thành module con khác vì rủi ro UX cao hơn hẳn —
+// giữ nguyên điều hướng cũ, chỉ đổi cách TÔ MÀU từng dải.
+type DayCell = {
+  date: Date;
+  type: string | null;
+  isToday: boolean;
+  isRunStart: boolean;
+  isRunEnd: boolean;
+};
+
+function buildRows(
+  days: (Date | null)[],
+  prediction: CyclePrediction,
+  loggedPeriodDays: Set<string>,
+  today: Date
+): (DayCell | null)[][] {
+  const rows: (DayCell | null)[][] = [];
+  for (let i = 0; i < days.length; i += 7) {
+    const rawRow = days.slice(i, i + 7);
+    const row: (DayCell | null)[] = rawRow.map((date) =>
+      date
+        ? {
+            date,
+            type: dayType(date, prediction, loggedPeriodDays),
+            isToday: isSameDay(date, today),
+            isRunStart: false,
+            isRunEnd: false,
+          }
+        : null
+    );
+    // Đánh dấu đầu/cuối dải: 1 ô là "đầu dải" nếu ô liền trước trong hàng
+    // trống hoặc khác loại; "cuối dải" nếu ô liền sau trống hoặc khác loại.
+    row.forEach((cell, idx) => {
+      if (!cell || !cell.type) return;
+      const prev = row[idx - 1];
+      const next = row[idx + 1];
+      cell.isRunStart = !prev || prev.type !== cell.type;
+      cell.isRunEnd = !next || next.type !== cell.type;
+    });
+    rows.push(row);
+  }
+  return rows;
+}
+
 export default function CycleCalendar({
   prediction,
   cycleLogs,
@@ -95,17 +147,20 @@ export default function CycleCalendar({
     return cells;
   }, [cursor]);
 
-  const today = new Date();
-  // `today` chỉ dùng làm fallback ngày kết thúc cho kỳ đang mở (chưa có
-  // end_date) bên trong `buildLoggedPeriodDays`, chỉ cần chính xác đến từng
-  // ngày — không đưa biến `today` ở trên vào mảng deps của useMemo bên dưới
-  // vì `new Date()` khác reference mỗi render, sẽ làm useMemo luôn tính lại
-  // và mất hết tác dụng memo hoá. Gọi `new Date()` riêng ngay trong hàm tính
-  // memo thay vì tái dùng biến `today` — 2 giá trị lệch nhau tối đa vài mili-
-  // giây trong cùng 1 lần render, không ảnh hưởng vì đều chỉ dùng cấp độ ngày.
+  // `today` (dùng làm fallback ngày kết thúc cho kỳ đang mở, và đánh dấu ô
+  // "hôm nay") được gọi trực tiếp `new Date()` riêng trong từng useMemo bên
+  // dưới thay vì 1 biến chung — vì `new Date()` khác reference mỗi render,
+  // đưa vào mảng deps sẽ làm useMemo luôn tính lại, mất tác dụng memo hoá.
+  // 2 giá trị gọi cách nhau vài mili-giây trong cùng 1 lần render, không ảnh
+  // hưởng vì đều chỉ dùng cấp độ ngày.
   const loggedPeriodDays = useMemo(
     () => buildLoggedPeriodDays(cycleLogs, new Date()),
     [cycleLogs]
+  );
+
+  const rows = useMemo(
+    () => buildRows(days, prediction, loggedPeriodDays, new Date()),
+    [days, prediction, loggedPeriodDays]
   );
 
   return (
@@ -128,32 +183,52 @@ export default function CycleCalendar({
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-y-2 text-center">
-        {weekdays.map((w) => (
-          <span key={w} className="text-[10px] font-medium text-[var(--ink-faint)]">
-            {w}
-          </span>
+      <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-7 text-center">
+          {weekdays.map((w) => (
+            <span key={w} className="text-[10px] font-medium text-[var(--ink-faint)]">
+              {w}
+            </span>
+          ))}
+        </div>
+        {rows.map((row, rowIdx) => (
+          <div key={rowIdx} className="grid grid-cols-7">
+            {row.map((cell, i) => {
+              if (!cell) return <div key={i} className="h-8" />;
+              const { date, type, isToday, isRunStart, isRunEnd } = cell;
+              return (
+                <div key={i} className="relative flex h-8 items-center justify-center">
+                  {/* Dải nền liền mạch — chỉ bo góc ở đầu/cuối dải thật sự,
+                      giữa dải là cạnh vuông để nối liền sang ô kế bên (2 ô
+                      cùng màu chạm sát cạnh, không có khoảng hở giữa vì cột
+                      lưới vốn đã sát nhau — `grid-cols-7` không đặt gap-x). */}
+                  {type && (
+                    <div
+                      className="absolute inset-y-0 left-0 right-0"
+                      style={{
+                        background: typeColor[type],
+                        borderTopLeftRadius: isRunStart ? 9999 : 0,
+                        borderBottomLeftRadius: isRunStart ? 9999 : 0,
+                        borderTopRightRadius: isRunEnd ? 9999 : 0,
+                        borderBottomRightRadius: isRunEnd ? 9999 : 0,
+                      }}
+                    />
+                  )}
+                  <span
+                    className="relative z-10 flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium"
+                    style={{
+                      color: type ? "#fff" : "var(--ink)",
+                      outline: isToday ? "2px solid var(--c-sleep)" : "none",
+                      outlineOffset: 1,
+                    }}
+                  >
+                    {date.getDate()}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         ))}
-        {days.map((date, i) => {
-          if (!date) return <div key={i} />;
-          const type = dayType(date, prediction, loggedPeriodDays);
-          const isToday = isSameDay(date, today);
-          return (
-            <div key={i} className="flex justify-center">
-              <div
-                className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium"
-                style={{
-                  background: type ? typeColor[type] : "transparent",
-                  color: type ? "#fff" : "var(--ink)",
-                  outline: isToday ? "2px solid var(--c-sleep)" : "none",
-                  outlineOffset: 1,
-                }}
-              >
-                {date.getDate()}
-              </div>
-            </div>
-          );
-        })}
       </div>
 
       <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-black/5 pt-3 text-[11px] text-[var(--ink-soft)]">

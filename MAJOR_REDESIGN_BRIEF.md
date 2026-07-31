@@ -101,3 +101,27 @@
     hàng như cũ.
   - `tsc --noEmit` + `eslint` sạch trên 2 file đã sửa.
   - Patch: `patch_J7_J8_greeting_fab.zip`.
+
+- **2026-07-31 — J3 (một phần: lịch dải liền mạch)**: Đã xem
+  `ref-02-calendar-stacked-months.png` và cắt riêng màn 2 của
+  `ref-06-radial-dial-mascot-mockup.webp` để phóng to trước khi code. Đọc lại
+  `CycleCalendar.tsx` — xác nhận đúng như brief: mỗi ngày đang tô 1 hình tròn
+  rời rạc (`h-8 w-8 rounded-full`), lưới `grid-cols-7` với `gap-y-2` (không
+  có gap ngang nên các cột vốn đã sát nhau, thuận lợi để dựng dải liền mạch
+  không hở).
+  - Đổi cấu trúc render từ 1 lưới 7 cột phẳng sang render THEO HÀNG
+    (`buildRows()`) — mỗi hàng tính lại `isRunStart`/`isRunEnd` cho từng ô
+    dựa vào ô liền trước/sau CÙNG HÀNG (so `type`, không so qua hàng khác).
+    Dải nền là 1 `div` tuyệt đối phủ hết chiều rộng ô, bo góc CHỈ ở
+    `borderTopLeftRadius`/`borderBottomLeftRadius` (nếu là đầu dải) hoặc
+    `borderTopRightRadius`/`borderBottomRightRadius` (nếu là cuối dải) —
+    dùng style trực tiếp thay vì class Tailwind `rounded-l-full` vì cần bật
+    tắt độc lập 4 góc theo từng ô, không có sẵn utility class ứng với đúng
+    tổ hợp này.
+  - Số ngày vẫn hiện trong 1 vòng nhỏ `h-6 w-6` không nền, đè lên dải (`z-10`)
+    — giữ được cách đánh dấu "hôm nay" cũ (outline quanh số) mà không xung
+    đột thị giác với màu dải bên dưới.
+  - CHƯA làm phần "cuộn dọc nhiều tháng" — brief cho phép tách riêng vì rủi
+    ro UX cao hơn hẳn phần tô màu, giữ nguyên điều hướng "1 tháng + nút </>".
+  - `tsc --noEmit` + `eslint` sạch trên file đã sửa.
+  - Patch: `patch_J3_seamless_calendar_band.zip`.
