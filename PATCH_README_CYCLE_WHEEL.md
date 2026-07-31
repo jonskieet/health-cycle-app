@@ -1,75 +1,52 @@
-# Patch: Cycle Wheel redesign theo Cycle_Wheel_Design_Specification.md
+# Patch: Cycle Wheel — xây lại từ đầu, phong cách hiện đại hơn
 
 ## Cách áp dụng
 Giải nén đè file bên dưới lên gốc dự án (ghi đè, chỉ 1 file):
 - `src/components/cycle/CycleRadialDial.tsx`
 
-Không cần sửa nơi gọi component (`src/app/cycle/page.tsx`) — props giữ
-nguyên (`size`, `avgCycleLength`, `avgPeriodLength`, `currentDay`,
-`periodColor`, `fertileColor`, `children`), không cần đổi DB/schema.
+Không cần sửa nơi gọi (`src/app/cycle/page.tsx`) — props giữ nguyên
+(`size`, `avgCycleLength`, `avgPeriodLength`, `currentDay`, `periodColor`,
+`fertileColor`, `children`).
 
-## Những gì đổi so với bản cũ
-Viết lại toàn bộ component theo đúng 6 lớp trong spec:
-- **Layer 1 (Outer Tick Ring)**: mỗi vạch = 1 ngày, dày 1.5px, màu
-  `#2F2F2F` mờ 35%, vạch mỗi 5 ngày dài hơn — bỏ style "vạch hôm nay to
-  bất thường" của bản cũ (spec: tick chỉ là tham chiếu thời gian, không
-  chỉ báo tiến độ).
-- **Layer 2 (Decorative Background Ring)**: đổi hoạ tiết gạch chéo từ màu
-  tím (`--c-fertile`) sang xám trung tính `#F5F5F7`, mờ 3–5%, đúng vai
-  trò "ngăn cách timeline khỏi tâm" thay vì mang màu theo pha.
-- **Layer 3 (Phase Timeline Ring)**: giữ 2 cung Kỳ kinh/Cửa sổ thụ thai
-  cong theo đúng vị trí ngày cố định + nhãn chữ uốn cong theo cung — bỏ
-  hẳn hiệu ứng "huy hiệu tròn + đường nối trắng đứt nét" ở 2 đầu nối cung
-  (không có trong spec, dễ hiểu lầm là mốc tiến độ).
-- **Layer 4 (Current Position Marker)** — thay đổi lớn nhất: bản cũ có 2
-  "huy hiệu" cố định tại điểm nối 2 cung màu (trông giống điểm hoàn
-  thành). Bản mới chỉ có **1 chấm "Hôm nay" duy nhất**, tự di chuyển theo
-  `currentDay` quanh vòng — đúng vòng ngoài trắng 36px + shadow nổi, vòng
-  trong tối `#202020` 28px, dấu check ở giữa, nằm đè nhẹ lên mép cung màu
-  (không lọt hẳn vào trong nét vẽ).
-- **Layer 5 (Center Circle)**: bản cũ không có vòng nền riêng ở giữa —
-  giờ thêm 1 vòng tròn `#F5F5F7` cùng hoạ tiết gạch chéo với Layer 2,
-  không viền, đường kính ≈72% wheel, đúng vai trò "bề mặt sạch" cho nội
-  dung giữa.
-- **Layer 6 (Center Content)**: không đổi — vẫn nhận qua `children` như
-  cũ (Pha hiện tại → Số ngày → Nhãn phụ → CTA), nơi gọi
-  (`src/app/cycle/page.tsx`) không cần sửa gì.
-- Các pha còn lại (không phải Kỳ kinh/Cửa sổ thụ thai) vẫn hoà mờ vào nền
-  bằng 1 vòng viền mảnh, mờ nhạt — không được vẽ ngang hàng 2 cung chính,
-  đúng nguyên tắc "không cho mọi pha trọng số hình ảnh bằng nhau".
+## Đây là bản viết lại hoàn toàn (không phải vá tiếp bản cũ)
+Sau 2 lần vá vẫn còn lỗi thị giác, lần này bỏ hẳn cách tiếp cận cũ (nhiều
+lớp SVG chồng nhau + chữ cong trên path) và dựng lại theo hướng khác hẳn:
 
-## Có chủ đích giữ nguyên
-- Màu cung Kỳ kinh/Cửa sổ thụ thai vẫn nhận qua props `periodColor`/
-  `fertileColor` (đang truyền `var(--c-period)`/`var(--c-fertile)` từ
-  trang gọi) thay vì hard-code hex `#FF67B4`/`#7A6BFF` như spec — để giữ
-  nhất quán với hệ theme sáng/tối đã có sẵn trong app, đổi theme không
-  cần sửa lại component này.
-- Nút "Xem thêm" xoay dọc bên trái wheel: đã nằm ở `src/app/cycle/page.tsx`
-  từ trước (ngoài `CycleRadialDial`), đúng đúng vị trí spec mô tả (không
-  gắn liền wheel) — không cần đổi.
+- **Bỏ hoàn toàn chữ cong (`<textPath>`)** — nguồn gốc lỗi "chữ văng chéo
+  ra khỏi cung" ở 2 lần vá trước. Nhãn "Kỳ kinh" / "Cửa sổ thụ thai" giờ
+  là **chip HTML phẳng** đặt ngay cạnh mép cung, luôn đứng thẳng, tự đổi
+  hướng neo (trái/phải/giữa) theo vị trí quanh vòng tròn — không thể bị
+  méo hay tràn ra ngoài trên bất kỳ trình duyệt nào.
+- **Bỏ hoạ tiết gạch chéo (hatch pattern)** kiểu cũ, trông hơi cũ kỹ —
+  thay bằng 1 quầng sáng mờ (blurred aura) phía sau + vòng nền phẳng đơn
+  sắc, tạo chiều sâu kiểu "soft glow" đang phổ biến ở các app sức khoẻ
+  hiện đại (Oura, Whoop, Apple Health...).
+- **Cung màu dùng gradient** (đậm → nhạt) thay vì màu phẳng đơn, kèm 1 lớp
+  glow cùng màu mờ phía dưới — nhìn nổi khối, cao cấp hơn hẳn dải màu
+  phẳng cũ.
+- **Chấm "Hôm nay"** đổi từ huy hiệu tròn + icon check sang 1 **chấm tròn
+  tối giản có vòng sáng lan toả (pulse animation)** quanh nó — vẫn di
+  chuyển đúng theo `currentDay` như yêu cầu spec ban đầu, nhưng nhìn nhẹ
+  nhàng, hiện đại hơn, không còn chi tiết thừa (mũi tên/dấu check).
+- **Vòng tick ngày**: vẫn giữ đúng nguyên tắc "1 vạch = 1 ngày" nhưng làm
+  siêu mảnh + siêu mờ (opacity 12%, chỉ vạch mỗi 5 ngày đậm hơn 1 chút) —
+  tránh cảm giác "vòng răng cưa rối mắt" của các bản trước.
+- **Vùng nội dung giữa**: bỏ hoạ tiết gạch chéo, chỉ còn 1 thẻ tròn nền
+  `var(--surface)` với đổ bóng mềm rất nhẹ (soft shadow) — sạch, hiện đại,
+  không cạnh tranh thị giác với số ngày/nút CTA bên trong.
 
-## Bản vá lỗi (sau khi bạn gửi ảnh chụp thực tế)
-Ảnh chụp cho thấy 2 lỗi rõ ràng — cả 2 đều đã sửa trong file mới:
+## Vẫn giữ nguyên các nguyên tắc gốc từ spec
+- 2 cung màu (Kỳ kinh/Cửa sổ thụ thai) vẫn là **vị trí cố định theo ngày
+  chu kỳ**, không phải % hoàn thành — không animate như thanh tiến độ.
+- Chỉ có chấm "Hôm nay" là phần tử di chuyển quanh vòng.
+- Màu cung vẫn nhận qua props `periodColor`/`fertileColor` (đang truyền
+  `var(--c-period)`/`var(--c-fertile)` từ trang gọi) để giữ nhất quán với
+  theme sáng/tối có sẵn.
 
-1. **Nhãn "Cửa sổ thụ thai" bung ra khỏi cung, chạy chéo xuyên qua vòng
-   tick.** Nguyên nhân: bản trước ép độ dài chữ bằng `textLength` +
-   `lengthAdjust="spacingAndGlyphs"` trên `<textPath>` cong — nhiều
-   WebKit/trình duyệt mobile render sai khi `textLength` vượt quá độ dài
-   thật của path, khiến chữ "văng" thẳng ra ngoài thay vì bám theo cung.
-   Đã bỏ hẳn `textLength`/`lengthAdjust`, thay bằng cách tự giảm cỡ chữ
-   (`fontSize`) nếu nhãn tự nhiên rộng hơn khoảng trống của cung — cách
-   này không phụ thuộc hành vi textPath khác nhau giữa các trình duyệt.
-2. **Chấm "Hôm nay" đè lên nội dung giữa (chữ/nút "Nhật ký").** Nguyên
-   nhân: bán kính vòng Phase Ring (nơi đặt chấm) và bán kính Center
-   Circle quá gần nhau (chỉ cách ~4px), nên chấm 36px gần như nằm trọn
-   trong vùng nội dung. Đã giãn lại hình học: thu Center Circle từ 72%
-   xuống 60% đường kính, đẩy Phase Ring ra xa hơn (39.5%), giảm chấm
-   "Hôm nay" xuống 30px — giờ chấm chỉ đè nhẹ lên mép cung màu như đúng ý
-   spec, không chạm vào nội dung giữa. Đồng thời gộp Decorative Ring
-   (Layer 2) về chung bán kính với Phase Ring thay vì để 2 vòng tách rời
-   nằm lệch nhau (khiến hình trước trông có 2 vòng xám lỏng lẻo).
-
-## Đề xuất kiểm tra sau khi áp patch
-Chưa chạy được `npm run build` trong môi trường patch (không có
-`node_modules`) — nên chạy `npm run build`/`tsc --noEmit` sau khi áp,
-chủ yếu để soát lại cân bằng dấu ngoặc/type ở file SVG khá dài này.
+## Lưu ý kỹ thuật
+- Dùng `color-mix(in srgb, ...)` cho gradient/glow — cùng cú pháp app đã
+  dùng sẵn ở nơi khác trong `cycle/page.tsx`, không phải kỹ thuật mới.
+- Animation pulse dùng CSS `@keyframes` nhúng trực tiếp trong component
+  qua thẻ `<style>` — không cần thêm dependency nào.
+- Chưa chạy được `npm run build` trong môi trường patch (không có
+  `node_modules`) — nên chạy `npm run build`/`tsc --noEmit` sau khi áp.
