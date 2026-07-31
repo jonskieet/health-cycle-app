@@ -141,6 +141,21 @@ body {
   box-shadow: var(--shadow-card-strong-1), var(--shadow-card-strong-2);
 }
 
+/* Bottom nav bar — nền ĐẶC 100% (không backdrop-filter/blur, không alpha
+   trong suốt như .glass-card-strong) theo yêu cầu hiển thị rõ hoàn toàn.
+   Phần "lõm xuống" quanh nút FAB "Ghi nhận" (kiểu ảnh tham khảo Moontide)
+   được tạo bằng mask-image radial-gradient: một vòng tròn trong suốt tại
+   chính giữa mép trên (50% 0%) "khoét" một nửa hình tròn lõm vào cạnh trên
+   của thanh pill, ôm lấy nút FAB nổi phía trên. Dùng mask thay vì vẽ path
+   SVG để tự co giãn theo mọi độ rộng thanh nav mà không bị méo hình. */
+.bottom-nav-bar {
+  background: var(--surface);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card-strong-1), var(--shadow-card-strong-2);
+  -webkit-mask-image: radial-gradient(circle 34px at 50% 0%, transparent 99%, #000 100%);
+  mask-image: radial-gradient(circle 34px at 50% 0%, transparent 99%, #000 100%);
+}
+
 /* Phone frame — bọc UI thành khung điện thoại, căn giữa trên màn hình lớn */
 .phone-shell {
   min-height: 100vh;
