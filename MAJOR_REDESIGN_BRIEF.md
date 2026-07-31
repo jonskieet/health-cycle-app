@@ -84,3 +84,20 @@
     toàn nếu sau này có nơi khác render nhiều dial cùng lúc.
   - `tsc --noEmit` + `eslint` sạch.
   - Patch: `patch_J2_fix_dial_rendering.zip`.
+
+- **2026-07-31 — J7 + J8 (lời chào cá nhân hoá + FAB "Ghi nhận")**: Đã xem
+  góc trên `ref-01-cycle-bar-history.png` (lời chào) và thanh nav dưới của
+  ảnh 01 + màn 2 của `ref-06-radial-dial-mascot-mockup.webp` (FAB) trước khi
+  code. Đọc `app/page.tsx` (chưa có lời chào nào, vào thẳng card chu kỳ) và
+  `BottomNav.tsx` (4 mục ngang hàng, "Ghi nhận" dùng `PlusCircle` không nổi
+  bật hơn các mục khác) — đúng như brief mô tả.
+  - `app/page.tsx`: thêm dòng chào theo giờ trong ngày (sáng/trưa/chiều/tối)
+    + `profile.display_name` (đã có sẵn qua `useProfile()`, không thêm gì
+    mới) ở đầu trang, trước card "Chu kỳ hôm nay". Ẩn nếu chưa có tên.
+  - `BottomNav.tsx`: tách `items` thành `leftItems` (Tổng quan, Chu kỳ) +
+    `rightItems` (Cá nhân), "Ghi nhận" tách riêng thành 1 `Link` tuyệt đối
+    `absolute left-1/2 -top-5`, khối tròn 56px màu `--c-period` viền 3px
+    `--surface` đè lên mép trên thanh nav — không còn là 1 trong 4 mục ngang
+    hàng như cũ.
+  - `tsc --noEmit` + `eslint` sạch trên 2 file đã sửa.
+  - Patch: `patch_J7_J8_greeting_fab.zip`.

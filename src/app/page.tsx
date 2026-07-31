@@ -46,8 +46,28 @@ export default function DashboardPage() {
   const hasAnyMetrics = metrics.length > 0;
   const loading = cycleLoading || metricsLoading;
 
+  // J7 (MAJOR_REDESIGN_BRIEF.md): lời chào cá nhân hoá theo giờ trong ngày +
+  // tên người dùng, giống góc trên `ref-01-cycle-bar-history.png`
+  // ("Hi, Good Morning Victoria"). Dữ liệu tên đã có sẵn qua
+  // `profile.display_name` — không cần thêm gì mới, chỉ hiển thị.
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 11) return "Chào buổi sáng";
+    if (hour < 13) return "Chào buổi trưa";
+    if (hour < 18) return "Chào buổi chiều";
+    return "Chào buổi tối";
+  }, []);
+
   return (
     <main className="flex flex-1 flex-col gap-6 px-5 pt-6">
+      {/* J7: lời chào — chỉ hiện khi đã có tên (display_name), tránh chào
+          "Chào buổi sáng ," trống tên khi chưa hoàn tất onboarding. */}
+      {profile?.display_name && (
+        <p className="text-sm text-[var(--ink-soft)]">
+          {greeting}, <span className="font-semibold text-[var(--ink)]">{profile.display_name}</span> 👋
+        </p>
+      )}
+
       {/* D5: thứ tự ưu tiên hiển thị — chu kỳ hôm nay → nhắc nhở → check-in
           nhanh → insight (Health Score). Trước đây Health Score ring nằm
           TRÊN CÙNG (là "signature element" thị giác), nhưng đây là điểm TỔNG
