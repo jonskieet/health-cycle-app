@@ -65,6 +65,15 @@
   --nav-bar-solid: #ffffff;
   --nav-active: #b56dff;
   --nav-inactive: #7a7a7a;
+
+  /* Module — Notched Card Navigation (redesign theo tham chiếu "Victoria"):
+     mỗi tab có màu riêng (ô bo góc pastel khi thường, đặc màu khi active) thay
+     vì 1 màu tím duy nhất cho mọi tab. Bar quay lại kiểu "notch" lõm ôm sát
+     nút "+" (khác bản floating-tách-rời trước) — 2 lớp hợp nhất thị giác. */
+  --nav-tile-overview: #8b6ef0;
+  --nav-tile-cycle: #e85c8a;
+  --nav-tile-library: #4fa8e8;
+  --nav-tile-profile: #4cae8e;
 }
 
 /* Module — Theme "Đêm dịu" (P9). Chỉ đổi các biến nền/chữ/kính (aurora, ink, glass) —
@@ -107,6 +116,12 @@
   --nav-bar-solid: #241a30;
   --nav-active: #c98bff;
   --nav-inactive: #8a84a0;
+
+  /* Dark theme: giữ đúng 4 sắc tab nhưng sáng hơn chút để nổi trên nền tối */
+  --nav-tile-overview: #a78bfa;
+  --nav-tile-cycle: #f0789e;
+  --nav-tile-library: #66b8f2;
+  --nav-tile-profile: #5cc4a0;
 
   --background: var(--aurora-a);
   --foreground: var(--ink);
