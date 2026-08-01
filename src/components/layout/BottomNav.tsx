@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useState } from "react";
 import { LayoutGrid, Droplet, Plus, BookOpen, User } from "lucide-react";
 
 // Redesign (2026-08-01 — "Notched Card Navigation", theo tham chiếu ứng dụng
@@ -57,28 +57,56 @@ function buildNotchPath(width: number) {
   `;
 }
 
+// Fix (2026-08-02): dùng path notch y hệt buildNotchPath() để cắt lớp
+// backdrop-blur đúng hình dạng bar hiện tại — 2 lớp luôn khớp nhau vì dùng
+// chung 1 hàm. CSS `mask-image` (khác `clip-path`) hỗ trợ ổn định trên
+// iOS/Android WebView cho lớp có backdrop-filter, không bị tràn như
+// clip-path path() ở bản trước.
+function buildNotchMaskUrl(width: number) {
+  const w = Math.max(width, 200);
+  const d = buildNotchPath(w).trim().replace(/\s+/g, " ");
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} ${BAR_H}' preserveAspectRatio='none'><path d='${d}' fill='#fff'/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+
 export default function BottomNav() {
   const pathname = usePathname();
-  const wrapRef = useRef<HTMLDivElement>(null);
   const [barWidth, setBarWidth] = useState<number | null>(null);
 
-  // Fix (2026-08-01 #7): bản trước dùng useEffect + chỉ tin vào callback đầu
-  // tiên của ResizeObserver, nhưng callback đó chạy SAU khung hình đầu tiên
-  // đã paint xong với barWidth mặc định (390) — nếu màn hình thật khác 390px,
-  // path notch bị méo (wingSpan trông hẹp) đúng 1 nhịp cho tới khi state cập
-  // nhật. Dùng useLayoutEffect + đo ngay bằng getBoundingClientRect() TRƯỚC
-  // khi trình duyệt paint, để lần render đầu tiên đã có width chính xác luôn.
+  // Fix (2026-08-02): bản trước dùng `useRef` thường + `useLayoutEffect` với
+  // deps `[]` — effect đó chỉ CHẠY 1 LẦN DUY NHẤT ứng với lần mount đầu tiên
+  // của component. Nhưng component này luôn được mount (đặt trong layout gốc)
+  // và có thể `return null` sớm tuỳ pathname (dòng if bên dưới) — lần đầu
+  // pathname rơi vào 1 trong các route bị ẩn (vd `/login`), div chứa `ref`
+  // chưa từng được tạo trong DOM nên `wrapRef.current` là `null`, effect bỏ
+  // qua luôn mà KHÔNG gắn ResizeObserver. Khi pathname đổi sang route hiển
+  // thị nav (vd sau khi đăng nhập/mở khoá PIN), React tái sử dụng CHÍNH
+  // component instance đó — hook không chạy lại (deps rỗng) — nên
+  // ResizeObserver không bao giờ được gắn, `barWidth` mắc kẹt ở giá trị
+  // fallback 390 mãi mãi (đến khi F5 mount lại từ đầu). Đây chính là bug
+  // "wingSpan bị thu nhỏ tới khi reload mới bung" trên màn hình PIN.
+  //
+  // Sửa bằng CALLBACK REF: `setWrapEl` được gọi lại mỗi khi node DOM thật sự
+  // gắn/gỡ, nên effect phụ thuộc `wrapEl` sẽ tự chạy lại đúng lúc div xuất
+  // hiện, bất kể trước đó component có từng `return null` bao nhiêu lần.
+  const [wrapEl, setWrapEl] = useState<HTMLDivElement | null>(null);
+  const wrapRef = useCallback((node: HTMLDivElement | null) => {
+    // Đo ngay tại thời điểm node DOM thật sự gắn (chạy trong commit phase,
+    // trước khi mắt người kịp thấy) — tránh phải setState trực tiếp trong
+    // thân effect (react-hooks/set-state-in-effect).
+    if (node) setBarWidth(node.getBoundingClientRect().width);
+    setWrapEl(node);
+  }, []);
+
   useLayoutEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-    setBarWidth(el.getBoundingClientRect().width);
+    if (!wrapEl) return;
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width;
       if (w) setBarWidth(w);
     });
-    ro.observe(el);
+    ro.observe(wrapEl);
     return () => ro.disconnect();
-  }, []);
+  }, [wrapEl]);
 
   if (
     pathname === "/login" ||
@@ -99,13 +127,41 @@ export default function BottomNav() {
       className="app-bottom-nav absolute inset-x-0 bottom-0 z-20 mx-auto w-full"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      <div ref={wrapRef} className="relative" style={{ height: BAR_H }}>
-        {/* Fix (2026-08-01 #7): bỏ hẳn lớp "kính mờ" backdrop-blur + clip-path
-            — dù đã thêm tiền tố -webkit-, clip-path dạng path() vẫn không cắt
-            đúng theo notch trên nhiều môi trường/WebView thực tế, khiến blur
-            tràn ra vùng trống quanh FAB thay vì chỉ áp trong thân bar. Quay về
-            1 lớp SVG duy nhất, tô màu đặc (nav-bar-bg đã là bán trong suốt sẵn
-            trong CSS) — đơn giản, chắc chắn hiển thị đúng mọi nơi. */}
+      <div
+        ref={wrapRef}
+        className="relative"
+        // Fix (2026-08-02): mặc định KHÔNG cho vùng này bắt sự kiện chạm/kéo.
+        // Trước đây div bọc này (và div lưới nội dung bên trong) trải kín cả
+        // hình chữ nhật BAR_H dù notch ở giữa trông "rỗng" — mọi thao tác kéo
+        // ngay phía trên/khu vực notch (nhìn như đang chạm vào nội dung trang
+        // phía sau) vẫn bị nav "nuốt" mất vì div vẫn hit-test toàn bộ khối,
+        // kể cả phần không có gì hiển thị. Bật lại `pointer-events: auto`
+        // riêng cho từng nút bấm thật (NavItem, FAB) — chỗ nào không có nút
+        // thì chạm/kéo xuyên thẳng xuống nội dung bên dưới như mắt thấy.
+        style={{ height: BAR_H, pointerEvents: "none" }}
+      >
+        {/* Lớp kính mờ (glass): backdrop-blur bị CẮT đúng hình notch bằng
+            CSS mask-image dùng chung path với viền SVG bên dưới — 2 lớp luôn
+            khớp nhau tuyệt đối, không lệch hình khi NOTCH_R đổi. mask-image
+            ổn định trên iOS/Android hơn clip-path path() (bản 2026-08-01 #7
+            đã bỏ blur vì lý do này — giờ quay lại dùng mask thay vì clip). */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backdropFilter: "blur(22px) saturate(160%)",
+            WebkitBackdropFilter: "blur(22px) saturate(160%)",
+            background: "var(--nav-bar-bg)",
+            WebkitMaskImage: buildNotchMaskUrl(w),
+            maskImage: buildNotchMaskUrl(w),
+            WebkitMaskSize: "100% 100%",
+            maskSize: "100% 100%",
+            WebkitMaskRepeat: "no-repeat",
+            maskRepeat: "no-repeat",
+          }}
+        />
+
+        {/* Viền + đổ bóng — chỉ vẽ nét stroke (fill="none"), phần nền đặc đã
+            chuyển sang lớp kính mờ ở trên. */}
         <svg
           className="absolute inset-0"
           width="100%"
@@ -114,12 +170,7 @@ export default function BottomNav() {
           preserveAspectRatio="none"
           style={{ filter: "drop-shadow(0 -10px 30px rgba(36, 27, 47, 0.10))" }}
         >
-          <path
-            d={buildNotchPath(w)}
-            fill="var(--nav-bar-bg)"
-            stroke="var(--glass-border)"
-            strokeWidth={1.5}
-          />
+          <path d={buildNotchPath(w)} fill="none" stroke="var(--glass-border)" strokeWidth={1.5} />
         </svg>
 
         {/* Lớp nội dung — 4 tab dàn 2 bên khoảng trống trung tâm (nơi notch
@@ -147,6 +198,7 @@ export default function BottomNav() {
           className="fab-float absolute left-1/2 z-10 flex h-16 w-16 -translate-x-1/2 items-center justify-center rounded-full text-white transition-transform active:scale-[0.94]"
           style={{
             top: -30,
+            pointerEvents: "auto",
             background: "linear-gradient(155deg, #F291B0 0%, #E85C8A 55%, #D6437A 100%)",
             boxShadow: "0 10px 28px -4px rgba(232, 92, 138, 0.5)",
           }}
@@ -177,6 +229,7 @@ function NavItem({
     <Link
       href={href}
       className="nav-item flex flex-col items-center justify-center gap-1"
+      style={{ pointerEvents: "auto" }}
     >
       {/* Bỏ hẳn nền ô thẻ — chỉ icon đổi màu/độ đậm theo trạng thái, dùng
           chung 1 tông hồng (--c-period) cho mọi tab thay vì mỗi tab 1 màu
