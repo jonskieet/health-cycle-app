@@ -36,7 +36,7 @@ function buildNotchPath(width: number) {
   const w = Math.max(width, 200);
   const h = BAR_H;
   const cx = w / 2;
-  const wingSpan = NOTCH_R * 1.15; // sát viền FAB, chỉ đủ chỗ để đường cong không bị gãy góc
+  const wingSpan = NOTCH_R * 1.3; // nới theo NOTCH_R=38 (2026-08-01 #5) để tỉ lệ đường cong 2 bên vẫn đều, không bị gấp gáp so với miệng notch rộng hơn
   const nl = cx - wingSpan;
   const nr = cx + wingSpan;
 
