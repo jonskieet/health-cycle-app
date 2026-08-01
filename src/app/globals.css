@@ -61,7 +61,7 @@
      mờ hơi trong suốt (rgba, không phải --surface đặc) đúng tinh thần
      "floating glass". --nav-bar-solid dùng riêng cho viền FAB — PHẢI là màu
      ĐẶC (không alpha) để viền không lộ nội dung phía sau xuyên qua. */
-  --nav-bar-bg: rgba(255, 255, 255, 0.72);
+  --nav-bar-bg: rgba(255, 255, 255, 0.94);
   --nav-bar-solid: #ffffff;
   --nav-active: #b56dff;
   --nav-inactive: #7a7a7a;
@@ -108,7 +108,7 @@
   /* Dark theme: kính mờ tối thay vì trắng, vẫn giữ độ trong suốt để lộ
      backdrop-blur; viền FAB đổi sang --surface tối để không tạo vòng trắng
      lạc tông giữa nền tối. */
-  --nav-bar-bg: rgba(36, 26, 48, 0.68);
+  --nav-bar-bg: rgba(36, 26, 48, 0.9);
   --nav-bar-solid: #241a30;
   --nav-active: #c98bff;
   --nav-inactive: #8a84a0;

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { LayoutGrid, Droplet, Plus, BookOpen, User } from "lucide-react";
 
 // Redesign (2026-08-01 — "Notched Card Navigation", theo tham chiếu ứng dụng
@@ -60,11 +60,18 @@ function buildNotchPath(width: number) {
 export default function BottomNav() {
   const pathname = usePathname();
   const wrapRef = useRef<HTMLDivElement>(null);
-  const [barWidth, setBarWidth] = useState(390);
+  const [barWidth, setBarWidth] = useState<number | null>(null);
 
-  useEffect(() => {
+  // Fix (2026-08-01 #7): bản trước dùng useEffect + chỉ tin vào callback đầu
+  // tiên của ResizeObserver, nhưng callback đó chạy SAU khung hình đầu tiên
+  // đã paint xong với barWidth mặc định (390) — nếu màn hình thật khác 390px,
+  // path notch bị méo (wingSpan trông hẹp) đúng 1 nhịp cho tới khi state cập
+  // nhật. Dùng useLayoutEffect + đo ngay bằng getBoundingClientRect() TRƯỚC
+  // khi trình duyệt paint, để lần render đầu tiên đã có width chính xác luôn.
+  useLayoutEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
+    setBarWidth(el.getBoundingClientRect().width);
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width;
       if (w) setBarWidth(w);
@@ -85,51 +92,31 @@ export default function BottomNav() {
   )
     return null;
 
+  const w = barWidth ?? 390; // fallback chỉ dùng cho khung hình rất đầu (thực tế useLayoutEffect luôn ghi đè trước khi mắt người kịp thấy)
+
   return (
     <nav
       className="app-bottom-nav absolute inset-x-0 bottom-0 z-20 mx-auto w-full"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div ref={wrapRef} className="relative" style={{ height: BAR_H }}>
-        {/* Lớp nền — "kính mờ" thật thay vì chỉ tô màu trắng gần đặc: giảm
-            alpha nền xuống để backdrop-blur lộ rõ màu/ánh sáng từ nội dung
-            phía sau xuyên qua (nhìn thấy có "chất liệu" hơn), viền trên là 1
-            đường sáng mảnh riêng (không dùng chung màu với stroke path) mô
-            phỏng ánh phản chiếu trên mép kính thật, tách biệt với bóng đổ mềm
-            lan toả rộng phía dưới để tạo cảm giác thanh nav lơ lửng. */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backdropFilter: "blur(22px) saturate(1.3)",
-            WebkitBackdropFilter: "blur(22px) saturate(1.3)",
-            clipPath: `path('${buildNotchPath(barWidth)}')`,
-            WebkitClipPath: `path('${buildNotchPath(barWidth)}')`,
-            filter: "drop-shadow(0 -10px 30px rgba(36, 27, 47, 0.10))",
-          }}
-        >
-          <svg
-            className="absolute inset-0"
-            width="100%"
-            height={BAR_H}
-            viewBox={`0 0 ${barWidth} ${BAR_H}`}
-            preserveAspectRatio="none"
-          >
-            <path d={buildNotchPath(barWidth)} fill="var(--nav-bar-bg)" />
-          </svg>
-        </div>
-        {/* Viền sáng mảnh ôm theo đúng path notch — vẽ riêng, KHÔNG có fill,
-            chỉ stroke, để nổi rõ như ánh sáng viền mép kính chứ không bị lẫn
-            vào nền mờ phía dưới. */}
+        {/* Fix (2026-08-01 #7): bỏ hẳn lớp "kính mờ" backdrop-blur + clip-path
+            — dù đã thêm tiền tố -webkit-, clip-path dạng path() vẫn không cắt
+            đúng theo notch trên nhiều môi trường/WebView thực tế, khiến blur
+            tràn ra vùng trống quanh FAB thay vì chỉ áp trong thân bar. Quay về
+            1 lớp SVG duy nhất, tô màu đặc (nav-bar-bg đã là bán trong suốt sẵn
+            trong CSS) — đơn giản, chắc chắn hiển thị đúng mọi nơi. */}
         <svg
-          className="absolute inset-0 pointer-events-none"
+          className="absolute inset-0"
           width="100%"
           height={BAR_H}
-          viewBox={`0 0 ${barWidth} ${BAR_H}`}
+          viewBox={`0 0 ${w} ${BAR_H}`}
           preserveAspectRatio="none"
+          style={{ filter: "drop-shadow(0 -10px 30px rgba(36, 27, 47, 0.10))" }}
         >
           <path
-            d={buildNotchPath(barWidth)}
-            fill="none"
+            d={buildNotchPath(w)}
+            fill="var(--nav-bar-bg)"
             stroke="var(--glass-border)"
             strokeWidth={1.5}
           />
