@@ -11,14 +11,17 @@ import { LayoutGrid, Droplet, Plus, BookOpen, User } from "lucide-react";
 // FAB (không còn là đường thẳng), khiến nút trông "lồng" vào thanh thay vì chỉ
 // đè chồng lớp. Path notch đo bằng ResizeObserver để luôn khớp pixel thật của
 // bar dù width co giãn theo màn hình (không hard-code %).
-// Đồng thời đổi mỗi tab từ "1 màu tím dùng chung" sang Ô THẺ (tile) bo góc,
-// mỗi tab 1 màu riêng: nhạt (pastel, ~14% alpha) khi thường, ĐẶC màu + icon
-// trắng khi active — giống cách "Cycle" nổi bật bằng nền hồng đậm ở ảnh mẫu.
+// Redesign (2026-08-01 #6 — "Rose Unified Palette"): app là ứng dụng theo dõi
+// chu kỳ dành cho phái nữ, việc mỗi tab 1 màu riêng (tím/hồng/xanh dương/xanh
+// lá — bản #Notched Card) không ăn nhập với định vị thương hiệu và trông rời
+// rạc. Bỏ hẳn nền ô thẻ (tile) theo màu riêng, quay về 1 TÔNG HỒNG DUY NHẤT
+// cho toàn bộ tab: active = hồng đậm (--c-period), inactive = xám nhạt trung
+// tính. FAB cũng đổi từ tím sang gradient hồng cùng họ để đồng bộ toàn thanh.
 const items = [
-  { href: "/", label: "Tổng quan", icon: LayoutGrid, color: "var(--nav-tile-overview)" },
-  { href: "/cycle", label: "Chu kỳ", icon: Droplet, color: "var(--nav-tile-cycle)" },
-  { href: "/library", label: "Thư viện", icon: BookOpen, color: "var(--nav-tile-library)" },
-  { href: "/profile", label: "Cá nhân", icon: User, color: "var(--nav-tile-profile)" },
+  { href: "/", label: "Tổng quan", icon: LayoutGrid },
+  { href: "/cycle", label: "Chu kỳ", icon: Droplet },
+  { href: "/library", label: "Thư viện", icon: BookOpen },
+  { href: "/profile", label: "Cá nhân", icon: User },
 ];
 const fab = { href: "/log", label: "Ghi nhận", icon: Plus };
 
@@ -146,18 +149,18 @@ export default function BottomNav() {
           ))}
         </div>
 
-        {/* FAB — lồng hẳn vào lòng notch (không viền trắng bọc ngoài như bản
-            trước — ảnh mẫu "Victoria" không có viền tách lớp, nút hoà thẳng
-            vào phần lõm). Đổi từ gradient tím→xanh cyan sang tím ĐẶC 1 tông
-            (đậm nhạt nhẹ trên-dưới để có chiều sâu) đúng phối màu ảnh mẫu. */}
+        {/* FAB — đổi từ gradient TÍM sang gradient HỒNG cùng họ với --c-period,
+            đồng bộ với tông màu chủ đạo "chu kỳ" của toàn app thay vì lạc tông
+            như bản trước (tím đứng một mình, không liên hệ gì tới các màu
+            khác trong app). */}
         <Link
           href={fab.href}
           aria-label={fab.label}
           className="fab-float absolute left-1/2 z-10 flex h-16 w-16 -translate-x-1/2 items-center justify-center rounded-full text-white transition-transform active:scale-[0.94]"
           style={{
             top: -30,
-            background: "linear-gradient(180deg, #A66BFF 0%, #8B4FE8 100%)",
-            boxShadow: "0 10px 28px -4px rgba(139, 79, 232, 0.55)",
+            background: "linear-gradient(155deg, #F291B0 0%, #E85C8A 55%, #D6437A 100%)",
+            boxShadow: "0 10px 28px -4px rgba(232, 92, 138, 0.5)",
           }}
         >
           <fab.icon size={22} strokeWidth={2.25} />
@@ -175,13 +178,11 @@ function NavItem({
   href,
   label,
   icon: Icon,
-  color,
   active,
 }: {
   href: string;
   label: string;
   icon: typeof LayoutGrid;
-  color: string;
   active: boolean;
 }) {
   return (
@@ -189,29 +190,20 @@ function NavItem({
       href={href}
       className="nav-item flex flex-col items-center justify-center gap-1"
     >
-      {/* Ô thẻ (tile) bo góc — pastel nhạt khi thường, đặc màu + icon trắng
-          khi active. Đây là điểm khác biệt chính so với bản cũ (chỉ đổi màu
-          icon/label, không có nền khối riêng cho từng tab). */}
-      <div
-        className="flex items-center justify-center rounded-2xl transition-all duration-[250ms] ease-out"
-        style={{
-          width: active ? 44 : 38,
-          height: active ? 44 : 38,
-          background: active ? color : `color-mix(in srgb, ${color} 14%, transparent)`,
-          boxShadow: active ? `0 6px 16px -4px color-mix(in srgb, ${color} 55%, transparent)` : "none",
-        }}
-      >
-        <Icon
-          size={active ? 21 : 19}
-          strokeWidth={active ? 2 : 1.6}
-          color={active ? "#ffffff" : color}
-        />
-      </div>
+      {/* Bỏ hẳn nền ô thẻ — chỉ icon đổi màu/độ đậm theo trạng thái, dùng
+          chung 1 tông hồng (--c-period) cho mọi tab thay vì mỗi tab 1 màu
+          riêng, đúng tinh thần "1 bộ nhận diện" của app theo dõi chu kỳ. */}
+      <Icon
+        size={active ? 24 : 22}
+        strokeWidth={active ? 2.1 : 1.6}
+        color={active ? "var(--c-period)" : "var(--nav-inactive)"}
+        className="transition-all duration-[220ms] ease-out"
+      />
       <span
-        className="text-[10.5px] leading-none font-medium transition-opacity duration-[250ms] ease-out"
+        className="text-[10.5px] leading-none transition-all duration-[220ms] ease-out"
         style={{
           opacity: active ? 1 : 0.75,
-          color: active ? "var(--ink)" : "var(--ink-soft)",
+          color: active ? "var(--c-period)" : "var(--ink-soft)",
           fontWeight: active ? 700 : 500,
         }}
       >
