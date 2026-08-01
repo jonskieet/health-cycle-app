@@ -24,7 +24,7 @@ const fab = { href: "/log", label: "Ghi nhận", icon: Plus };
 
 const BAR_H = 84;
 const TOP_R = 28; // bo góc trên của bar
-const NOTCH_R = 34; // bán kính "miệng" notch — THU HẸP LẠI, chỉ nhỉnh hơn bán kính FAB (32) một chút để ôm sát nút thay vì tạo 1 vùng lõm rộng rời rạc
+const NOTCH_R = 38; // bán kính "miệng" notch — chỉnh theo phản hồi thực tế trên máy (2026-08-01 #4), 34 hơi chật, 38 vừa ôm sát nút vừa đủ thở
 const NOTCH_DEPTH = 40; // độ lõm sâu — giữ đủ sâu để nửa dưới FAB chìm vào trong
 
 // Fix (2026-08-01 #3): bản #2 kéo wingSpan quá rộng (NOTCH_R * 2.3) khiến
