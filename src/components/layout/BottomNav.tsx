@@ -22,25 +22,32 @@ const items = [
 ];
 const fab = { href: "/log", label: "Ghi nhận", icon: Plus };
 
-const BAR_H = 78;
+const BAR_H = 84;
 const TOP_R = 28; // bo góc trên của bar
-const NOTCH_R = 42; // bán kính "miệng" notch (rộng hơn FAB một chút để có viền thở)
-const NOTCH_DEPTH = 34; // độ lõm sâu xuống của notch
+const NOTCH_R = 52; // bán kính "miệng" notch — rộng hơn hẳn đường kính FAB (64) để đường cong thoải, không ôm sát/dính vào nút
+const NOTCH_DEPTH = 46; // độ lõm sâu — đủ sâu để nửa dưới FAB chìm hẳn vào trong, tránh nút đè lên mép bar
 
+// Fix (2026-08-01 #2): bản trước dùng 2 cung Bezier nối trực tiếp vào 2 đoạn
+// thẳng ở 2 bên → điểm nối bị "gãy" (đổi độ cong đột ngột), nhìn như đường cong
+// chưa đủ mượt và FAB như dính chặt vào mép notch. Sửa bằng cách kéo dài đoạn
+// cong sang 2 bên (rộng hơn NOTCH_R nhiều — wingSpan) và dùng control point
+// thoải hơn (nằm ngang với điểm bắt đầu) để độ dốc bằng 0 tại điểm nối với
+// đoạn thẳng, tạo 1 đường cong liền mạch (C1-continuous) giống rãnh "sóng"
+// mềm thay vì hình chữ V bo tròn.
 function buildNotchPath(width: number) {
   const w = Math.max(width, 200);
   const h = BAR_H;
   const cx = w / 2;
-  const flareOut = 26; // đoạn cong loe ra 2 bên trước khi vào notch, tạo đường mượt thay vì gãy góc
-  const nl = cx - NOTCH_R - flareOut;
-  const nr = cx + NOTCH_R + flareOut;
+  const wingSpan = NOTCH_R * 2.3; // bề rộng toàn bộ đoạn cong (2 bên + đáy), rộng rãi để độ dốc vào/ra thoải
+  const nl = cx - wingSpan;
+  const nr = cx + wingSpan;
 
   return `
     M0,${TOP_R}
     Q0,0 ${TOP_R},0
     L${nl},0
-    C${cx - NOTCH_R},0 ${cx - NOTCH_R * 0.72},${NOTCH_DEPTH} ${cx},${NOTCH_DEPTH}
-    C${cx + NOTCH_R * 0.72},${NOTCH_DEPTH} ${cx + NOTCH_R},0 ${nr},0
+    C${cx - wingSpan * 0.55},0 ${cx - NOTCH_R * 1.05},${NOTCH_DEPTH} ${cx},${NOTCH_DEPTH}
+    C${cx + NOTCH_R * 1.05},${NOTCH_DEPTH} ${cx + wingSpan * 0.55},0 ${nr},0
     L${w - TOP_R},0
     Q${w},0 ${w},${TOP_R}
     L${w},${h}
@@ -118,21 +125,21 @@ export default function BottomNav() {
           ))}
         </div>
 
-        {/* FAB — lồng vào phần notch vừa khoét, nửa dưới chìm vào bar, nửa
-            trên nổi lên trên mép notch, viền đặc để tách khỏi nền phía sau. */}
+        {/* FAB — lồng hẳn vào lòng notch (không viền trắng bọc ngoài như bản
+            trước — ảnh mẫu "Victoria" không có viền tách lớp, nút hoà thẳng
+            vào phần lõm). Đổi từ gradient tím→xanh cyan sang tím ĐẶC 1 tông
+            (đậm nhạt nhẹ trên-dưới để có chiều sâu) đúng phối màu ảnh mẫu. */}
         <Link
           href={fab.href}
           aria-label={fab.label}
           className="fab-float absolute left-1/2 z-10 flex h-16 w-16 -translate-x-1/2 items-center justify-center rounded-full text-white transition-transform active:scale-[0.94]"
           style={{
-            top: -22,
-            background:
-              "radial-gradient(circle at 35% 30%, #D18BFF 0%, #B56DFF 45%, #87E0FF 100%)",
-            border: "4px solid var(--nav-bar-solid)",
-            boxShadow: "0 12px 40px rgba(181, 109, 255, 0.35)",
+            top: -30,
+            background: "linear-gradient(180deg, #A66BFF 0%, #8B4FE8 100%)",
+            boxShadow: "0 10px 28px -4px rgba(139, 79, 232, 0.55)",
           }}
         >
-          <fab.icon size={20} strokeWidth={2} />
+          <fab.icon size={22} strokeWidth={2.25} />
         </Link>
       </div>
     </nav>
