@@ -24,21 +24,19 @@ const fab = { href: "/log", label: "Ghi nhận", icon: Plus };
 
 const BAR_H = 84;
 const TOP_R = 28; // bo góc trên của bar
-const NOTCH_R = 52; // bán kính "miệng" notch — rộng hơn hẳn đường kính FAB (64) để đường cong thoải, không ôm sát/dính vào nút
-const NOTCH_DEPTH = 46; // độ lõm sâu — đủ sâu để nửa dưới FAB chìm hẳn vào trong, tránh nút đè lên mép bar
+const NOTCH_R = 34; // bán kính "miệng" notch — THU HẸP LẠI, chỉ nhỉnh hơn bán kính FAB (32) một chút để ôm sát nút thay vì tạo 1 vùng lõm rộng rời rạc
+const NOTCH_DEPTH = 40; // độ lõm sâu — giữ đủ sâu để nửa dưới FAB chìm vào trong
 
-// Fix (2026-08-01 #2): bản trước dùng 2 cung Bezier nối trực tiếp vào 2 đoạn
-// thẳng ở 2 bên → điểm nối bị "gãy" (đổi độ cong đột ngột), nhìn như đường cong
-// chưa đủ mượt và FAB như dính chặt vào mép notch. Sửa bằng cách kéo dài đoạn
-// cong sang 2 bên (rộng hơn NOTCH_R nhiều — wingSpan) và dùng control point
-// thoải hơn (nằm ngang với điểm bắt đầu) để độ dốc bằng 0 tại điểm nối với
-// đoạn thẳng, tạo 1 đường cong liền mạch (C1-continuous) giống rãnh "sóng"
-// mềm thay vì hình chữ V bo tròn.
+// Fix (2026-08-01 #3): bản #2 kéo wingSpan quá rộng (NOTCH_R * 2.3) khiến
+// vùng lõm loe ra xa 2 bên, nhìn như 1 cái máng rộng chứ không "bo" theo hình
+// nút "+" nữa. Thu hẹp wingSpan sát lại gần NOTCH_R (chỉ hơn ~15%) để đường
+// cong bám sát đường kính thật của FAB — vẫn giữ control point thoải (nằm
+// ngang tại điểm nối) để không bị gãy góc như bản #1, nhưng độ "ôm" rõ hơn.
 function buildNotchPath(width: number) {
   const w = Math.max(width, 200);
   const h = BAR_H;
   const cx = w / 2;
-  const wingSpan = NOTCH_R * 2.3; // bề rộng toàn bộ đoạn cong (2 bên + đáy), rộng rãi để độ dốc vào/ra thoải
+  const wingSpan = NOTCH_R * 1.15; // sát viền FAB, chỉ đủ chỗ để đường cong không bị gãy góc
   const nl = cx - wingSpan;
   const nr = cx + wingSpan;
 
@@ -46,8 +44,8 @@ function buildNotchPath(width: number) {
     M0,${TOP_R}
     Q0,0 ${TOP_R},0
     L${nl},0
-    C${cx - wingSpan * 0.55},0 ${cx - NOTCH_R * 1.05},${NOTCH_DEPTH} ${cx},${NOTCH_DEPTH}
-    C${cx + NOTCH_R * 1.05},${NOTCH_DEPTH} ${cx + wingSpan * 0.55},0 ${nr},0
+    C${cx - wingSpan * 0.6},0 ${cx - NOTCH_R},${NOTCH_DEPTH} ${cx},${NOTCH_DEPTH}
+    C${cx + NOTCH_R},${NOTCH_DEPTH} ${cx + wingSpan * 0.6},0 ${nr},0
     L${w - TOP_R},0
     Q${w},0 ${w},${TOP_R}
     L${w},${h}
@@ -90,23 +88,46 @@ export default function BottomNav() {
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div ref={wrapRef} className="relative" style={{ height: BAR_H }}>
-        {/* Lớp nền — 1 khối SVG duy nhất: viền trên khoét lõm cong ôm theo FAB,
-            thay vì bar chữ nhật phẳng. drop-shadow áp lên toàn path nên đường
-            viền notch cũng có bóng đổ mềm giống mép ngoài, tạo cảm giác liền
-            khối chứ không phải 2 lớp chồng nhau. */}
-        <svg
+        {/* Lớp nền — "kính mờ" thật thay vì chỉ tô màu trắng gần đặc: giảm
+            alpha nền xuống để backdrop-blur lộ rõ màu/ánh sáng từ nội dung
+            phía sau xuyên qua (nhìn thấy có "chất liệu" hơn), viền trên là 1
+            đường sáng mảnh riêng (không dùng chung màu với stroke path) mô
+            phỏng ánh phản chiếu trên mép kính thật, tách biệt với bóng đổ mềm
+            lan toả rộng phía dưới để tạo cảm giác thanh nav lơ lửng. */}
+        <div
           className="absolute inset-0"
+          style={{
+            backdropFilter: "blur(22px) saturate(1.3)",
+            WebkitBackdropFilter: "blur(22px) saturate(1.3)",
+            clipPath: `path('${buildNotchPath(barWidth)}')`,
+            filter: "drop-shadow(0 -10px 30px rgba(36, 27, 47, 0.10))",
+          }}
+        >
+          <svg
+            className="absolute inset-0"
+            width="100%"
+            height={BAR_H}
+            viewBox={`0 0 ${barWidth} ${BAR_H}`}
+            preserveAspectRatio="none"
+          >
+            <path d={buildNotchPath(barWidth)} fill="var(--nav-bar-bg)" />
+          </svg>
+        </div>
+        {/* Viền sáng mảnh ôm theo đúng path notch — vẽ riêng, KHÔNG có fill,
+            chỉ stroke, để nổi rõ như ánh sáng viền mép kính chứ không bị lẫn
+            vào nền mờ phía dưới. */}
+        <svg
+          className="absolute inset-0 pointer-events-none"
           width="100%"
           height={BAR_H}
           viewBox={`0 0 ${barWidth} ${BAR_H}`}
           preserveAspectRatio="none"
-          style={{ filter: "drop-shadow(0 -6px 24px rgba(36, 27, 47, 0.08))" }}
         >
           <path
             d={buildNotchPath(barWidth)}
-            fill="var(--nav-bar-bg)"
+            fill="none"
             stroke="var(--glass-border)"
-            strokeWidth={1}
+            strokeWidth={1.5}
           />
         </svg>
 
