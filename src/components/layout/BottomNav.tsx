@@ -103,6 +103,7 @@ export default function BottomNav() {
             backdropFilter: "blur(22px) saturate(1.3)",
             WebkitBackdropFilter: "blur(22px) saturate(1.3)",
             clipPath: `path('${buildNotchPath(barWidth)}')`,
+            WebkitClipPath: `path('${buildNotchPath(barWidth)}')`,
             filter: "drop-shadow(0 -10px 30px rgba(36, 27, 47, 0.10))",
           }}
         >
