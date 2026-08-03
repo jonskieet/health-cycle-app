@@ -110,20 +110,20 @@ export default function CyclePage() {
                 periodColor="var(--c-period)"
                 fertileColor="var(--c-fertile)"
               >
-                <span className="text-[11px] font-medium text-white/70">
+                <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/85">
                   {phaseLabel[prediction.phase]}
                 </span>
-                <span className="font-display text-[26px] font-extrabold leading-tight text-white">
+                <span className="font-display text-[30px] font-extrabold leading-none text-white">
                   Ngày {prediction.currentDay}
                 </span>
-                <span className="max-w-[8.5rem] text-[11px] leading-snug text-white/80">
+                <span className="line-clamp-1 max-w-[9rem] text-[11px] leading-snug text-white/75">
                   {phaseSubtitle[prediction.phase]}
                 </span>
                 <button
                   type="button"
                   onClick={() => setAddingNew(true)}
-                  className="mt-1 flex items-center gap-0.5 rounded-full px-3.5 py-1.5 text-[11px] font-bold text-white"
-                  style={{ background: phaseColor[prediction.phase] }}
+                  className="mt-1.5 flex items-center gap-0.5 rounded-full bg-white px-3.5 py-1.5 text-[11px] font-bold"
+                  style={{ color: phaseColor[prediction.phase] }}
                 >
                   Nhật ký
                   <ChevronRight size={12} />
