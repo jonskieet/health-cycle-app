@@ -95,48 +95,95 @@ function DayRing({
 }
 
 /**
- * Hoạ tiết khối tròn tối giữa, bản thiết kế lại (2026-08-03): kết hợp một
- * "vầng trăng" mờ lệch góc trên-trái (gợi ý pha chu kỳ, giống tinh thần ảnh
- * tham khảo nhưng KHÔNG sao chép hình vẽ mặt trăng chia sáng/tối cụ thể của
- * ảnh) + vài đốm sao nhỏ rải rác phía trên + 3 lớp sóng mờ chồng nhau phía
- * dưới tạo chiều sâu, tất cả tô theo đúng cặp periodColor/fertileColor sẵn
- * có của app.
+ * Hoạ tiết khối tròn tối giữa, bản vẽ minh hoạ đầy đủ (2026-08-03, theo ảnh
+ * tham khảo mới chủ dự án gửi — phong cách "bầu trời hoàng hôn + trăng lưỡi
+ * liềm + mây + đồi sóng"): vẽ lại HOÀN TOÀN nguyên bản bằng SVG path/ellipse
+ * tự tạo (không dùng ảnh nào của ảnh mẫu), giữ đúng bố cục cảm hứng (trăng
+ * lệch trên, mây rải giữa, đồi sóng dưới) nhưng đổi bảng màu theo đúng cặp
+ * periodColor/fertileColor của KVCycle thay vì xanh dương/vàng cố định của
+ * ảnh mẫu, để hoạ tiết tự đổi màu theo theme mà không lệch nhận diện app.
+ * Có thêm lớp vignette tối mờ ở giữa để chữ trắng (Ngày X, nút Nhật ký...)
+ * luôn đủ tương phản dù hoạ tiết sáng.
  */
 function CenterArt({ size, color1, color2 }: { size: number; color1: string; color2: string }) {
   const c = size / 2;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="absolute" style={{ left: 0, top: 0 }}>
       <defs>
-        <radialGradient id="cycle-dial-bg-grad" cx="32%" cy="26%" r="80%">
-          <stop offset="0%" stopColor={color1} stopOpacity={0.92} />
-          <stop offset="100%" stopColor={color2} stopOpacity={0.97} />
+        {/* Bầu trời hoàng hôn: nhạt phía trên (gần fertileColor) xuống đậm
+            phía dưới (gần periodColor), đúng cảm giác ảnh mẫu nhưng theo
+            theme của app. */}
+        <linearGradient id="cycle-dial-sky-grad" x1="0" y1="0" x2="0.35" y2="1">
+          <stop offset="0%" stopColor={color2} stopOpacity={0.55} />
+          <stop offset="55%" stopColor={color2} stopOpacity={0.85} />
+          <stop offset="100%" stopColor={color1} stopOpacity={0.96} />
+        </linearGradient>
+        <radialGradient id="cycle-dial-moon-glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#fff8e6" stopOpacity={0.9} />
+          <stop offset="60%" stopColor="#fff2cf" stopOpacity={0.5} />
+          <stop offset="100%" stopColor="#fff2cf" stopOpacity={0} />
         </radialGradient>
-        <radialGradient id="cycle-dial-moon-grad" cx="38%" cy="35%" r="65%">
-          <stop offset="0%" stopColor="#fff" stopOpacity={0.55} />
-          <stop offset="100%" stopColor="#fff" stopOpacity={0.06} />
+        <linearGradient id="cycle-dial-moon-body" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#fffaf0" />
+          <stop offset="100%" stopColor="#ffe9b8" />
+        </linearGradient>
+        <radialGradient id="cycle-dial-vignette" cx="50%" cy="58%" r="55%">
+          <stop offset="0%" stopColor="#000" stopOpacity={0.22} />
+          <stop offset="70%" stopColor="#000" stopOpacity={0.05} />
+          <stop offset="100%" stopColor="#000" stopOpacity={0} />
         </radialGradient>
         <clipPath id="cycle-dial-clip">
           <circle cx={c} cy={c} r={c} />
         </clipPath>
       </defs>
 
-      <circle cx={c} cy={c} r={c} fill="url(#cycle-dial-bg-grad)" />
-
       <g clipPath="url(#cycle-dial-clip)">
-        {/* Vầng trăng mờ lệch góc trên-trái */}
-        <circle cx={size * 0.32} cy={size * 0.3} r={size * 0.24} fill="url(#cycle-dial-moon-grad)" />
-        <circle cx={size * 0.32} cy={size * 0.3} r={size * 0.24} fill="none" stroke="#fff" strokeOpacity={0.25} strokeWidth={1} />
+        <rect x={0} y={0} width={size} height={size} fill="url(#cycle-dial-sky-grad)" />
 
-        {/* Sao nhỏ rải rác */}
-        <circle cx={size * 0.68} cy={size * 0.16} r={size * 0.012} fill="#fff" opacity={0.6} />
-        <circle cx={size * 0.78} cy={size * 0.28} r={size * 0.018} fill="#fff" opacity={0.5} />
-        <circle cx={size * 0.6} cy={size * 0.1} r={size * 0.01} fill="#fff" opacity={0.45} />
-        <circle cx={size * 0.16} cy={size * 0.14} r={size * 0.01} fill="#fff" opacity={0.4} />
+        {/* Sao nhỏ rải rác góc trên */}
+        <circle cx={size * 0.14} cy={size * 0.12} r={size * 0.009} fill="#fff" opacity={0.55} />
+        <circle cx={size * 0.24} cy={size * 0.08} r={size * 0.012} fill="#fff" opacity={0.5} />
+        <circle cx={size * 0.08} cy={size * 0.24} r={size * 0.007} fill="#fff" opacity={0.45} />
 
-        {/* Sóng mờ chồng lớp phía dưới, tạo chiều sâu */}
-        <ellipse cx={c * 0.55} cy={size * 0.98} rx={size * 0.8} ry={size * 0.34} fill="#fff" opacity={0.08} />
-        <ellipse cx={c * 1.15} cy={size * 1.06} rx={size * 0.7} ry={size * 0.28} fill="#fff" opacity={0.1} />
-        <ellipse cx={c * 0.85} cy={size * 1.14} rx={size * 0.85} ry={size * 0.26} fill="#fff" opacity={0.14} />
+        {/* Vầng sáng + trăng lưỡi liềm lệch góc trên-trái */}
+        <circle cx={size * 0.33} cy={size * 0.28} r={size * 0.26} fill="url(#cycle-dial-moon-glow)" />
+        <path
+          d={`M ${size * 0.4} ${size * 0.14}
+              a ${size * 0.155} ${size * 0.155} 0 1 0 0 ${size * 0.28}
+              a ${size * 0.115} ${size * 0.115} 0 1 1 0 -${size * 0.28} Z`}
+          fill="url(#cycle-dial-moon-body)"
+        />
+
+        {/* Mây rải rác giữa nền, dạng chùm ellipse chồng mềm */}
+        <g opacity={0.85}>
+          <ellipse cx={size * 0.68} cy={size * 0.36} rx={size * 0.13} ry={size * 0.05} fill="#fff" opacity={0.75} />
+          <ellipse cx={size * 0.6} cy={size * 0.34} rx={size * 0.09} ry={size * 0.045} fill="#fff" opacity={0.7} />
+          <ellipse cx={size * 0.78} cy={size * 0.4} rx={size * 0.08} ry={size * 0.038} fill="#fff" opacity={0.6} />
+        </g>
+        <g opacity={0.55}>
+          <ellipse cx={size * 0.24} cy={size * 0.5} rx={size * 0.1} ry={size * 0.04} fill="#fff" />
+          <ellipse cx={size * 0.15} cy={size * 0.48} rx={size * 0.06} ry={size * 0.032} fill="#fff" />
+        </g>
+
+        {/* Đồi sóng nhiều lớp phía dưới, tạo chiều sâu như ảnh mẫu */}
+        <path
+          d={`M 0 ${size * 0.78}
+              C ${size * 0.22} ${size * 0.7}, ${size * 0.4} ${size * 0.86}, ${size * 0.62} ${size * 0.76}
+              S ${size * 0.9} ${size * 0.72}, ${size} ${size * 0.8}
+              L ${size} ${size} L 0 ${size} Z`}
+          fill="#fff"
+          opacity={0.16}
+        />
+        <path
+          d={`M 0 ${size * 0.88}
+              C ${size * 0.26} ${size * 0.98}, ${size * 0.5} ${size * 0.8}, ${size * 0.74} ${size * 0.9}
+              S ${size * 0.92} ${size * 0.98}, ${size} ${size * 0.92}
+              L ${size} ${size} L 0 ${size} Z`}
+          fill="#fff"
+          opacity={0.22}
+        />
+
+        <circle cx={c} cy={c} r={c} fill="url(#cycle-dial-vignette)" />
       </g>
     </svg>
   );
