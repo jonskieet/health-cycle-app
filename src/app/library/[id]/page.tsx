@@ -29,7 +29,7 @@ export default function ArticleDetailPage() {
           >
             <ChevronLeft size={18} className="text-[var(--ink)]" />
           </button>
-          <h1 className="font-display text-xl font-bold text-[var(--ink)]">Không tìm thấy bài viết</h1>
+          <h1 className="font-display text-xl font-semibold tracking-tight text-[var(--ink)]">Không tìm thấy bài viết</h1>
         </header>
       </main>
     );

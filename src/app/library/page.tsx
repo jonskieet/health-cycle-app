@@ -30,7 +30,7 @@ export default function LibraryPage() {
         >
           <ChevronLeft size={18} className="text-[var(--ink)]" />
         </button>
-        <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Thư viện kiến thức</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight text-[var(--ink)]">Thư viện kiến thức</h1>
       </header>
 
       <p className="text-xs text-[var(--ink-soft)]">

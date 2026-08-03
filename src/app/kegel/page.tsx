@@ -35,7 +35,7 @@ export default function KegelPage() {
         >
           <ChevronLeft size={18} className="text-[var(--ink)]" />
         </button>
-        <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Bài tập Kegel</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight text-[var(--ink)]">Bài tập Kegel</h1>
       </header>
 
       {selected ? (

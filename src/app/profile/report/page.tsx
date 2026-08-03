@@ -96,7 +96,7 @@ export default function HealthReportPage() {
       </header>
 
       <div>
-        <h1 className="font-display text-xl font-bold text-[var(--ink)]">
+        <h1 className="font-display text-xl font-semibold tracking-tight text-[var(--ink)]">
           Báo cáo sức khỏe — KVCycle
         </h1>
         <p className="mt-1 text-xs text-[var(--ink-soft)]">

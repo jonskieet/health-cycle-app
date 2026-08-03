@@ -60,7 +60,7 @@ export default function CyclePage() {
   return (
     <main className="flex flex-1 flex-col gap-6 px-5 pt-8">
       <header className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Chu kỳ</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight text-[var(--ink)]">Chu kỳ</h1>
         <button
           type="button"
           onClick={() => setAddingNew(true)}
