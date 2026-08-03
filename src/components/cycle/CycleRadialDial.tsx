@@ -95,30 +95,49 @@ function DayRing({
 }
 
 /**
- * Hoạ tiết sóng mờ trừu tượng NGUYÊN BẢN cho khối tròn tối giữa — lấy cảm
- * hứng từ mảng sóng/trăng lưỡi liềm của ảnh tham khảo nhưng đơn giản hoá
- * thành 2 dải cong mờ chồng lớp (không sao chép hình vẽ cụ thể), đúng tông
- * period/fertile sẵn có của app thay vì xanh navy của ảnh mẫu.
+ * Hoạ tiết khối tròn tối giữa, bản thiết kế lại (2026-08-03): kết hợp một
+ * "vầng trăng" mờ lệch góc trên-trái (gợi ý pha chu kỳ, giống tinh thần ảnh
+ * tham khảo nhưng KHÔNG sao chép hình vẽ mặt trăng chia sáng/tối cụ thể của
+ * ảnh) + vài đốm sao nhỏ rải rác phía trên + 3 lớp sóng mờ chồng nhau phía
+ * dưới tạo chiều sâu, tất cả tô theo đúng cặp periodColor/fertileColor sẵn
+ * có của app.
  */
-function CenterWaves({ size, color1, color2 }: { size: number; color1: string; color2: string }) {
+function CenterArt({ size, color1, color2 }: { size: number; color1: string; color2: string }) {
   const c = size / 2;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="absolute" style={{ left: 0, top: 0 }}>
       <defs>
-        <radialGradient id="cycle-dial-wave-grad" cx="35%" cy="30%" r="75%">
-          <stop offset="0%" stopColor={color1} stopOpacity={0.9} />
-          <stop offset="100%" stopColor={color2} stopOpacity={0.95} />
+        <radialGradient id="cycle-dial-bg-grad" cx="32%" cy="26%" r="80%">
+          <stop offset="0%" stopColor={color1} stopOpacity={0.92} />
+          <stop offset="100%" stopColor={color2} stopOpacity={0.97} />
         </radialGradient>
-        <clipPath id="cycle-dial-wave-clip">
+        <radialGradient id="cycle-dial-moon-grad" cx="38%" cy="35%" r="65%">
+          <stop offset="0%" stopColor="#fff" stopOpacity={0.55} />
+          <stop offset="100%" stopColor="#fff" stopOpacity={0.06} />
+        </radialGradient>
+        <clipPath id="cycle-dial-clip">
           <circle cx={c} cy={c} r={c} />
         </clipPath>
       </defs>
-      <circle cx={c} cy={c} r={c} fill="url(#cycle-dial-wave-grad)" />
-      <g clipPath="url(#cycle-dial-wave-clip)" opacity={0.16}>
-        <ellipse cx={c * 0.7} cy={c * 1.5} rx={size * 0.75} ry={size * 0.32} fill="#fff" />
-        <ellipse cx={c * 1.3} cy={c * 1.72} rx={size * 0.65} ry={size * 0.24} fill="#fff" />
+
+      <circle cx={c} cy={c} r={c} fill="url(#cycle-dial-bg-grad)" />
+
+      <g clipPath="url(#cycle-dial-clip)">
+        {/* Vầng trăng mờ lệch góc trên-trái */}
+        <circle cx={size * 0.32} cy={size * 0.3} r={size * 0.24} fill="url(#cycle-dial-moon-grad)" />
+        <circle cx={size * 0.32} cy={size * 0.3} r={size * 0.24} fill="none" stroke="#fff" strokeOpacity={0.25} strokeWidth={1} />
+
+        {/* Sao nhỏ rải rác */}
+        <circle cx={size * 0.68} cy={size * 0.16} r={size * 0.012} fill="#fff" opacity={0.6} />
+        <circle cx={size * 0.78} cy={size * 0.28} r={size * 0.018} fill="#fff" opacity={0.5} />
+        <circle cx={size * 0.6} cy={size * 0.1} r={size * 0.01} fill="#fff" opacity={0.45} />
+        <circle cx={size * 0.16} cy={size * 0.14} r={size * 0.01} fill="#fff" opacity={0.4} />
+
+        {/* Sóng mờ chồng lớp phía dưới, tạo chiều sâu */}
+        <ellipse cx={c * 0.55} cy={size * 0.98} rx={size * 0.8} ry={size * 0.34} fill="#fff" opacity={0.08} />
+        <ellipse cx={c * 1.15} cy={size * 1.06} rx={size * 0.7} ry={size * 0.28} fill="#fff" opacity={0.1} />
+        <ellipse cx={c * 0.85} cy={size * 1.14} rx={size * 0.85} ry={size * 0.26} fill="#fff" opacity={0.14} />
       </g>
-      <circle cx={size * 0.24} cy={size * 0.22} r={size * 0.05} fill="#fff" opacity={0.35} />
     </svg>
   );
 }
@@ -135,7 +154,7 @@ interface CycleRadialDialProps {
 
 const RING_R_RATIO = 0.42;
 const NUMBER_R_RATIO = 0.5;
-const CENTER_D_RATIO = 0.62;
+const CENTER_D_RATIO = 0.74;
 const BADGE_R_RATIO = 9 / 260;
 const CANVAS_RATIO = 1.16;
 
@@ -212,9 +231,9 @@ export default function CycleRadialDial({
           boxShadow: "0 14px 30px -14px rgba(0,0,0,0.35)",
         }}
       >
-        <CenterWaves size={centerR * 2} color1={periodColor} color2={fertileColor} />
+        <CenterArt size={centerR * 2} color1={periodColor} color2={fertileColor} />
       </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-9 text-center">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-7 text-center">
         {children}
       </div>
     </div>

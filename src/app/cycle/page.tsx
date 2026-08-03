@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, Sparkles, ChevronRight } from "lucide-react";
 import CycleRadialDial from "@/components/cycle/CycleRadialDial";
 import CycleWeekStrip from "@/components/cycle/CycleWeekStrip";
@@ -41,7 +41,6 @@ export default function CyclePage() {
   const cycleHistory = useMemo(() => buildCycleHistory(cycleLogs), [cycleLogs]);
   const daysToNext = daysUntil(prediction.nextPeriodDate);
   const daysToOvulation = daysUntil(prediction.ovulationDate);
-  const detailsRef = useRef<HTMLDivElement>(null);
 
   // Tap ngay (yyyy-mm-dd) roi vao ky hanh kinh da ghi nhan, de cham diem
   // duoi so ngay trong dai tuan (`CycleWeekStrip`).
@@ -104,7 +103,7 @@ export default function CyclePage() {
 
             <div className="relative flex w-full justify-center py-1">
               <CycleRadialDial
-                size={252}
+                size={288}
                 avgCycleLength={prediction.avgCycleLength}
                 avgPeriodLength={prediction.avgPeriodLength}
                 currentDay={prediction.currentDay}
@@ -130,18 +129,9 @@ export default function CyclePage() {
                   <ChevronRight size={12} />
                 </button>
               </CycleRadialDial>
-
-              <button
-                type="button"
-                onClick={() => detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}
-                className="absolute left-0 top-1/2 flex -translate-y-1/2 flex-col items-center gap-1 text-[10px] font-medium text-[var(--ink-faint)]"
-                style={{ writingMode: "vertical-rl" }}
-              >
-                <span style={{ transform: "rotate(180deg)" }}>Xem thêm</span>
-              </button>
             </div>
 
-            <div ref={detailsRef} className="relative grid w-full grid-cols-2 gap-3 text-left">
+            <div className="relative grid w-full grid-cols-2 gap-3 text-left">
               <div className="rounded-2xl bg-black/[0.03] p-3">
                 <p className="text-[11px] text-[var(--ink-faint)]">Kỳ kinh tiếp theo</p>
                 <p className="font-display text-sm font-bold text-[var(--ink)]">
