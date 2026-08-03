@@ -9,6 +9,7 @@ interface ProfileAvatarProps {
   isVip: boolean;
   size?: number;
   avatarKey?: string | null;
+  avatarUrl?: string | null;
 }
 
 function getInitials(name?: string | null, email?: string | null) {
@@ -31,6 +32,7 @@ export default function ProfileAvatar({
   isVip,
   size = 72,
   avatarKey,
+  avatarUrl,
 }: ProfileAvatarProps) {
   const initials = getInitials(name, email);
   const preset = getAvatarPreset(avatarKey);
@@ -39,19 +41,24 @@ export default function ProfileAvatar({
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
       <span
-        className="flex h-full w-full items-center justify-center rounded-full font-display text-2xl font-bold text-white"
+        className="flex h-full w-full items-center justify-center overflow-hidden rounded-full font-display text-2xl font-bold text-white"
         style={{
-          background: preset
-            ? `linear-gradient(135deg, ${preset.gradientFrom}, ${preset.gradientTo})`
-            : isVip
-              ? "linear-gradient(135deg, #f6c453, #e85c8a 55%, #7c6ff0)"
-              : "linear-gradient(135deg, var(--c-sleep), var(--c-period))",
+          background: avatarUrl
+            ? "var(--ink-faint)"
+            : preset
+              ? `linear-gradient(135deg, ${preset.gradientFrom}, ${preset.gradientTo})`
+              : isVip
+                ? "linear-gradient(135deg, #f6c453, #e85c8a 55%, #7c6ff0)"
+                : "linear-gradient(135deg, var(--c-sleep), var(--c-period))",
           boxShadow: isVip
             ? "0 0 0 3px #fff, 0 0 0 5px #f6c453"
             : "0 0 0 3px #fff, 0 0 0 4px rgba(124,111,240,0.25)",
         }}
       >
-        {PresetIcon ? (
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={avatarUrl} alt={name || "Avatar"} className="h-full w-full object-cover" />
+        ) : PresetIcon ? (
           <PresetIcon size={size * 0.42} />
         ) : (
           (initials ?? <User size={size * 0.4} />)

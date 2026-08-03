@@ -116,30 +116,44 @@ export default function ProfilePage() {
         </Link>
       </div>
 
-      <section className="glass-card-strong flex flex-col items-center gap-2 rounded-[28px] p-8 text-center">
-        <button type="button" onClick={() => setEditingProfile(true)}>
+      <section className="glass-card-strong relative flex flex-col items-center gap-2 overflow-hidden rounded-[28px] p-8 text-center">
+        {/* Redesign trang Cá nhân: thêm dải gradient mờ phía sau avatar làm
+            điểm nhấn thị giác cho phần header, đồng bộ tông màu với
+            AuroraRing ở trang chủ thay vì nền glass-card trơn như trước. */}
+        <div
+          className="pointer-events-none absolute inset-x-0 -top-16 h-40 opacity-20"
+          style={{ background: "linear-gradient(135deg, #7c6ff0, #e85c8a)" }}
+        />
+
+        <button type="button" onClick={() => setEditingProfile(true)} className="relative">
           <ProfileAvatar
             name={profile?.display_name}
             email={user?.email}
             isVip={vip}
-            size={72}
+            size={84}
             avatarKey={profile?.avatar_key}
+            avatarUrl={profile?.avatar_url}
           />
+          <span
+            className="absolute -bottom-0.5 -right-0.5 flex h-7 w-7 items-center justify-center rounded-full text-white"
+            style={{ background: "var(--c-sleep)", boxShadow: "0 0 0 2px #fff" }}
+          >
+            <Pencil size={12} />
+          </span>
         </button>
 
         <button
           type="button"
           onClick={() => setEditingProfile(true)}
-          className="mt-1 flex items-center gap-1.5"
+          className="relative mt-2 flex items-center gap-1.5"
         >
-          <p className="font-display text-base font-bold text-[var(--ink)]">
+          <p className="font-display text-lg font-bold text-[var(--ink)]">
             {profile?.display_name || user?.email}
           </p>
-          <Pencil size={13} className="text-[var(--ink-faint)]" />
         </button>
 
         {profile?.display_name && (
-          <p className="text-xs text-[var(--ink-faint)]">{user?.email}</p>
+          <p className="relative text-xs text-[var(--ink-faint)]">{user?.email}</p>
         )}
       </section>
 

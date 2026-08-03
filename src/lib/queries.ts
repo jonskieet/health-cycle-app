@@ -37,6 +37,7 @@ export interface Profile {
   birth_date: string | null;
   birth_year: number | null;
   avatar_key: string | null;
+  avatar_url: string | null;
   avg_cycle_length: number;
   avg_period_length: number;
   onboarded: boolean;
@@ -81,6 +82,41 @@ export function useUpdateProfile() {
         .update(patch)
         .eq("id", user!.id);
       if (error) throwSupabaseError(error);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["profile", user?.id] }),
+  });
+}
+
+// Module 12: upload ảnh đại diện thật lên Supabase Storage (bucket
+// "avatars"), sau đó lưu public URL vào profiles.avatar_url. Đặt tên file
+// cố định theo user id (không theo tên file gốc) + `upsert: true` để mỗi
+// lần đổi ảnh chỉ ghi đè, không tích luỹ rác trong bucket; thêm query-string
+// timestamp vào URL lưu ở DB để buộc trình duyệt tải lại ảnh mới (CDN/cache
+// theo URL, cùng path thì ảnh cũ có thể vẫn được cache).
+export function useUploadAvatar() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      if (!user) throw new Error("Chưa đăng nhập");
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true, cacheControl: "3600" });
+      if (uploadError) throw new Error(`Tải ảnh lên thất bại: ${uploadError.message}`);
+
+      const { data: publicUrlData } = supabase.storage.from("avatars").getPublicUrl(path);
+      const avatarUrl = `${publicUrlData.publicUrl}?v=${Date.now()}`;
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl, avatar_key: null })
+        .eq("id", user.id);
+      if (updateError) throwSupabaseError(updateError);
+
+      return avatarUrl;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["profile", user?.id] }),
   });

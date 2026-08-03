@@ -10,6 +10,9 @@ import PhaseMotif from "@/components/ui/PhaseMotif";
 import { Skeleton } from "@/components/ui/Skeleton";
 import AbnormalCycleBanner from "@/components/cycle/AbnormalCycleBanner";
 import ReminderBanner from "@/components/cycle/ReminderBanner";
+import ProfileAvatar from "@/components/profile/ProfileAvatar";
+import { useAuth } from "@/lib/auth-context";
+import { isVipProfile } from "@/lib/vip";
 import {
   useHealthMetrics,
   useCycleLogs,
@@ -26,10 +29,12 @@ import { predictCycle, phaseLabel, phaseColor, daysUntil } from "@/lib/cycle-uti
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const { data: profile } = useProfile();
   const { data: cycleLogs = [], isLoading: cycleLoading } = useCycleLogs();
   const { data: metrics = [], isLoading: metricsLoading } = useHealthMetrics();
   const { data: upcomingAppointments } = useUpcomingAppointments();
+  const vip = isVipProfile(profile);
 
   const avgCycleLength = profile?.avg_cycle_length ?? 28;
   const avgPeriodLength = profile?.avg_period_length ?? 5;
@@ -46,27 +51,24 @@ export default function DashboardPage() {
   const hasAnyMetrics = metrics.length > 0;
   const loading = cycleLoading || metricsLoading;
 
-  // J7 (MAJOR_REDESIGN_BRIEF.md): lời chào cá nhân hoá theo giờ trong ngày +
-  // tên người dùng, giống góc trên `ref-01-cycle-bar-history.png`
-  // ("Hi, Good Morning Victoria"). Dữ liệu tên đã có sẵn qua
-  // `profile.display_name` — không cần thêm gì mới, chỉ hiển thị.
-  const greeting = useMemo(() => {
-    const hour = new Date().getHours();
-    if (hour < 11) return "Chào buổi sáng";
-    if (hour < 13) return "Chào buổi trưa";
-    if (hour < 18) return "Chào buổi chiều";
-    return "Chào buổi tối";
-  }, []);
-
   return (
     <main className="flex flex-1 flex-col gap-6 px-5 pt-6">
-      {/* J7: lời chào — chỉ hiện khi đã có tên (display_name), tránh chào
-          "Chào buổi sáng ," trống tên khi chưa hoàn tất onboarding. */}
-      {profile?.display_name && (
-        <p className="text-sm text-[var(--ink-soft)]">
-          {greeting}, <span className="font-semibold text-[var(--ink)]">{profile.display_name}</span> 👋
-        </p>
-      )}
+      {/* Thay lời chào cũ bằng header gọn: avatar + tên user, bấm vào để
+          sang trang Cá nhân — giống thanh app bar quen thuộc thay vì một
+          câu chào theo giờ trong ngày. */}
+      <Link href="/profile" className="flex items-center gap-3">
+        <ProfileAvatar
+          name={profile?.display_name}
+          email={user?.email}
+          isVip={vip}
+          size={40}
+          avatarKey={profile?.avatar_key}
+          avatarUrl={profile?.avatar_url}
+        />
+        <span className="font-display text-sm font-bold text-[var(--ink)]">
+          {profile?.display_name || user?.email}
+        </span>
+      </Link>
 
       {/* D5: thứ tự ưu tiên hiển thị — chu kỳ hôm nay → nhắc nhở → check-in
           nhanh → insight (Health Score). Trước đây Health Score ring nằm
