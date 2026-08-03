@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Stethoscope, ChevronRight } from "lucide-react";
+import { ChevronLeft, Plus, Stethoscope, ChevronRight } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
 import { SkeletonRows } from "@/components/ui/Skeleton";
 import AppointmentForm from "@/components/appointments/AppointmentForm";
@@ -36,7 +36,7 @@ export default function AppointmentsPage() {
             onClick={() => router.back()}
             className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-black/5"
           >
-            <ArrowLeft size={18} className="text-[var(--ink)]" />
+            <ChevronLeft size={18} className="text-[var(--ink)]" />
           </button>
           <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Lịch hẹn</h1>
         </div>

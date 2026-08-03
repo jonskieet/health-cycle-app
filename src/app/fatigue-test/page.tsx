@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Battery } from "lucide-react";
+import { ChevronLeft, Battery } from "lucide-react";
 import FatigueQuiz from "@/components/fatigue/FatigueQuiz";
 import EmptyState from "@/components/ui/EmptyState";
 import { SkeletonRows } from "@/components/ui/Skeleton";
@@ -30,7 +30,7 @@ export default function FatigueTestPage() {
           onClick={() => router.back()}
           className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-black/5"
         >
-          <ArrowLeft size={18} className="text-[var(--ink)]" />
+          <ChevronLeft size={18} className="text-[var(--ink)]" />
         </button>
         <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Trắc nghiệm năng lượng</h1>
       </header>

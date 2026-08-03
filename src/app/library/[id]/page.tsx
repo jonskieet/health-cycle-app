@@ -4,7 +4,7 @@
 // bọc trong `LockedFeature` — dùng đúng cơ chế khoá VIP có sẵn, không tự chế mới.
 
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Clock } from "lucide-react";
+import { ChevronLeft, Clock } from "lucide-react";
 import { useProfile } from "@/lib/queries";
 import { isVipProfile } from "@/lib/vip";
 import { getArticleById, ARTICLE_CATEGORY_LABELS } from "@/lib/articles";
@@ -27,7 +27,7 @@ export default function ArticleDetailPage() {
             onClick={() => router.back()}
             className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-black/5"
           >
-            <ArrowLeft size={18} className="text-[var(--ink)]" />
+            <ChevronLeft size={18} className="text-[var(--ink)]" />
           </button>
           <h1 className="font-display text-xl font-bold text-[var(--ink)]">Không tìm thấy bài viết</h1>
         </header>
@@ -46,7 +46,7 @@ export default function ArticleDetailPage() {
           onClick={() => router.back()}
           className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-black/5"
         >
-          <ArrowLeft size={18} className="text-[var(--ink)]" />
+          <ChevronLeft size={18} className="text-[var(--ink)]" />
         </button>
       </header>
 

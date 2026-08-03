@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, Clock, HeartPulse } from "lucide-react";
+import { ChevronLeft, Check, Clock, HeartPulse } from "lucide-react";
 import { KEGEL_PRESETS, KegelPreset, buildKegelSequence, totalSequenceSeconds, formatSecondsShort } from "@/lib/kegel";
 import { useKegelSessions } from "@/lib/queries";
 import KegelTimer from "@/components/kegel/KegelTimer";
@@ -33,7 +33,7 @@ export default function KegelPage() {
           onClick={() => (selected ? setSelected(null) : router.back())}
           className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-black/5"
         >
-          <ArrowLeft size={18} className="text-[var(--ink)]" />
+          <ChevronLeft size={18} className="text-[var(--ink)]" />
         </button>
         <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Bài tập Kegel</h1>
       </header>

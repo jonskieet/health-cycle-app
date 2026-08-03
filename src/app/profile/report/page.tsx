@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, Printer, FileDown } from "lucide-react";
+import { ChevronLeft, Printer, FileDown } from "lucide-react";
 import { useProfile, useCycleLogs, useHealthMetrics, MetricType } from "@/lib/queries";
 import { predictCycle, buildCycleHistory } from "@/lib/cycle-utils";
 import { isVipProfile } from "@/lib/vip";
@@ -70,7 +70,7 @@ export default function HealthReportPage() {
           href="/profile"
           className="flex h-9 w-9 items-center justify-center rounded-full glass-card"
         >
-          <ArrowLeft size={16} className="text-[var(--ink)]" />
+          <ChevronLeft size={16} className="text-[var(--ink)]" />
         </Link>
         <div className="flex items-center gap-2">
           <button

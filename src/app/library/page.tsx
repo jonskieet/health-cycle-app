@@ -7,7 +7,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Clock, Crown, BookOpen } from "lucide-react";
+import { ChevronLeft, Clock, Crown, BookOpen } from "lucide-react";
 import { useProfile } from "@/lib/queries";
 import { isVipProfile } from "@/lib/vip";
 import { ARTICLE_CATEGORIES, ARTICLE_CATEGORY_LABELS, ArticleCategory, getArticlesByCategory } from "@/lib/articles";
@@ -28,7 +28,7 @@ export default function LibraryPage() {
           onClick={() => router.back()}
           className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-black/5"
         >
-          <ArrowLeft size={18} className="text-[var(--ink)]" />
+          <ChevronLeft size={18} className="text-[var(--ink)]" />
         </button>
         <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Thư viện kiến thức</h1>
       </header>
