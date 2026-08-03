@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Check, Clock, HeartPulse } from "lucide-react";
+import { Check, Clock, HeartPulse } from "lucide-react";
+import PageHeader from "@/components/ui/PageHeader";
 import { KEGEL_PRESETS, KegelPreset, buildKegelSequence, totalSequenceSeconds, formatSecondsShort } from "@/lib/kegel";
 import { useKegelSessions } from "@/lib/queries";
 import KegelTimer from "@/components/kegel/KegelTimer";
@@ -27,16 +28,10 @@ export default function KegelPage() {
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-5 pt-8 pb-6">
-      <header className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => (selected ? setSelected(null) : router.back())}
-          className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-black/5"
-        >
-          <ChevronLeft size={18} className="text-[var(--ink)]" />
-        </button>
-        <h1 className="font-display text-xl font-semibold tracking-tight text-[var(--ink)]">Bài tập Kegel</h1>
-      </header>
+      <PageHeader
+        title="Bài tập Kegel"
+        onBack={() => (selected ? setSelected(null) : router.back())}
+      />
 
       {selected ? (
         <section className="glass-card-strong rounded-[28px] p-6">

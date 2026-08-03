@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { ChevronLeft, Battery } from "lucide-react";
+import { Battery } from "lucide-react";
+import PageHeader from "@/components/ui/PageHeader";
 import FatigueQuiz from "@/components/fatigue/FatigueQuiz";
 import EmptyState from "@/components/ui/EmptyState";
 import { SkeletonRows } from "@/components/ui/Skeleton";
@@ -19,21 +19,11 @@ function formatWhen(iso: string) {
 }
 
 export default function FatigueTestPage() {
-  const router = useRouter();
   const { data: history = [], isLoading } = useFatigueTests();
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-5 pt-8 pb-6">
-      <header className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-black/5"
-        >
-          <ChevronLeft size={18} className="text-[var(--ink)]" />
-        </button>
-        <h1 className="font-display text-2xl font-bold text-[var(--ink)]">Trắc nghiệm năng lượng</h1>
-      </header>
+      <PageHeader title="Trắc nghiệm năng lượng" />
 
       <section className="glass-card-strong rounded-[28px] p-6">
         <FatigueQuiz />

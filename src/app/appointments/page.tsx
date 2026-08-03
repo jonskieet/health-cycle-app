@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { ChevronLeft, Plus, Stethoscope, ChevronRight } from "lucide-react";
+import { Plus, Stethoscope, ChevronRight } from "lucide-react";
+import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { SkeletonRows } from "@/components/ui/Skeleton";
 import AppointmentForm from "@/components/appointments/AppointmentForm";
@@ -16,7 +16,6 @@ function formatWhen(iso: string) {
 }
 
 export default function AppointmentsPage() {
-  const router = useRouter();
   const { data: appointments = [], isLoading } = useAppointments();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Appointment | null>(null);
@@ -29,29 +28,22 @@ export default function AppointmentsPage() {
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-5 pt-8">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="Lịch hẹn"
+        action={
           <button
             type="button"
-            onClick={() => router.back()}
-            className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-black/5"
+            onClick={() => {
+              setEditing(null);
+              setFormOpen(true);
+            }}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-white"
+            style={{ background: "var(--c-fertile)" }}
           >
-            <ChevronLeft size={18} className="text-[var(--ink)]" />
+            <Plus size={18} />
           </button>
-          <h1 className="font-display text-xl font-semibold tracking-tight text-[var(--ink)]">Lịch hẹn</h1>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            setEditing(null);
-            setFormOpen(true);
-          }}
-          className="flex h-9 w-9 items-center justify-center rounded-full text-white"
-          style={{ background: "var(--c-fertile)" }}
-        >
-          <Plus size={18} />
-        </button>
-      </header>
+        }
+      />
 
       {isLoading ? (
         <SkeletonRows rows={3} />

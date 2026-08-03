@@ -5,6 +5,7 @@
 
 import { useRouter, useParams } from "next/navigation";
 import { ChevronLeft, Clock } from "lucide-react";
+import PageHeader from "@/components/ui/PageHeader";
 import { useProfile } from "@/lib/queries";
 import { isVipProfile } from "@/lib/vip";
 import { getArticleById, ARTICLE_CATEGORY_LABELS } from "@/lib/articles";
@@ -21,16 +22,7 @@ export default function ArticleDetailPage() {
   if (!article) {
     return (
       <main className="flex flex-1 flex-col gap-6 px-5 pt-8 pb-6">
-        <header className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-black/5"
-          >
-            <ChevronLeft size={18} className="text-[var(--ink)]" />
-          </button>
-          <h1 className="font-display text-xl font-semibold tracking-tight text-[var(--ink)]">Không tìm thấy bài viết</h1>
-        </header>
+        <PageHeader title="Không tìm thấy bài viết" />
       </main>
     );
   }
