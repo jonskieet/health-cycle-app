@@ -67,13 +67,17 @@ export default function ProfileAvatar({
 
       {isVip && (
         <span
-          className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full text-white"
+          className="absolute flex items-center justify-center rounded-full text-white"
           style={{
+            width: Math.max(size * 0.32, 16),
+            height: Math.max(size * 0.32, 16),
+            right: -size * 0.04,
+            top: -size * 0.04,
             background: "linear-gradient(135deg, #f6c453, #e8973e)",
-            boxShadow: "0 2px 6px rgba(232, 151, 62, 0.5), 0 0 0 2px #fff",
+            boxShadow: `0 2px 6px rgba(232, 151, 62, 0.5), 0 0 0 ${Math.max(size * 0.03, 1.5)}px #fff`,
           }}
         >
-          <Crown size={13} fill="currentColor" />
+          <Crown size={Math.max(size * 0.17, 9)} fill="currentColor" />
         </span>
       )}
     </div>
