@@ -56,9 +56,16 @@ function PhaseArc({
   fertileColor,
   strokeWidth,
 }: PhaseArcProps) {
-  const periodEndDeg = (avgPeriodLength / count) * 360;
+  // Sửa lỗi lệch 1 ngày (2026-08-04, theo phản hồi "dòng chảy đã vượt qua
+  // ngày X rồi"): vị trí góc của NGÀY d trên vòng số là (d-1)/count*360 (xem
+  // `DayRing`). Trước đây điểm kết thúc cung dùng avgPeriodLength/count*360
+  // — đúng ra là góc của ngày (avgPeriodLength + 1), tức đầu cung luôn lấn
+  // sang đúng vị trí của ngày NGAY SAU ngày cuối cùng thuộc pha, dù ngày đó
+  // không được tô màu. Đổi lại để đầu cung dừng CHÍNH XÁC tại vị trí của
+  // ngày cuối cùng còn thuộc pha — không vượt quá nữa.
+  const periodEndDeg = ((avgPeriodLength - 1) / count) * 360;
   const fertileStartDeg = ((fertileStartDay - 1) / count) * 360;
-  const fertileEndDeg = (fertileEndDay / count) * 360;
+  const fertileEndDeg = ((fertileEndDay - 1) / count) * 360;
   return (
     <>
       <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--ink-faint)" strokeOpacity={0.1} strokeWidth={strokeWidth} />
