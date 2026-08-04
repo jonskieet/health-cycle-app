@@ -163,37 +163,11 @@ function DayRing({
 }
 
 /**
- * Nền khối tròn giữa, bản ĐƠN GIẢN HOÁ (2026-08-03 – sau phản hồi "vẽ nhiều
- * chi tiết quá rối, bỏ hẳn kiểu minh hoạ này"): bỏ hoàn toàn trăng/mây/đồi —
- * chỉ còn 1 gradient phẳng theo đúng cặp periodColor/fertileColor + 2 quầng
- * sáng mờ (blur) làm điểm nhấn nhẹ, để chữ là trọng tâm thị giác chính thay
- * vì hoạ tiết.
+ * (2026-08-04 – theo yêu cầu chủ dự án "giữ nguyên vòng tròn cũ, chỉ bỏ hình
+ * tròn ở giữa đi"): đã XOÁ hẳn `CenterArt` (khối tròn nền gradient) — phần
+ * giữa giờ trong suốt hoàn toàn, để lộ nền thẻ phía sau, chỉ còn chữ nổi lên
+ * trên. Vòng cung + vòng số NGÀY giữ nguyên 100% như bản trước, không đổi.
  */
-function CenterArt({ size, color1, color2 }: { size: number; color1: string; color2: string }) {
-  const c = size / 2;
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="absolute" style={{ left: 0, top: 0 }}>
-      <defs>
-        <linearGradient id="cycle-dial-flat-grad" x1="0.1" y1="0" x2="0.9" y2="1">
-          <stop offset="0%" stopColor={color2} />
-          <stop offset="100%" stopColor={color1} />
-        </linearGradient>
-        <filter id="cycle-dial-blur" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation={size * 0.06} />
-        </filter>
-        <clipPath id="cycle-dial-clip">
-          <circle cx={c} cy={c} r={c} />
-        </clipPath>
-      </defs>
-
-      <g clipPath="url(#cycle-dial-clip)">
-        <circle cx={c} cy={c} r={c} fill="url(#cycle-dial-flat-grad)" />
-        <circle cx={size * 0.18} cy={size * 0.16} r={size * 0.26} fill="#fff" opacity={0.16} filter="url(#cycle-dial-blur)" />
-        <circle cx={size * 0.86} cy={size * 0.9} r={size * 0.3} fill="#000" opacity={0.12} filter="url(#cycle-dial-blur)" />
-      </g>
-    </svg>
-  );
-}
 
 interface CycleRadialDialProps {
   size?: number;
@@ -207,7 +181,6 @@ interface CycleRadialDialProps {
 
 const RING_R_RATIO = 0.42;
 const NUMBER_R_RATIO = 0.5;
-const CENTER_D_RATIO = 0.74;
 const BADGE_R_RATIO = 9 / 260;
 const CANVAS_RATIO = 1.16;
 
@@ -227,7 +200,6 @@ export default function CycleRadialDial({
   const ringR = size * RING_R_RATIO;
   const numberR = size * NUMBER_R_RATIO;
   const numberFontSize = Math.max(7, size * 0.034);
-  const centerR = (size * CENTER_D_RATIO) / 2;
   const badgeR = size * BADGE_R_RATIO;
   const arcStrokeWidth = Math.max(3, size * 0.02);
 
@@ -238,15 +210,6 @@ export default function CycleRadialDial({
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
-      {/* Quầng sáng mờ phía sau vòng tròn. */}
-      <div
-        className="absolute inset-0 rounded-full"
-        style={{
-          background: `radial-gradient(circle, color-mix(in srgb, ${fertileColor} 16%, transparent) 0%, transparent 70%)`,
-          filter: "blur(18px)",
-        }}
-      />
-
       <div
         className="absolute overflow-visible"
         style={{ width: canvas, height: canvas, left: (size - canvas) / 2, top: (size - canvas) / 2 }}
@@ -282,21 +245,7 @@ export default function CycleRadialDial({
         </svg>
       </div>
 
-      {/* Khối tròn tối giữa — thay cho thẻ trắng phẳng trước đây, đúng tinh
-          thần "khối tròn tối làm điểm nhấn thị giác chính" của ảnh mẫu. */}
-      <div
-        className="absolute overflow-hidden rounded-full"
-        style={{
-          width: centerR * 2,
-          height: centerR * 2,
-          left: size / 2 - centerR,
-          top: size / 2 - centerR,
-          boxShadow: "0 14px 30px -14px rgba(0,0,0,0.35)",
-        }}
-      >
-        <CenterArt size={centerR * 2} color1={periodColor} color2={fertileColor} />
-      </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-7 text-center">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-9 text-center">
         {children}
       </div>
     </div>
