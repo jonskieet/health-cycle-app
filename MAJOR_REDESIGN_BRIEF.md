@@ -154,3 +154,38 @@
     trước khi đóng gói — không tràn/chồng chữ ở 28 ngày (giá trị mặc định).
   - `tsc --noEmit` + `eslint` sạch trên 3 file đã sửa.
   - Patch: `patch_fix_nav_and_dial_redesign.zip`.
+
+- **2026-08-04 — J3 (phần còn lại: cuộn dọc nhiều tháng)**: Hoàn thiện nốt
+  phần đã tách riêng ở module J3 trước (dải liền mạch xong, phần cuộn nhiều
+  tháng để sau vì rủi ro UX cao hơn — nay làm, sau khi chủ dự án xác nhận
+  tiếp tục dù không còn ảnh `ref-02-calendar-stacked-months.png` gốc trong
+  lần làm việc này, nên tự thiết kế theo mô tả đã ghi lại ở log J3 cũ: danh
+  sách nhiều tháng xếp chồng dọc, có thể cuộn).
+  - Viết lại `CycleCalendar.tsx`: đổi từ "1 tháng hiện tại + nút `</>` chuyển
+    tháng" sang danh sách nhiều khối tháng (`MonthBlock`, tách bằng
+    `forwardRef` để bắt `ref` tới khối tháng hiện tại) XẾP CHỒNG DỌC trong 1
+    khung cuộn RIÊNG (`max-h-[420px] overflow-y-auto`) — cố tình KHÔNG cuộn
+    cả trang, để lịch dài nhiều tháng không đẩy tuột thanh nav dưới/nội dung
+    khác của trang Chu kỳ ra khỏi tầm nhìn.
+  - Mặc định nạp 3 tháng (trước — hiện tại — sau), có nút "Xem tháng trước"/
+    "Xem tháng sau" ở 2 đầu danh sách để nạp thêm theo cụm 3 tháng. Cân nhắc
+    dùng `IntersectionObserver` để tự cuộn vô hạn nhưng CHỌN nút bấm thay vì
+    tự động — giữ ổn định vị trí cuộn khi thêm tháng CŨ hơn vào ĐẦU danh sách
+    (nếu tự động nạp lúc cuộn lên đầu, phải tự bù `scrollTop` để tránh giật
+    hình, rủi ro bug cao hơn nhiều so với lợi ích UX ở bản đầu tiên).
+  - Thêm nút "Hôm nay" ở góc phải header, dùng `scrollIntoView` trên ref của
+    khối tháng hiện tại (offset 0) để nhảy nhanh về giữa danh sách dài — bù
+    lại việc bỏ nút mũi tên chuyển tháng đơn lẻ cũ.
+  - `loggedPeriodDays` (phụ thuộc `cycleLogs`) hoist lên component cha, tính
+    1 lần dùng chung cho mọi khối tháng — mỗi `MonthBlock` chỉ tự tính
+    `days`/`rows` của riêng tháng đó qua `useMemo` theo `cursor`, tránh tính
+    lại toàn bộ danh sách tháng mỗi khi 1 tháng đổi.
+  - Giữ nguyên 100% logic tô màu dải liền mạch (`buildRows`, bo góc đầu/cuối
+    dải) đã làm ở phần J3 trước — không đổi lại, chỉ đổi cấu trúc bố cục
+    nhiều tháng bên ngoài.
+  - `tsc --noEmit` + `eslint` sạch trên file đã sửa.
+  - Lưu ý cho agent sau: không có `ref-02-calendar-stacked-months.png` trong
+    lần làm này để đối chiếu pixel-perfect — bố cục dựng theo mô tả text đã
+    ghi ở log J3 cũ (dòng 105-127 phía trên). Nếu chủ dự án gửi lại ảnh và
+    thấy lệch, ưu tiên sửa theo ảnh.
+  - Patch: `patch_J3_stacked_months_scroll.zip`.

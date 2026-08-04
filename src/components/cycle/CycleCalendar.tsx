@@ -8,8 +8,8 @@
 // chỉ có "Rụng trứng" / "Cửa sổ thụ thai" / kỳ tiếp theo là suy đoán, và suy
 // đoán không bao giờ vẽ đè lên ngày đã có dữ liệu thật.
 
-import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { forwardRef, useMemo, useRef, useState } from "react";
+import { ChevronUp, ChevronDown, CalendarDays } from "lucide-react";
 import { CyclePrediction, CycleLog } from "@/lib/cycle-utils";
 
 const weekdays = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
@@ -30,6 +30,13 @@ function addDays(d: Date, n: number) {
   const out = new Date(d);
   out.setDate(out.getDate() + n);
   return out;
+}
+
+/** Tháng thứ `offset` so với tháng hiện tại (0 = tháng hiện tại), luôn trả về
+ *  ngày mùng 1 — dùng làm "cursor" cho từng khối tháng trong danh sách xếp
+ *  chồng dọc. */
+function monthAtOffset(base: Date, offset: number) {
+  return new Date(base.getFullYear(), base.getMonth() + offset, 1);
 }
 
 /** Tập hợp các ngày hành kinh THẬT, dựng từ start_date→end_date của mọi log.
@@ -77,9 +84,6 @@ const typeColor: Record<string, string> = {
 // Chỉ nối trong cùng hàng (không nối qua hàng khác) vì lưới vốn đã ngắt dòng
 // trực quan ở cuối mỗi tuần, đúng với chính ảnh tham khảo (dải "Cửa sổ thụ
 // thai" ngày 23–27 không nối tràn sang hàng dưới dù dài hơn 1 tuần).
-// Không đổi cấu trúc "1 tháng + nút </>": brief cho phép tách riêng phần
-// "cuộn dọc nhiều tháng" thành module con khác vì rủi ro UX cao hơn hẳn —
-// giữ nguyên điều hướng cũ, chỉ đổi cách TÔ MÀU từng dải.
 type DayCell = {
   date: Date;
   type: string | null;
@@ -122,6 +126,29 @@ function buildRows(
   return rows;
 }
 
+function buildMonthDays(cursor: Date): (Date | null)[] {
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7; // Mon=0
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const cells: (Date | null)[] = Array(startOffset).fill(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+  return cells;
+}
+
+// J3 (phần "cuộn dọc nhiều tháng", tách riêng khỏi phần dải liền mạch đã làm
+// trước — brief cho phép tách vì rủi ro UX cao hơn). Đổi từ "1 tháng + nút
+// </>" sang danh sách nhiều tháng XẾP CHỒNG DỌC trong 1 khung cuộn riêng
+// (không cuộn cả trang, tránh việc lịch dài nuốt luôn thanh nav dưới) —
+// giống `ref-02-calendar-stacked-months.png`. Mỗi khối tháng tự tính
+// days/rows của chính nó (tách qua `MonthBlock`, `loggedPeriodDays` hoist lên
+// cha vì chỉ phụ thuộc `cycleLogs`, dùng chung cho mọi tháng). Nạp thêm tháng
+// qua nút bấm ở 2 đầu danh sách (không dùng IntersectionObserver tự cuộn vô
+// hạn — giữ vị trí cuộn ổn định khi thêm tháng CŨ hơn ở đầu danh sách phức
+// tạp hơn nhiều so với lợi ích, nút bấm rõ ràng và an toàn hơn cho bản đầu
+// tiên của tính năng này).
 export default function CycleCalendar({
   prediction,
   cycleLogs,
@@ -129,68 +156,114 @@ export default function CycleCalendar({
   prediction: CyclePrediction;
   cycleLogs: CycleLog[];
 }) {
-  const [cursor, setCursor] = useState(() => {
-    const d = new Date();
-    d.setDate(1);
-    return d;
-  });
+  // range offset tháng so với tháng hiện tại (0). Mặc định hiện tháng trước +
+  // tháng hiện tại + tháng sau (3 khối) — đủ ngữ cảnh mà không dài quá khi
+  // mới mở trang.
+  const [range, setRange] = useState({ start: -1, end: 1 });
+  const todayMonthRef = useRef<HTMLDivElement | null>(null);
+  const today = useMemo(() => new Date(), []);
 
-  const days = useMemo(() => {
-    const year = cursor.getFullYear();
-    const month = cursor.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const startOffset = (firstDay.getDay() + 6) % 7; // Mon=0
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const cells: (Date | null)[] = Array(startOffset).fill(null);
-    for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
-    return cells;
-  }, [cursor]);
-
-  // `today` (dùng làm fallback ngày kết thúc cho kỳ đang mở, và đánh dấu ô
-  // "hôm nay") được gọi trực tiếp `new Date()` riêng trong từng useMemo bên
-  // dưới thay vì 1 biến chung — vì `new Date()` khác reference mỗi render,
-  // đưa vào mảng deps sẽ làm useMemo luôn tính lại, mất tác dụng memo hoá.
-  // 2 giá trị gọi cách nhau vài mili-giây trong cùng 1 lần render, không ảnh
-  // hưởng vì đều chỉ dùng cấp độ ngày.
   const loggedPeriodDays = useMemo(
-    () => buildLoggedPeriodDays(cycleLogs, new Date()),
-    [cycleLogs]
+    () => buildLoggedPeriodDays(cycleLogs, today),
+    [cycleLogs, today]
   );
 
-  const rows = useMemo(
-    () => buildRows(days, prediction, loggedPeriodDays, new Date()),
-    [days, prediction, loggedPeriodDays]
-  );
+  const offsets = useMemo(() => {
+    const arr: number[] = [];
+    for (let o = range.start; o <= range.end; o++) arr.push(o);
+    return arr;
+  }, [range]);
+
+  function scrollToToday() {
+    todayMonthRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }
 
   return (
-    <div className="glass-card rounded-[26px] p-5">
+    <div className="glass-card flex flex-col rounded-[26px] p-5">
       <div className="mb-4 flex items-center justify-between">
+        <span className="font-display text-sm font-bold text-[var(--ink)]">Lịch chu kỳ</span>
         <button
-          onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
-          className="rounded-full p-1.5 text-[var(--ink-soft)] hover:bg-black/5"
+          onClick={scrollToToday}
+          className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold text-[var(--ink-soft)] transition active:scale-95"
+          style={{ background: "var(--surface-soft)" }}
         >
-          <ChevronLeft size={18} />
-        </button>
-        <span className="font-display text-sm font-bold text-[var(--ink)]">
-          {monthNames[cursor.getMonth()]} {cursor.getFullYear()}
-        </span>
-        <button
-          onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
-          className="rounded-full p-1.5 text-[var(--ink-soft)] hover:bg-black/5"
-        >
-          <ChevronRight size={18} />
+          <CalendarDays size={12} />
+          Hôm nay
         </button>
       </div>
 
+      <div className="grid grid-cols-7 text-center">
+        {weekdays.map((w) => (
+          <span key={w} className="text-[10px] font-medium text-[var(--ink-faint)]">
+            {w}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-1 flex max-h-[420px] flex-col gap-4 overflow-y-auto overscroll-contain py-2">
+        <button
+          onClick={() => setRange((r) => ({ ...r, start: r.start - 3 }))}
+          className="flex items-center justify-center gap-1 rounded-full py-1.5 text-[11px] font-semibold text-[var(--ink-faint)] transition hover:bg-black/5 active:scale-95"
+        >
+          <ChevronUp size={14} />
+          Xem tháng trước
+        </button>
+
+        {offsets.map((offset) => (
+          <MonthBlock
+            key={offset}
+            ref={offset === 0 ? todayMonthRef : undefined}
+            cursor={monthAtOffset(today, offset)}
+            prediction={prediction}
+            loggedPeriodDays={loggedPeriodDays}
+            today={today}
+            isCurrent={offset === 0}
+          />
+        ))}
+
+        <button
+          onClick={() => setRange((r) => ({ ...r, end: r.end + 3 }))}
+          className="flex items-center justify-center gap-1 rounded-full py-1.5 text-[11px] font-semibold text-[var(--ink-faint)] transition hover:bg-black/5 active:scale-95"
+        >
+          Xem tháng sau
+          <ChevronDown size={14} />
+        </button>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-black/5 pt-3 text-[11px] text-[var(--ink-soft)]">
+        <Legend color="var(--c-period)" label="Hành kinh" />
+        <Legend color="var(--c-fertile)" label="Cửa sổ thụ thai" />
+        <Legend color="var(--c-ovulation)" label="Rụng trứng" />
+      </div>
+    </div>
+  );
+}
+
+const MonthBlock = forwardRef<
+  HTMLDivElement,
+  {
+    cursor: Date;
+    prediction: CyclePrediction;
+    loggedPeriodDays: Set<string>;
+    today: Date;
+    isCurrent: boolean;
+  }
+>(function MonthBlock({ cursor, prediction, loggedPeriodDays, today, isCurrent }, ref) {
+  const days = useMemo(() => buildMonthDays(cursor), [cursor]);
+  const rows = useMemo(
+    () => buildRows(days, prediction, loggedPeriodDays, today),
+    [days, prediction, loggedPeriodDays, today]
+  );
+
+  return (
+    <div ref={ref} className="flex flex-col gap-1.5">
+      <span
+        className="text-xs font-semibold"
+        style={{ color: isCurrent ? "var(--c-period)" : "var(--ink-soft)" }}
+      >
+        {monthNames[cursor.getMonth()]} {cursor.getFullYear()}
+      </span>
       <div className="flex flex-col gap-2">
-        <div className="grid grid-cols-7 text-center">
-          {weekdays.map((w) => (
-            <span key={w} className="text-[10px] font-medium text-[var(--ink-faint)]">
-              {w}
-            </span>
-          ))}
-        </div>
         {rows.map((row, rowIdx) => (
           <div key={rowIdx} className="grid grid-cols-7">
             {row.map((cell, i) => {
@@ -230,15 +303,9 @@ export default function CycleCalendar({
           </div>
         ))}
       </div>
-
-      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-black/5 pt-3 text-[11px] text-[var(--ink-soft)]">
-        <Legend color="var(--c-period)" label="Hành kinh" />
-        <Legend color="var(--c-fertile)" label="Cửa sổ thụ thai" />
-        <Legend color="var(--c-ovulation)" label="Rụng trứng" />
-      </div>
     </div>
   );
-}
+});
 
 function Legend({ color, label }: { color: string; label: string }) {
   return (
