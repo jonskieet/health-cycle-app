@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Sparkles, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus, Sparkles, ChevronRight, ChevronLeft } from "lucide-react";
 import CycleRadialDial from "@/components/cycle/CycleRadialDial";
 import CycleWeekStrip from "@/components/cycle/CycleWeekStrip";
 import CycleCalendar from "@/components/cycle/CycleCalendar";
@@ -20,6 +21,7 @@ import { predictCycle, phaseLabel, phaseColor, phaseSubtitle, daysUntil, buildCy
 import { getSuggestedPrompts } from "@/lib/cycle-insights";
 
 export default function CyclePage() {
+  const router = useRouter();
   const { data: profile } = useProfile();
   const { data: cycleLogs = [], isLoading } = useCycleLogs();
   const [editingLog, setEditingLog] = useState<CycleLogFull | null>(null);
@@ -58,12 +60,21 @@ export default function CyclePage() {
 
   return (
     <main className="flex flex-1 flex-col gap-6 px-5 pt-8">
-      <header className="flex items-center justify-between">
-        <h1 className="font-display text-xl font-semibold tracking-tight text-[var(--ink)]">Chu kỳ</h1>
+      <header className="grid grid-cols-[2.25rem_1fr_2.25rem] items-center">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="glass-card flex h-9 w-9 items-center justify-center rounded-full"
+        >
+          <ChevronLeft size={18} className="text-[var(--ink)]" />
+        </button>
+        <h1 className="font-display text-center text-xl font-semibold tracking-tight text-[var(--ink)]">
+          Chu kỳ
+        </h1>
         <button
           type="button"
           onClick={() => setAddingNew(true)}
-          className="flex h-9 w-9 items-center justify-center rounded-full text-white"
+          className="flex h-9 w-9 items-center justify-center justify-self-end rounded-full text-white"
           style={{ background: "var(--c-period)" }}
         >
           <Plus size={18} />

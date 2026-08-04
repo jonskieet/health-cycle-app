@@ -17,6 +17,69 @@ function polar(cx: number, cy: number, r: number, angleDeg: number) {
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
+function arcPath(cx: number, cy: number, r: number, startDeg: number, endDeg: number) {
+  const start = polar(cx, cy, r, startDeg);
+  const end = polar(cx, cy, r, endDeg);
+  const largeArc = endDeg - startDeg <= 180 ? 0 : 1;
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`;
+}
+
+interface PhaseArcProps {
+  cx: number;
+  cy: number;
+  r: number;
+  count: number;
+  avgPeriodLength: number;
+  fertileStartDay: number;
+  fertileEndDay: number;
+  periodColor: string;
+  fertileColor: string;
+  strokeWidth: number;
+}
+
+/**
+ * Vòng cung tiến trình dày (2026-08-04, theo yêu cầu "tham khảo nhiều mẫu
+ * khác nhau, hiện đại hơn"): thay vòng viền mờ mảnh trước đây bằng 1 track
+ * tròn rất nhạt full 360° + 2 cung dày bo tròn đầu (period/fertile) — kiểu
+ * "activity ring" quen thuộc ở các app chu kỳ hiện đại (Flo, Clue...), giúp
+ * nhận ra pha hiện tại ngay từ xa mà không cần đọc từng số.
+ */
+function PhaseArc({
+  cx,
+  cy,
+  r,
+  count,
+  avgPeriodLength,
+  fertileStartDay,
+  fertileEndDay,
+  periodColor,
+  fertileColor,
+  strokeWidth,
+}: PhaseArcProps) {
+  const periodEndDeg = (avgPeriodLength / count) * 360;
+  const fertileStartDeg = ((fertileStartDay - 1) / count) * 360;
+  const fertileEndDeg = (fertileEndDay / count) * 360;
+  return (
+    <>
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--ink-faint)" strokeOpacity={0.1} strokeWidth={strokeWidth} />
+      <path
+        d={arcPath(cx, cy, r, 0, periodEndDeg)}
+        fill="none"
+        stroke={periodColor}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+      />
+      <path
+        d={arcPath(cx, cy, r, fertileStartDeg, fertileEndDeg)}
+        fill="none"
+        stroke={fertileColor}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+      />
+    </>
+  );
+}
+
 interface DayRingProps {
   cx: number;
   cy: number;
@@ -34,9 +97,11 @@ interface DayRingProps {
 
 /**
  * Vòng SỐ NGÀY đầy đủ quanh viền (1 → avgCycleLength, không chỉ mỗi 5 ngày
- * như bản cũ) — mỗi số tự xoay theo hướng kính tuyến tại vị trí của nó.
- * Ngày hành kinh/cửa sổ thụ thai tô đậm màu theo pha; ngày thường tô nhạt.
- * Ngày hiện tại có 1 badge nền tròn phía sau số, nổi bật như ảnh tham khảo.
+ * như bản cũ) — mỗi số tự xoay theo hướng kính tuyến tại vị trí của nó. Từ
+ * khi có `PhaseArc` làm nền cung màu riêng, các số không cần tự "gánh" việc
+ * phân biệt pha bằng màu đậm/nhạt nữa — số ngày thường giờ đồng nhất 1 tông
+ * trung tính nhẹ, chỉ ngày trong pha mới nổi bật hơn 1 chút, đỡ rối mắt hơn
+ * bản trước (từng tô đậm màu period/fertile trùng với cung bên dưới).
  */
 function DayRing({
   cx,
@@ -61,26 +126,29 @@ function DayRing({
         const isPeriod = day <= avgPeriodLength;
         const isFertile = day >= fertileStartDay && day <= fertileEndDay;
         const isToday = day === currentDay;
-        const color = isPeriod ? periodColor : isFertile ? fertileColor : "var(--ink-faint)";
+        const accent = isPeriod ? periodColor : isFertile ? fertileColor : null;
         return (
           <g key={day}>
             {isToday && (
-              <circle
-                cx={pos.x}
-                cy={pos.y}
-                r={badgeR}
-                fill={color}
-                stroke="var(--surface)"
-                strokeWidth={2}
-              />
+              <>
+                <circle cx={pos.x} cy={pos.y} r={badgeR * 1.7} fill={accent ?? "var(--c-period)"} opacity={0.18} />
+                <circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={badgeR}
+                  fill={accent ?? "var(--c-period)"}
+                  stroke="var(--surface)"
+                  strokeWidth={2}
+                />
+              </>
             )}
             <text
               x={pos.x}
               y={pos.y}
               fontSize={fontSize}
-              fontWeight={isToday ? 700 : isPeriod || isFertile ? 700 : 500}
-              fill={isToday ? "#fff" : color}
-              fillOpacity={isToday ? 1 : isPeriod || isFertile ? 0.95 : 0.55}
+              fontWeight={isToday ? 700 : accent ? 600 : 500}
+              fill={isToday ? "#fff" : accent ?? "var(--ink-faint)"}
+              fillOpacity={isToday ? 1 : accent ? 0.85 : 0.45}
               textAnchor="middle"
               dominantBaseline="middle"
               transform={`rotate(${deg}, ${pos.x}, ${pos.y})`}
@@ -161,6 +229,7 @@ export default function CycleRadialDial({
   const numberFontSize = Math.max(7, size * 0.034);
   const centerR = (size * CENTER_D_RATIO) / 2;
   const badgeR = size * BADGE_R_RATIO;
+  const arcStrokeWidth = Math.max(3, size * 0.02);
 
   const ovulationDay = avgCycleLength - 14;
   const fertileStartDay = Math.max(avgPeriodLength + 1, ovulationDay - 5);
@@ -183,9 +252,18 @@ export default function CycleRadialDial({
         style={{ width: canvas, height: canvas, left: (size - canvas) / 2, top: (size - canvas) / 2 }}
       >
         <svg width={canvas} height={canvas} viewBox={`0 0 ${canvas} ${canvas}`} className="absolute overflow-visible">
-          {/* Vòng dẫn mờ phía sau số — chỉ để gợi hình dạng vòng, giống viền
-              rất nhạt trong ảnh tham khảo, không mang thông tin riêng. */}
-          <circle cx={cx} cy={cy} r={ringR} fill="none" stroke="var(--ink-faint)" strokeOpacity={0.12} strokeWidth={1} />
+          <PhaseArc
+            cx={cx}
+            cy={cy}
+            r={ringR}
+            count={avgCycleLength}
+            avgPeriodLength={avgPeriodLength}
+            fertileStartDay={fertileStartDay}
+            fertileEndDay={fertileEndDay}
+            periodColor={periodColor}
+            fertileColor={fertileColor}
+            strokeWidth={arcStrokeWidth}
+          />
 
           <DayRing
             cx={cx}
