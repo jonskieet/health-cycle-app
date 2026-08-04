@@ -62,84 +62,6 @@ function PhaseArc({ cx, cy, r, startDeg, endDeg, color, strokeWidth, knobR }: Ph
   );
 }
 
-/** Vòng SỐ NGÀY đầy đủ quanh viền — "linh hồn" của thiết kế theo đúng phản
- * hồi chủ dự án, mỗi số tự xoay theo hướng kính tuyến tại vị trí của nó.
- * Vì đã có `PhaseArc` lo việc thể hiện pha bằng màu, số ngày ở đây giữ tông
- * trung tính, chỉ đậm hơn nhẹ ở ngày trong pha; riêng ngày hiện tại có 1
- * badge nền tròn nổi bật phía sau số.
- */
-function DayRing({
-  cx,
-  cy,
-  r,
-  count,
-  fontSize,
-  currentDay,
-  periodColor,
-  fertileColor,
-  avgPeriodLength,
-  fertileStartDay,
-  fertileEndDay,
-  badgeR,
-}: {
-  cx: number;
-  cy: number;
-  r: number;
-  count: number;
-  fontSize: number;
-  currentDay: number;
-  periodColor: string;
-  fertileColor: string;
-  avgPeriodLength: number;
-  fertileStartDay: number;
-  fertileEndDay: number;
-  badgeR: number;
-}) {
-  return (
-    <>
-      {Array.from({ length: count }).map((_, i) => {
-        const day = i + 1;
-        const deg = (i / count) * 360;
-        const pos = polar(cx, cy, r, deg);
-        const isPeriod = day <= avgPeriodLength;
-        const isFertile = day >= fertileStartDay && day <= fertileEndDay;
-        const isToday = day === currentDay;
-        const accent = isPeriod ? periodColor : isFertile ? fertileColor : null;
-        return (
-          <g key={day}>
-            {isToday && (
-              <>
-                <circle cx={pos.x} cy={pos.y} r={badgeR * 1.7} fill={accent ?? "var(--c-period)"} opacity={0.18} />
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r={badgeR}
-                  fill={accent ?? "var(--c-period)"}
-                  stroke="var(--surface)"
-                  strokeWidth={2}
-                />
-              </>
-            )}
-            <text
-              x={pos.x}
-              y={pos.y}
-              fontSize={fontSize}
-              fontWeight={isToday ? 700 : accent ? 600 : 500}
-              fill={isToday ? "#fff" : accent ?? "var(--ink-faint)"}
-              fillOpacity={isToday ? 1 : accent ? 0.85 : 0.45}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              transform={`rotate(${deg}, ${pos.x}, ${pos.y})`}
-            >
-              {day}
-            </text>
-          </g>
-        );
-      })}
-    </>
-  );
-}
-
 interface CycleRadialDialProps {
   size?: number;
   avgCycleLength: number;
@@ -150,9 +72,8 @@ interface CycleRadialDialProps {
   children?: React.ReactNode;
 }
 
-const RING_R_RATIO = 0.35;
-const NUMBER_R_RATIO = 0.48;
-const CANVAS_RATIO = 1.16;
+const RING_R_RATIO = 0.42;
+const CANVAS_RATIO = 1.14;
 
 export default function CycleRadialDial({
   size = 260,
@@ -168,12 +89,10 @@ export default function CycleRadialDial({
   const cy = canvas / 2;
 
   const ringR = size * RING_R_RATIO;
-  const numberR = size * NUMBER_R_RATIO;
-  const numberFontSize = Math.max(7, size * 0.034);
   const dotR = Math.max(1, size * 0.006);
-  const strokeWidth = Math.max(6, size * 0.05);
+  const strokeWidth = Math.max(6, size * 0.055);
   const knobR = strokeWidth / 2 + 2;
-  const badgeR = size * (9 / 260);
+  const badgeR = Math.max(11, size * 0.05);
 
   const ovulationDay = avgCycleLength - 14;
   const fertileStartDay = Math.max(avgPeriodLength + 1, ovulationDay - 5);
@@ -184,6 +103,8 @@ export default function CycleRadialDial({
   const periodEndDeg = (avgPeriodLength / avgCycleLength) * 360;
   const fertileStartDeg = ((fertileStartDay - 1) / avgCycleLength) * 360;
   const fertileEndDeg = (fertileEndDay / avgCycleLength) * 360;
+  const todayDeg = ((clampedDay - 1) / avgCycleLength) * 360;
+  const todayPos = polar(cx, cy, ringR + strokeWidth / 2 + badgeR + 3, todayDeg);
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -215,20 +136,28 @@ export default function CycleRadialDial({
             knobR={knobR}
           />
 
-          <DayRing
-            cx={cx}
-            cy={cy}
-            r={numberR}
-            count={avgCycleLength}
-            fontSize={numberFontSize}
-            currentDay={clampedDay}
-            periodColor={periodColor}
-            fertileColor={fertileColor}
-            avgPeriodLength={avgPeriodLength}
-            fertileStartDay={fertileStartDay}
-            fertileEndDay={fertileEndDay}
-            badgeR={badgeR}
+          {/* Badge ngày hiện tại, nổi hẳn ra ngoài vòng — giống bong bóng số
+              ngày-trong-tháng của ảnh mẫu (không phải ngày-trong-chu-kỳ). */}
+          <circle
+            cx={todayPos.x}
+            cy={todayPos.y}
+            r={badgeR}
+            fill="var(--surface)"
+            stroke="var(--ink-faint)"
+            strokeOpacity={0.25}
+            strokeWidth={1.5}
           />
+          <text
+            x={todayPos.x}
+            y={todayPos.y}
+            fontSize={badgeR * 0.95}
+            fontWeight={700}
+            fill="var(--ink)"
+            textAnchor="middle"
+            dominantBaseline="middle"
+          >
+            {clampedDay}
+          </text>
         </svg>
       </div>
 
