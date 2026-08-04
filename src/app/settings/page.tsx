@@ -42,6 +42,7 @@ import { buildFullDataExport, downloadFullDataExport } from "@/lib/export-data";
 import { useToast } from "@/components/ui/Toast";
 import Switch from "@/components/ui/Switch";
 import SettingsRow from "@/components/ui/SettingsRow";
+import SliderControl from "@/components/ui/SliderControl";
 
 function SettingsSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -319,14 +320,16 @@ export default function SettingsPage() {
             <span className="text-xs font-medium text-[var(--ink-soft)]">
               Nhắc trước: <b className="text-[var(--ink)]">{periodLeadDays} ngày</b>
             </span>
-            <input
-              type="range"
+            <SliderControl
               min={1}
               max={5}
               value={periodLeadDays}
-              onChange={(e) => handleChangeLeadDays(Number(e.target.value))}
+              onChange={handleChangeLeadDays}
               disabled={upsertReminder.isPending}
-              style={{ accentColor: "var(--c-period)" }}
+              accentColor="var(--c-period)"
+              showValueBubble
+              formatValue={(v) => `${v} ngày`}
+              aria-label="Nhắc trước"
             />
           </div>
         )}

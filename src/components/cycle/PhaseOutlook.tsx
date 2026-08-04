@@ -3,6 +3,7 @@
 import { Sparkles } from "lucide-react";
 import { getOutlook } from "@/lib/cycle-insights";
 import type { CyclePrediction } from "@/lib/cycle-utils";
+import ProgressBar from "@/components/ui/ProgressBar";
 
 export default function PhaseOutlook({ phase }: { phase: CyclePrediction["phase"] }) {
   const metrics = getOutlook(phase);
@@ -26,12 +27,7 @@ export default function PhaseOutlook({ phase }: { phase: CyclePrediction["phase"
                 {m.value >= 70 ? "Cao" : m.value >= 45 ? "Trung bình" : "Thấp"}
               </span>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-black/[0.06]">
-              <div
-                className="h-full rounded-full transition-all"
-                style={{ width: `${m.value}%`, background: m.color }}
-              />
-            </div>
+            <ProgressBar value={m.value} color={m.color} />
           </div>
         ))}
       </div>

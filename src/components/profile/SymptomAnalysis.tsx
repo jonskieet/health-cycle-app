@@ -7,6 +7,7 @@
 import { useMemo, useState } from "react";
 import { TrendingUp, TrendingDown, Sparkles, Minus } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
+import ProgressBar from "@/components/ui/ProgressBar";
 import { CycleLogFull } from "@/lib/queries";
 import { computeSymptomFrequencies } from "@/lib/symptom-analysis";
 import {
@@ -106,15 +107,7 @@ export default function SymptomAnalysis({ cycleLogs }: { cycleLogs: CycleLogFull
                     {f.percentage}% ({f.count} kỳ)
                   </span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-black/[0.05]">
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${(f.percentage / maxPercentage) * 100}%`,
-                      background: "var(--c-sleep)",
-                    }}
-                  />
-                </div>
+                <ProgressBar value={(f.percentage / maxPercentage) * 100} color="var(--c-sleep)" />
               </div>
             );
           })}

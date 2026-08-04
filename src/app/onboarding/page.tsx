@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Heart, Baby, ShieldOff } from "lucide-react";
 import { useUpdateProfile, UsageGoal } from "@/lib/queries";
 import { useToast } from "@/components/ui/Toast";
+import SliderControl from "@/components/ui/SliderControl";
 
 const GOAL_OPTIONS: { value: UsageGoal; label: string; desc: string; icon: typeof Heart }[] = [
   { value: "track", label: "Theo dõi chu kỳ", desc: "Nắm rõ cơ thể mình mỗi tháng", icon: Heart },
@@ -107,13 +108,15 @@ export default function OnboardingPage() {
           <span className="text-xs font-medium text-[var(--ink-soft)]">
             Độ dài chu kỳ trung bình: <b className="text-[var(--ink)]">{avgCycleLength} ngày</b>
           </span>
-          <input
-            type="range"
+          <SliderControl
             min={21}
             max={40}
             value={avgCycleLength}
-            onChange={(e) => setAvgCycleLength(Number(e.target.value))}
-            style={{ accentColor: "var(--c-period)" }}
+            onChange={setAvgCycleLength}
+            accentColor="var(--c-period)"
+            showValueBubble
+            formatValue={(v) => `${v} ngày`}
+            aria-label="Độ dài chu kỳ trung bình"
           />
         </label>
 
@@ -121,13 +124,15 @@ export default function OnboardingPage() {
           <span className="text-xs font-medium text-[var(--ink-soft)]">
             Số ngày hành kinh trung bình: <b className="text-[var(--ink)]">{avgPeriodLength} ngày</b>
           </span>
-          <input
-            type="range"
+          <SliderControl
             min={2}
             max={10}
             value={avgPeriodLength}
-            onChange={(e) => setAvgPeriodLength(Number(e.target.value))}
-            style={{ accentColor: "var(--c-period)" }}
+            onChange={setAvgPeriodLength}
+            accentColor="var(--c-period)"
+            showValueBubble
+            formatValue={(v) => `${v} ngày`}
+            aria-label="Số ngày hành kinh trung bình"
           />
         </label>
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { RotateCcw } from "lucide-react";
 import { FATIGUE_QUESTIONS, scoreFatigueTest, FatigueResult } from "@/lib/fatigue-test";
 import { useSaveFatigueTest } from "@/lib/queries";
+import ProgressBar from "@/components/ui/ProgressBar";
 
 const LEVEL_COLOR: Record<FatigueResult["level"], string> = {
   low: "var(--c-mood)",
@@ -95,12 +96,9 @@ export default function FatigueQuiz() {
         </span>
         <span>{progress}%</span>
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ background: "rgba(36,27,47,0.08)" }}>
-        <div
-          className="h-full rounded-full transition-all"
-          style={{ width: `${progress}%`, background: "var(--c-sleep)" }}
-        />
-      </div>
+      {/* Giữ mảnh hơn 2 chỗ kia (height=6) — tiến độ CÂU HỎI làm quiz, ngữ nghĩa
+          khác "mức độ" của PhaseOutlook/SymptomAnalysis. */}
+      <ProgressBar value={progress} color="var(--c-sleep)" height={6} />
 
       <p className="font-display text-base font-bold text-[var(--ink)]">{question.text}</p>
 

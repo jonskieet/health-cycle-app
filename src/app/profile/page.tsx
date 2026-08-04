@@ -22,6 +22,7 @@ import { isVipProfile } from "@/lib/vip";
 import { useToast } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/Skeleton";
 import BlobIcon from "@/components/ui/BlobIcon";
+import SliderControl from "@/components/ui/SliderControl";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import MembershipCard from "@/components/profile/MembershipCard";
 import LockedFeature from "@/components/profile/LockedFeature";
@@ -298,13 +299,15 @@ export default function ProfilePage() {
             <span className="text-xs font-medium text-[var(--ink-soft)]">
               Độ dài chu kỳ trung bình: <b className="text-[var(--ink)]">{avgCycleLength} ngày</b>
             </span>
-            <input
-              type="range"
+            <SliderControl
               min={21}
               max={40}
               value={avgCycleLength}
-              onChange={(e) => setAvgCycleLength(Number(e.target.value))}
-              style={{ accentColor: "var(--c-period)" }}
+              onChange={setAvgCycleLength}
+              accentColor="var(--c-period)"
+              showValueBubble
+              formatValue={(v) => `${v} ngày`}
+              aria-label="Độ dài chu kỳ trung bình"
             />
           </label>
 
@@ -312,13 +315,15 @@ export default function ProfilePage() {
             <span className="text-xs font-medium text-[var(--ink-soft)]">
               Số ngày hành kinh trung bình: <b className="text-[var(--ink)]">{avgPeriodLength} ngày</b>
             </span>
-            <input
-              type="range"
+            <SliderControl
               min={2}
               max={10}
               value={avgPeriodLength}
-              onChange={(e) => setAvgPeriodLength(Number(e.target.value))}
-              style={{ accentColor: "var(--c-period)" }}
+              onChange={setAvgPeriodLength}
+              accentColor="var(--c-period)"
+              showValueBubble
+              formatValue={(v) => `${v} ngày`}
+              aria-label="Số ngày hành kinh trung bình"
             />
           </label>
 

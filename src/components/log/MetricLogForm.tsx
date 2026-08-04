@@ -15,6 +15,7 @@ import { useState } from "react";
 import { X, Loader2, LucideIcon, Minus, Plus } from "lucide-react";
 import { useLogMetric, MetricType } from "@/lib/queries";
 import { useToast } from "@/components/ui/Toast";
+import SliderControl from "@/components/ui/SliderControl";
 
 interface MetricConfig {
   type: MetricType;
@@ -136,15 +137,16 @@ export default function MetricLogForm({
             </button>
           </div>
 
-          <input
-            type="range"
+          <SliderControl
             min={config.min}
             max={config.max}
             step={config.step}
             value={value}
-            onChange={(e) => setValue(formatValue(Number(e.target.value), config.step))}
-            className="w-full"
-            style={{ accentColor: config.color }}
+            onChange={(v) => setValue(formatValue(v, config.step))}
+            accentColor={config.color}
+            showValueBubble
+            formatValue={(v) => `${formatValue(v, config.step)} ${config.unit}`}
+            aria-label={config.label}
           />
           <div className="flex w-full justify-between text-[11px] text-[var(--ink-faint)]">
             <span>{config.min}</span>
