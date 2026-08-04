@@ -189,3 +189,50 @@
     ghi ở log J3 cũ (dòng 105-127 phía trên). Nếu chủ dự án gửi lại ảnh và
     thấy lệch, ưu tiên sửa theo ảnh.
   - Patch: `patch_J3_stacked_months_scroll.zip`.
+
+- **2026-08-04 — Nút AI ở trang chủ + thiết kế lại giao diện chat AI**: Chủ dự
+  án gửi 2 ảnh: (1) mascot bong bóng dạng mèo pha lê (tham khảo phong cách/
+  vibe, KHÔNG sao chép), (2) mockup màn hình "New AI Chat" thật (mascot bong
+  bóng đơn giản có 3 chấm thoại phía trên, lời chào "Hello {tên}", tiêu đề lớn
+  "How can I help you today?", hàng chip chủ đề cuộn ngang, thanh nhập có
+  icon +/ảnh/mic + nhãn "Moonly AI Assistant · Upgrade"). Đã xem kỹ cả 2 ảnh
+  trước khi code.
+  - `app/page.tsx`: bọc header cũ (avatar + tên, bấm vào `/profile`) trong 1
+    hàng `justify-between`, thêm nút tròn gradient (`--c-sleep`→`--c-period`)
+    ở bên phải mở thẳng `AiChatSheet` — trước đây trang chủ hoàn toàn chưa có
+    lối vào AI, phải sang trang Chu kỳ mới thấy nút hỏi AI.
+  - Viết lại toàn bộ `AiChatSheet.tsx`:
+    - Đổi từ bottom-sheet cao 85vh (nền tối mờ phía sau, bo góc trên) sang
+      PHỦ TOÀN MÀN HÌNH (`fixed inset-0`, nền đặc `var(--surface)`) — đúng
+      cảm giác "1 trang riêng" như ảnh mẫu, dù cơ chế vẫn là overlay (không
+      đổi routing) để KHÔNG phá vỡ các điểm gọi `setChatOpen(true)` sẵn có ở
+      `cycle/page.tsx`.
+    - Header đổi nút đóng "X" góc phải sang mũi tên lùi bên trái + tiêu đề
+      giữa + menu "..." bên phải (chỉ hiện khi đã có tin nhắn) — bấm ra menu
+      có 1 hành động thật: "Xoá đoạn chat" (reset `messages`), không để icon
+      trang trí chết không làm gì.
+    - Màn hình chào (khi `messages.length === 0`): mascot bong bóng NGUYÊN
+      BẢN tự vẽ bằng CSS/SVG đơn giản (gradient tròn pha 3 màu token sẵn có
+      `--c-sleep`/`--c-period`/`--c-ovulation` + 2 chấm mắt + bong bóng thoại
+      3 chấm phía trên) — không sao chép hình con mèo pha lê ở ảnh 1, chỉ giữ
+      đúng Ý TƯỞNG bố cục ở ảnh 2 (tuân thủ ràng buộc bản quyền, không tái
+      tạo tác phẩm nghệ thuật cụ thể). Lời chào dùng `profile.display_name`
+      thật (tách lấy từ cuối cùng làm "tên gọi" ngắn gọn, có sẵn qua
+      `useProfile()`, không thêm field mới). 4 chip chủ đề cố định (không phụ
+      thuộc giai đoạn chu kỳ như "Câu hỏi gợi ý" cũ ở trang Chu kỳ) — vì màn
+      chào này dùng chung cho MỌI điểm vào (trang chủ, trang Chu kỳ), nên
+      không tái dùng thẳng `getSuggestedPrompts(phase)` (cần `prediction`
+      không phải lúc nào cũng có sẵn ở nơi gọi).
+    - Có tin nhắn rồi thì hiện lại đúng UI list chat cũ (bong bóng tin nhắn,
+      typing indicator) — không đổi gì phần này.
+    - Thanh nhập viết lại theo bố cục ảnh mẫu: nhãn nhỏ "Trợ lý AI KVCycle" +
+      "Nâng cấp" (chỉ hiện nếu CHƯA phải VIP, link `/profile`, tái dùng
+      `isVipProfile()` có sẵn — thay cho nhãn thương hiệu ngoài "Moonly" ở
+      ảnh mẫu, đổi đúng theo brand KVCycle) phía trên; icon "+"/ảnh/mic KHÔNG
+      có backend thật nên bấm vào hiện toast "sắp ra mắt" (`useToast().info`)
+      thay vì để icon chết không phản hồi gì — giữ trung thực về tính năng.
+  - `tsc --noEmit` + `eslint` sạch trên 2 file đã sửa.
+  - Việc còn dang dở: chưa có tính năng đính kèm ảnh/ghi âm thật (đúng như
+    yêu cầu chỉ làm phần giao diện) — nếu sau này chủ dự án muốn làm thật,
+    2 icon đã có sẵn vị trí, chỉ cần thay handler.
+  - Patch: `patch_ai_chat_redesign.zip`.

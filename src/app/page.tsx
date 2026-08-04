@@ -1,6 +1,6 @@
 "use client";
 
-import { HeartPulse, Flame, Moon, Droplets, Smile, Stethoscope, ChevronRight, LucideIcon } from "lucide-react";
+import { HeartPulse, Flame, Moon, Droplets, Smile, Stethoscope, ChevronRight, Sparkles, LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import MetricCard from "@/components/ui/MetricCard";
@@ -10,6 +10,7 @@ import PhaseMotif from "@/components/ui/PhaseMotif";
 import { Skeleton } from "@/components/ui/Skeleton";
 import AbnormalCycleBanner from "@/components/cycle/AbnormalCycleBanner";
 import ReminderBanner from "@/components/cycle/ReminderBanner";
+import AiChatSheet from "@/components/cycle/AiChatSheet";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
 import { useAuth } from "@/lib/auth-context";
 import { isVipProfile } from "@/lib/vip";
@@ -24,12 +25,13 @@ import {
   HealthMetricRow,
   MetricType,
 } from "@/lib/queries";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { predictCycle, phaseLabel, phaseColor, daysUntil } from "@/lib/cycle-utils";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const [chatOpen, setChatOpen] = useState(false);
   const { data: profile } = useProfile();
   const { data: cycleLogs = [], isLoading: cycleLoading } = useCycleLogs();
   const { data: metrics = [], isLoading: metricsLoading } = useHealthMetrics();
@@ -55,20 +57,35 @@ export default function DashboardPage() {
     <main className="flex flex-1 flex-col gap-6 px-5 pt-6">
       {/* Thay lời chào cũ bằng header gọn: avatar + tên user, bấm vào để
           sang trang Cá nhân — giống thanh app bar quen thuộc thay vì một
-          câu chào theo giờ trong ngày. */}
-      <Link href="/profile" className="flex items-center gap-3">
-        <ProfileAvatar
-          name={profile?.display_name}
-          email={user?.email}
-          isVip={vip}
-          size={40}
-          avatarKey={profile?.avatar_key}
-          avatarUrl={profile?.avatar_url}
-        />
-        <span className="font-display text-sm font-bold text-[var(--ink)]">
-          {profile?.display_name || user?.email}
-        </span>
-      </Link>
+          câu chào theo giờ trong ngày. Thêm nút phụ bên phải (yêu cầu chủ dự
+          án kèm ảnh tham khảo "New AI Chat") — mở thẳng trợ lý AI, không cần
+          vào trang Chu kỳ trước như trước đây. */}
+      <div className="flex items-center justify-between gap-3">
+        <Link href="/profile" className="flex min-w-0 items-center gap-3">
+          <ProfileAvatar
+            name={profile?.display_name}
+            email={user?.email}
+            isVip={vip}
+            size={40}
+            avatarKey={profile?.avatar_key}
+            avatarUrl={profile?.avatar_url}
+          />
+          <span className="truncate font-display text-sm font-bold text-[var(--ink)]">
+            {profile?.display_name || user?.email}
+          </span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => setChatOpen(true)}
+          aria-label="Trò chuyện với AI"
+          className="press-feedback flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-[0_6px_16px_rgba(124,111,240,0.35)]"
+          style={{ background: "linear-gradient(135deg, var(--c-sleep), var(--c-period))" }}
+        >
+          <Sparkles size={18} />
+        </button>
+      </div>
+
+      {chatOpen && <AiChatSheet onClose={() => setChatOpen(false)} />}
 
       {/* D5: thứ tự ưu tiên hiển thị — chu kỳ hôm nay → nhắc nhở → check-in
           nhanh → insight (Health Score). Trước đây Health Score ring nằm
