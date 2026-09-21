@@ -11,6 +11,17 @@ không lộ API key ra client. Copy `.env.local.example` thành `.env.local` và
 Route có rate-limit tạm thời (in-memory, 10 request/phút/user) — chỉ phù hợp cho MVP single-instance,
 cần thay bằng giải pháp bền hơn (Supabase/Redis) khi scale nhiều instance.
 
+## Nguyên tắc dự đoán chu kỳ
+
+Phần dự đoán trong `src/lib/cycle-utils.ts` dùng ngày lịch theo múi giờ cục bộ
+để tránh lệch ngày khi parse dữ liệu `date` từ Supabase. Độ dài chu kỳ được
+ước tính từ các khoảng cách hợp lệ giữa những lần bắt đầu kỳ gần nhất, loại
+ngoại lệ bằng median/MAD và ưu tiên các chu kỳ mới hơn bằng trọng số giảm dần.
+Độ dài hành kinh dùng median thay vì trung bình để một lần ghi sai không làm
+thay đổi mạnh kết quả. Ngày rụng trứng vẫn là ước tính theo quy tắc trung bình
+14 ngày trước kỳ kế tiếp; đây không phải phương pháp tránh thai hay chẩn đoán
+y khoa.
+
 ## Getting Started
 
 First, run the development server:

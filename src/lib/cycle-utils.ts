@@ -20,14 +20,63 @@ export interface CyclePrediction {
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 
+// Dates in Supabase are date-only values, not timestamps. Parsing them with
+// `new Date("yyyy-mm-dd")` interprets them as UTC and can shift the day in
+// local timezones. Keep all cycle arithmetic in local calendar time.
+function parseDateOnly(value: string): Date {
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
 function diffInDays(a: Date, b: Date) {
-  return Math.round((a.getTime() - b.getTime()) / DAY_MS);
+  const aUtc = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+  const bUtc = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.round((aUtc - bUtc) / DAY_MS);
 }
 
 function addDays(date: Date, days: number) {
   const d = new Date(date);
   d.setDate(d.getDate() + days);
   return d;
+}
+
+function dateValue(value: string) {
+  return parseDateOnly(value).getTime();
+}
+
+function median(values: number[]) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? (sorted[middle - 1] + sorted[middle]) / 2
+    : sorted[middle];
+}
+
+/**
+ * Estimate a personal cycle length without letting one late/mistyped log
+ * dominate the result. Recent cycles receive more weight, while a robust
+ * median/MAD filter removes isolated outliers. This is intentionally kept
+ * separate from the UI so every surface (dashboard, calendar and AI) agrees.
+ */
+function estimateCycleLength(gaps: number[], fallback: number) {
+  if (gaps.length === 0) return fallback;
+
+  const center = median(gaps);
+  const deviations = gaps.map((gap) => Math.abs(gap - center));
+  const mad = median(deviations);
+  const tolerance = Math.max(7, mad * 3);
+  const inliers = gaps.filter((gap) => Math.abs(gap - center) <= tolerance);
+  const candidates = inliers.length > 0 ? inliers : gaps;
+
+  let weightedTotal = 0;
+  let totalWeight = 0;
+  candidates.forEach((gap, index) => {
+    const weight = candidates.length - index;
+    weightedTotal += gap * weight;
+    totalWeight += weight;
+  });
+
+  return Math.round(weightedTotal / totalWeight);
 }
 
 /**
@@ -41,21 +90,21 @@ function addDays(date: Date, days: number) {
  */
 export function coalesceCycleLogs<T extends CycleLog>(logs: T[]): T[] {
   const ascending = [...logs].sort(
-    (a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+    (a, b) => dateValue(a.start_date) - dateValue(b.start_date)
   );
 
   const merged: T[] = [];
   for (const log of ascending) {
     const prev = merged[merged.length - 1];
     if (prev) {
-      const prevEnd = prev.end_date ? new Date(prev.end_date) : new Date(prev.start_date);
-      const curStart = new Date(log.start_date);
+      const prevEnd = prev.end_date ? parseDateOnly(prev.end_date) : parseDateOnly(prev.start_date);
+      const curStart = parseDateOnly(log.start_date);
       // liền kề/chồng lấn nếu kỳ mới bắt đầu trong vòng 1 ngày sau khi kỳ
       // trước đó "kết thúc" (hoặc trước khi nó kết thúc, tức chồng lấn).
       if (diffInDays(curStart, prevEnd) <= 1) {
         const prevEndKey = prev.end_date ?? prev.start_date;
         const curEndKey = log.end_date ?? log.start_date;
-        const newEnd = new Date(curEndKey) > new Date(prevEndKey) ? curEndKey : prevEndKey;
+        const newEnd = dateValue(curEndKey) > dateValue(prevEndKey) ? curEndKey : prevEndKey;
         merged[merged.length - 1] = { ...prev, end_date: newEnd };
         continue;
       }
@@ -63,7 +112,7 @@ export function coalesceCycleLogs<T extends CycleLog>(logs: T[]): T[] {
     merged.push({ ...log });
   }
 
-  return merged.sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+  return merged.sort((a, b) => dateValue(b.start_date) - dateValue(a.start_date));
 }
 
 /**
@@ -80,34 +129,34 @@ export function predictCycle(
   today: Date = new Date()
 ): CyclePrediction {
   const sorted = coalesceCycleLogs(logs).sort(
-    (a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+    (a, b) => dateValue(b.start_date) - dateValue(a.start_date)
   );
-  let avgCycleLength = fallback.avgCycleLength;
-  let avgPeriodLength = fallback.avgPeriodLength;
+  const safeFallbackCycle = Math.max(15, Math.min(90, Math.round(fallback.avgCycleLength)));
+  const safeFallbackPeriod = Math.max(1, Math.min(15, Math.round(fallback.avgPeriodLength)));
+  let avgCycleLength = safeFallbackCycle;
+  let avgPeriodLength = safeFallbackPeriod;
 
   if (sorted.length >= 2) {
     const gaps: number[] = [];
     for (let i = 0; i < sorted.length - 1; i++) {
       const gap = diffInDays(
-        new Date(sorted[i].start_date),
-        new Date(sorted[i + 1].start_date)
+        parseDateOnly(sorted[i].start_date),
+        parseDateOnly(sorted[i + 1].start_date)
       );
-      if (gap > 0 && gap < 60) gaps.push(gap);
+      // Ignore duplicates/data-entry mistakes, but retain genuinely long
+      // cycles so the prediction remains personal rather than always 28 days.
+      if (gap >= 15 && gap <= 90) gaps.push(gap);
     }
-    if (gaps.length > 0) {
-      avgCycleLength = Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length);
-    }
+    avgCycleLength = estimateCycleLength(gaps, safeFallbackCycle);
   }
 
   if (sorted.length > 0) {
     const periodLengths = sorted
       .filter((l) => l.end_date)
-      .map((l) => diffInDays(new Date(l.end_date as string), new Date(l.start_date)) + 1)
-      .filter((n) => n > 0 && n < 15);
+      .map((l) => diffInDays(parseDateOnly(l.end_date as string), parseDateOnly(l.start_date)) + 1)
+      .filter((n) => n >= 1 && n <= 15);
     if (periodLengths.length > 0) {
-      avgPeriodLength = Math.round(
-        periodLengths.reduce((a, b) => a + b, 0) / periodLengths.length
-      );
+      avgPeriodLength = Math.round(median(periodLengths));
     }
   }
 
@@ -117,7 +166,7 @@ export function predictCycle(
   // đúng ngay cả khi dữ liệu cũ còn sót vài dòng 1-ngày trùng lặp.
   const openSorted = sorted.filter((l) => !l.end_date);
   const anchorLog = openSorted[0] ?? sorted[0] ?? null;
-  const lastStart = anchorLog ? new Date(anchorLog.start_date) : addDays(today, -avgCycleLength / 2);
+  const lastStart = anchorLog ? parseDateOnly(anchorLog.start_date) : addDays(today, -Math.round(avgCycleLength / 2));
   const currentDay = Math.max(1, diffInDays(today, lastStart) + 1);
   const nextPeriodDate = addDays(lastStart, avgCycleLength);
   const ovulationDate = addDays(nextPeriodDate, -14);
@@ -176,10 +225,10 @@ export function buildCycleHistory(logs: CycleLog[]): CycleHistoryEntry[] {
   return sorted.map((log, i) => {
     const next = sorted[i + 1];
     const cycleLength = next
-      ? diffInDays(new Date(log.start_date), new Date(next.start_date))
+      ? diffInDays(parseDateOnly(log.start_date), parseDateOnly(next.start_date))
       : null;
     const periodLength = log.end_date
-      ? diffInDays(new Date(log.end_date), new Date(log.start_date)) + 1
+      ? diffInDays(parseDateOnly(log.end_date), parseDateOnly(log.start_date)) + 1
       : null;
 
     return {
